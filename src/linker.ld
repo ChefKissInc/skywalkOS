@@ -1,3 +1,4 @@
+ENTRY(kernel_main)
 OUTPUT_FORMAT(elf64-x86-64)
 
 KERNEL_VMA = 0xFFFFFFFF80000000;
@@ -11,22 +12,30 @@ SECTIONS {
 
     .text ALIGN(0x1000) : AT(ADDR(.text) - KERNEL_VMA) { *(.text*) }
 
-    .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - KERNEL_VMA) { *(.rodata*) }
+    .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - KERNEL_VMA) { *(.rodata.*) }
 
-    .init_array ALIGN(0x1000) : AT(ADDR(.init_array) - KERNEL_VMA) {
-        __initArrayStart = .;
-        *(.init_array*)
-        __initArrayEnd = .;
+    .eh_frame_hdr ALIGN(0x1000) : AT(ADDR(.eh_frame) - KERNEL_VMA) {
+        __eh_frame_hdr_start = .;
+        *(.eh_frame*)
+        __eh_frame_hdr_end = .;
+    }
+
+    .eh_frame ALIGN(0x1000) : AT(ADDR(.eh_frame) - KERNEL_VMA) {
+        __eh_frame_start = .;
+        *(.eh_frame*)
+        __eh_frame_end = .;
     }
 
     .data ALIGN(0x1000) : AT(ADDR(.data) - KERNEL_VMA) { *(.data*) }
 
     .bss ALIGN(0x1000) : AT(ADDR(.bss) - KERNEL_VMA) {
-        __bssStart = .;
+        __bss_start = .;
         *(COMMON)
         *(.bss*)
-        __bssEnd = .;
+        __bss_end = .;
     }
 
-    kernelTop = .;
+    __kernel_top = .;
+
+    /DISCARD/ : { *(.note.gnu.*) }
 }
