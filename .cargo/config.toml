@@ -4,6 +4,3 @@ build-std-features = ["compiler-builtins-mem"]
 
 [build]
 target = "x86_64-none-fwkernel.json"
-
-[target.x86_64-none-fwkernel.fuse]
-rustc-cdylib-link-arg = []

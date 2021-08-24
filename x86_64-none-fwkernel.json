@@ -1,18 +1,24 @@
 {
   "arch": "x86_64",
-  "data-layout": "e-m:e-i64:64-f80:128-n8:16:32:64-S128",
+  "code-model": "kernel",
+  "cpu": "x86-64",
+  "data-layout": "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128",
   "disable-redzone": true,
-  "emit-debug-gdb-scripts": false,
+  "frame-pointer": "always",
   "exe-suffix": ".exec",
   "target-endian": "little",
   "target-pointer-width": "64",
   "target-c-int-width": "32",
   "executables": true,
-  "features": "-mmx,-sse,+soft-float",
+  "features": "-mmx,-sse,-sse2,-sse3,-ssse3,-sse4.1,-sse4.2,-3dnow,-3dnowa,-avx,-avx2,+soft-float",
   "linker-flavor": "ld.lld",
   "linker": "rust-lld",
-  "llvm-target": "x86_64-unknown-none",
+  "llvm-target": "x86_64-unknown-none-elf",
   "max-atomic-width": 64,
+  "position-independent-executables": false,
+  "stack-probes": {
+    "kind": "call"
+  },
   "panic-strategy": "abort",
   "os": "none"
 }

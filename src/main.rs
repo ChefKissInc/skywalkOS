@@ -1,28 +1,60 @@
 #![no_std]
 #![no_main]
 #![feature(asm)]
-#![feature(allocator_api)]
 #![warn(unused_extern_crates)]
 
+use core::fmt::Write;
 use core::panic::PanicInfo;
+use kaboom;
+
+static STACK: [u8; 4096] = [0; 4096];
+
+#[link_section = ".kaboom"]
+#[used]
+static EXPLOSION_INFO: kaboom::ExplosionInfo = kaboom::ExplosionInfo::new(&STACK[4095] as *const u8);
 
 pub const PHYS_VIRT_OFFSET: u64 = 0xFFFF800000000000;
 pub const KERNEL_VIRT_OFFSET: u64 = 0xFFFFFFFF80000000;
 
-#[no_mangle]
-pub fn kernel_main() -> ! {
-    let vga_buffer = (0xB8000 as u64 + PHYS_VIRT_OFFSET) as *mut u8;
+unsafe fn outb(port: u16, val: u8) {
+    asm!("out dx, al", in("dx") port, in("al") val, options(nomem, nostack, preserves_flags));
+}
 
-    for (i, &byte) in b"Hello World!".iter().enumerate() {
-        unsafe {
-            *vga_buffer.offset(i as isize * 2) = byte;
-            *vga_buffer.offset(i as isize * 2 + 1) = 0xb;
+struct Serial;
+
+impl Write for Serial {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        for c in s.chars() {
+            unsafe { outb(0x3F8, c as u8) };
         }
+        Ok(())
     }
-    loop {}
+}
+
+static mut SERIAL: Serial = Serial {};
+
+#[no_mangle]
+pub fn kernel_main(explosion: &kaboom::ExplosionResult) -> ! {
+    unsafe {
+        writeln!(&mut SERIAL, "Hello!").unwrap();
+        writeln!(&mut SERIAL, "{:#X?}", explosion).unwrap();
+
+        explosion.framebuffer.base.write_bytes(0, explosion.framebuffer.resolution.0 * explosion.framebuffer.resolution.1);
+
+        writeln!(&mut SERIAL, "I love Rust").unwrap();
+    }
+
+    loop {
+        unsafe { asm!("hlt") };
+    }
 }
 
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
+pub fn panic(info: &PanicInfo) -> ! {
+    unsafe {
+        write!(&mut SERIAL, "PANIC: {:?}", info).unwrap();
+    }
+    loop {
+        unsafe { asm!("hlt") };
+    }
 }
