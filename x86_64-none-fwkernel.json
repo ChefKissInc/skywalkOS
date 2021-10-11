@@ -16,17 +16,7 @@
   "panic-strategy": "abort",
   "position-independent-executables": false,
   "relocation-model": "static",
-  "frame-pointer": "always",
   "relro-level": "off",
-  "stack-probes": {
-    "kind": "call"
-  },
-  "pre-link-args": {
-    "ld.lld": [
-      "--gc-sections",
-      "--script=.cargo/linker.ld"
-    ]
-  },
   "target-endian": "little",
   "target-c-int-width": "32",
   "target-pointer-width": "64"
