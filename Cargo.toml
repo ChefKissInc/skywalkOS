@@ -1,11 +1,10 @@
-cargo-features = ["edition2021"]
-
 [package]
 name = "fuse"
 version = "0.1.0"
 authors = ["VisualDevelopment"]
 publish = false
 edition = "2021"
+include = ["src/**/*", "build.rs"]
 
 [profile.dev]
 lto = "thin"
