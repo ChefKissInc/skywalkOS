@@ -1,3 +1,3 @@
-mod parse_tags;
-
 pub use parse_tags::*;
+
+mod parse_tags;

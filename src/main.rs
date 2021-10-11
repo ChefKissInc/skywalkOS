@@ -6,12 +6,12 @@
 #![feature(alloc_error_handler)]
 #![feature(allocator_api)]
 
-mod sys;
-mod utils;
-
 use core::fmt::Write;
 
 use log::info;
+
+mod sys;
+mod utils;
 
 struct SerialLogger;
 

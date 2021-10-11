@@ -2,8 +2,8 @@
 name = "fuse"
 version = "0.1.0"
 authors = ["VisualDevelopment"]
-publish = false
 edition = "2021"
+license-file = "LICENSE"
 
 [profile.dev]
 lto = "thin"

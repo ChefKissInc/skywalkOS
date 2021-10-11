@@ -13,3 +13,7 @@ Cargo.lock
 .Trash-*
 .nfs*
 .ionide
+.idea/
+out/
+*.iml
+*.ipr
