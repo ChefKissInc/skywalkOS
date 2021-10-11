@@ -2,16 +2,16 @@
 #![no_main]
 #![feature(asm)]
 #![warn(unused_extern_crates)]
+#![feature(panic_info_message)]
+#![feature(alloc_error_handler)]
 
 use core::fmt::Write;
-use core::panic::PanicInfo;
-use kaboom;
 
 static STACK: [u8; 4096] = [0; 4096];
 
 #[link_section = ".kaboom"]
 #[used]
-static EXPLOSION_INFO: kaboom::ExplosionInfo = kaboom::ExplosionInfo::new(&STACK[4095] as *const u8);
+static EXPLOSION_INFO: kaboom::ExplosionInfo = kaboom::ExplosionInfo::new(&STACK[4095] as *const _);
 
 pub const PHYS_VIRT_OFFSET: u64 = 0xFFFF800000000000;
 pub const KERNEL_VIRT_OFFSET: u64 = 0xFFFFFFFF80000000;
@@ -34,12 +34,23 @@ impl Write for Serial {
 static mut SERIAL: Serial = Serial {};
 
 #[no_mangle]
-pub fn kernel_main(explosion: &kaboom::ExplosionResult) -> ! {
+fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     unsafe {
-        writeln!(&mut SERIAL, "Hello!").unwrap();
-        writeln!(&mut SERIAL, "{:#X?}", explosion).unwrap();
-
-        explosion.framebuffer.base.write_bytes(0, explosion.framebuffer.resolution.0 * explosion.framebuffer.resolution.1);
+        writeln!(&mut SERIAL, "Fuse ignition begun.").unwrap();
+        assert_eq!(explosion.rev, EXPLOSION_INFO.rev);
+        writeln!(&mut SERIAL, "Bootloader data: {:X?}", explosion).unwrap();
+        for tag in explosion.tags {
+            match tag.uuid() {
+                kaboom::tags::MemoryMap::UUID => writeln!(&mut SERIAL, "Memory map: {:X?}", &*(*tag as *const _ as *const kaboom::tags::MemoryMap)).unwrap(),
+                kaboom::tags::FrameBufferInfo::UUID => {
+                    let frame_buffer = &*(*tag as *const _ as *const kaboom::tags::FrameBufferInfo);
+                    writeln!(&mut SERIAL, "Frame buffer: {:X?}", frame_buffer).unwrap();
+                    let size = frame_buffer.resolution.width * frame_buffer.resolution.height;
+                    frame_buffer.base.write_bytes(0, size.try_into().unwrap());
+                }
+                _ => writeln!(&mut SERIAL, "Unknown tag: {:X?}", tag).unwrap(),
+            }
+        }
 
         writeln!(&mut SERIAL, "I love Rust").unwrap();
     }
@@ -50,11 +61,24 @@ pub fn kernel_main(explosion: &kaboom::ExplosionResult) -> ! {
 }
 
 #[panic_handler]
-pub fn panic(info: &PanicInfo) -> ! {
-    unsafe {
-        write!(&mut SERIAL, "PANIC: {:?}", info).unwrap();
+pub fn panic(info: &core::panic::PanicInfo) -> ! {
+    if let Some(loc) = info.location() {
+        unsafe { write!(&mut SERIAL, "Panic in {} at ({}, {}): ", loc.file(), loc.line(), loc.column()).unwrap() };
+        if let Some(msg) = info.message() {
+            unsafe { write!(&mut SERIAL, "{}", msg).unwrap() };
+        } else {
+            unsafe { write!(&mut SERIAL, "No message provided").unwrap() };
+        }
+    } else {
+        unsafe { write!(&mut SERIAL, "Panic: {:#X?}", info.payload()).unwrap() };
     }
+
     loop {
         unsafe { asm!("hlt") };
     }
+}
+
+#[alloc_error_handler]
+fn out_of_memory(layout: core::alloc::Layout) -> ! {
+    panic!("Ran out of memory while trying to allocate {:#?}", layout);
 }

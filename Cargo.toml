@@ -7,6 +7,12 @@ authors = ["VisualDevelopment"]
 publish = false
 edition = "2021"
 
+[profile.dev]
+lto = "thin"
+
+[profile.release]
+lto = "thin"
+
 [dependencies]
 log = { version = "^0.4.14", default-features = false }
 lazy_static = { version = "^1.4.0", features = ["spin_no_std"] }
