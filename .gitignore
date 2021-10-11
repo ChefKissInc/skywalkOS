@@ -3,10 +3,6 @@
 Cargo.lock
 **/*.rs.bk
 .pdb
-*.tmlanguage.cache
-*.tmPreferences.cache
-*.stTheme.cache
-*.sublime-workspace
 .vscode/*
 *.code-workspace
 .history/
