@@ -4,6 +4,9 @@
 #![warn(unused_extern_crates)]
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
+#![feature(allocator_api)]
+
+mod system;
 
 use core::fmt::Write;
 use spin::Mutex;
@@ -34,7 +37,7 @@ static SERIAL: Mutex<SerialWriter> = Mutex::new(SerialWriter::new(0x3F8));
 static _KERNEL_MAIN_CHECK: kaboom::EntryPoint = kernel_main;
 
 #[no_mangle]
-pub fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
+pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     let mut serial = SERIAL.lock();
 
     writeln!(serial, "Fuse ignition begun.").unwrap();
