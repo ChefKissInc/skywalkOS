@@ -6,20 +6,52 @@
 #![feature(alloc_error_handler)]
 #![feature(allocator_api)]
 
-mod system;
+mod sys;
+mod utils;
 
 use core::fmt::Write;
 
+use log::info;
+
+struct SerialLogger;
+
+impl log::Log for SerialLogger {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.level() <= log::Level::Trace
+    }
+
+    fn log(&self, record: &log::Record) {
+        let mut serial = sys::io::serial::SERIAL.lock();
+
+        if self.enabled(record.metadata()) {
+            writeln!(
+                serial,
+                "[{}:{}] {}",
+                record.target(),
+                record.level(),
+                record.args()
+            )
+            .unwrap();
+        }
+    }
+
+    fn flush(&self) {}
+}
+
+static LOGGER: SerialLogger = SerialLogger;
+
 #[no_mangle]
 pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
-    let mut serial = system::io::serial::SERIAL.lock();
+    log::set_logger(&LOGGER)
+        .map(|()| log::set_max_level(log::LevelFilter::Trace))
+        .unwrap();
 
-    writeln!(serial, "Fuse ignition begun.").unwrap();
-    writeln!(serial, "Bootloader data: {:X?}", explosion).unwrap();
+    info!("Copyright VisualDevelopment 2021.");
+    info!("Thoust fuseth hast been igniteth!");
 
     assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
 
-    writeln!(serial, "Fuse initialization complete.").unwrap();
+    info!("Wowse! We artst sending thoust ourst greatesth welcomes!.");
 
     loop {
         unsafe { asm!("hlt") }

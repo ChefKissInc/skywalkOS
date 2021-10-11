@@ -11,6 +11,7 @@ impl core::fmt::Write for SerialWriter {
         for c in s.chars() {
             unsafe { self.0.write(c as u8) };
         }
+
         Ok(())
     }
 }
