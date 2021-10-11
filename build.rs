@@ -1,3 +1,3 @@
-fn main() {
-    println!("cargo:rustc-link-arg-bins=-Tsrc/linker.ld")
+pub fn main() {
+    println!("cargo:rerun-if-changed=src/linker.ld");
 }
