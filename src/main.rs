@@ -38,11 +38,11 @@ impl log::Log for SerialLogger {
     fn flush(&self) {}
 }
 
-static LOGGER: SerialLogger = SerialLogger;
+static SERIAL_LOGGER: SerialLogger = SerialLogger;
 
 #[no_mangle]
 pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
-    log::set_logger(&LOGGER)
+    log::set_logger(&SERIAL_LOGGER)
         .map(|()| log::set_max_level(log::LevelFilter::Trace))
         .unwrap();
 
