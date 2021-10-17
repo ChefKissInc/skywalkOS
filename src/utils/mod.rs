@@ -5,4 +5,5 @@
 
 pub use parse_tags::*;
 
+pub mod logger;
 mod parse_tags;
