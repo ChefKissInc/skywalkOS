@@ -18,6 +18,8 @@ mod utils;
 
 #[no_mangle]
 pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
+    sys::io::serial::SERIAL.lock().init();
+
     log::set_logger(&utils::logger::SERIAL_LOGGER)
         .map(|()| log::set_max_level(log::LevelFilter::Trace))
         .unwrap();

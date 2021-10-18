@@ -3,18 +3,22 @@
  * This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
  */
 
-pub struct SerialWriter(amd64::io::SerialPort<u8>);
+pub struct SerialWriter(amd64::io::serial::SerialPort);
 
 impl SerialWriter {
-    pub const fn new(port: amd64::io::SerialPort<u8>) -> Self {
+    pub const fn new(port: amd64::io::serial::SerialPort) -> Self {
         Self { 0: port }
+    }
+
+    pub fn init(&self) {
+        self.0.init();
     }
 }
 
 impl core::fmt::Write for SerialWriter {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        for c in s.chars() {
-            unsafe { self.0.write(c as u8) };
+        for c in s.bytes() {
+            self.0.transmit(c);
         }
 
         Ok(())
@@ -22,4 +26,4 @@ impl core::fmt::Write for SerialWriter {
 }
 
 pub static SERIAL: spin::Mutex<SerialWriter> =
-    spin::Mutex::new(SerialWriter::new(amd64::io::SerialPort::<u8>::new(0x3F8)));
+    spin::Mutex::new(SerialWriter::new(amd64::io::serial::SerialPort::new(0x3F8)));
