@@ -3,6 +3,7 @@
  * This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
  */
 
-mod allocator;
+pub mod allocator;
 pub mod io;
 mod panic;
+pub mod pmm;

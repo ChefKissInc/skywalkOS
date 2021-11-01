@@ -1,5 +1,8 @@
 [package]
 name = "fuse"
+description = "Firework kernel"
+repository = "https://github.com/Firework-OS/Fuse"
+publish = false
 version = "0.1.0"
 authors = ["VisualDevelopment"]
 edition = "2021"

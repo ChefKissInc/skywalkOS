@@ -5,13 +5,17 @@
 
 #![no_std]
 #![no_main]
+#![deny(warnings, clippy::cargo, unused_extern_crates)]
 #![feature(asm)]
-#![warn(unused_extern_crates)]
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
 #![feature(allocator_api)]
+#![feature(const_raw_ptr_deref)]
 
-use log::info;
+extern crate alloc;
+
+use alloc::boxed::Box;
+use log::{debug, info};
 
 mod sys;
 mod utils;
@@ -26,10 +30,15 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
 
     utils::parse_tags(explosion.tags);
 
+    // At this point, memory allocations are now possible
     info!("Copyright VisualDevelopment 2021.");
     info!("Thoust fuseth hast been igniteth!");
 
     assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
+
+    let test = Box::new(5);
+    debug!("test = {:#X?}", test);
+    core::mem::drop(test);
 
     info!("Wowse! We artst sending thoust ourst greatesth welcomes!.");
 
