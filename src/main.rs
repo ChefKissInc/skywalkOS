@@ -5,7 +5,7 @@
 
 #![no_std]
 #![no_main]
-#![deny(warnings, clippy::cargo, unused_extern_crates)]
+#![deny(warnings, clippy::cargo, unused_extern_crates, rust_2021_compatibility)]
 #![feature(asm)]
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
@@ -15,6 +15,7 @@
 extern crate alloc;
 
 use alloc::boxed::Box;
+
 use log::{debug, info};
 
 mod sys;

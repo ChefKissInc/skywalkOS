@@ -44,7 +44,10 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
         if let Some(pmm) = (*self.pmm.get()).get_mut() {
             assert!(ptr as u64 > amd64::paging::PHYS_VIRT_OFFSET);
-            pmm.free(ptr.sub(amd64::paging::PHYS_VIRT_OFFSET as usize), layout.size());
+            pmm.free(
+                ptr.sub(amd64::paging::PHYS_VIRT_OFFSET as usize),
+                layout.size(),
+            );
         } else {
             panic!(
                 "Failed to deallocate memory at {:#X?}, layout = {:#X?}",
