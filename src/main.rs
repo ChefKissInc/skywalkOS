@@ -33,13 +33,16 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
         log::set_logger(&utils::logger::SERIAL_LOGGER).unwrap();
     }
 
+    unsafe {
+        sys::gdt::GDTR.load();
+    }
+
     utils::parse_tags(explosion.tags);
 
     // At this point, memory allocations are now possible
     info!("Copyright VisualDevelopment 2021.");
-    info!("Thoust fuseth hast been igniteth!");
-
     assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
+    info!("Thoust fuseth hast been igniteth!");
 
     let test = Box::new(5);
     debug!("test = {:#X?}", test);
