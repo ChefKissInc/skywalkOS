@@ -4,7 +4,7 @@
  */
 
 pub mod allocator;
+pub mod gdt;
 pub mod io;
 mod panic;
 pub mod pmm;
-pub mod gdt;

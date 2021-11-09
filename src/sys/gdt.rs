@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) VisualDevelopment 2021-2021.
+ * This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
+ */
+
 pub static ENTRIES: [amd64::registers::gdt::SegmentDescriptor; 5] = [
     amd64::registers::gdt::SegmentDescriptor::default(),
     amd64::registers::gdt::SegmentDescriptor::new_from_ty(
