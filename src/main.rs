@@ -11,6 +11,7 @@
 #![feature(alloc_error_handler)]
 #![feature(allocator_api)]
 #![feature(const_raw_ptr_deref)]
+#![feature(const_size_of_val)]
 
 extern crate alloc;
 
