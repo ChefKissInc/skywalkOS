@@ -12,6 +12,7 @@
 #![feature(allocator_api)]
 #![feature(const_raw_ptr_deref)]
 #![feature(const_size_of_val)]
+#![feature(naked_functions)]
 
 extern crate alloc;
 
@@ -35,7 +36,28 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
     }
 
     unsafe {
-        sys::gdt::GDTR.load();
+        // PIC initialization. temporary
+        amd64::io::port::Port::<u8>::new(0x20).write(0x11);
+        amd64::io::port::Port::<u8>::new(0xA0).write(0x11);
+        let (master, slave) = (
+            amd64::io::port::Port::<u8>::new(0x21),
+            amd64::io::port::Port::<u8>::new(0xA1),
+        );
+        master.write(32);
+        master.write(4);
+        slave.write(2);
+        master.write(1);
+        slave.write(1);
+        slave.write(0);
+        master.write(0);
+
+        sys::gdt::GDTR.load(
+            amd64::sys::cpu::SegmentSelector::new(1, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
+            amd64::sys::cpu::SegmentSelector::new(2, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
+        );
+        sys::idt::init();
+
+        asm!("div {:x}", in(reg) 0)
     }
 
     utils::parse_tags(explosion.tags);

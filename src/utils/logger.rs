@@ -13,9 +13,9 @@ impl log::Log for SerialLogger {
     }
 
     fn log(&self, record: &log::Record) {
-        let mut serial = crate::sys::io::serial::SERIAL.lock();
-
         if self.enabled(record.metadata()) {
+            let mut serial = crate::sys::io::serial::SERIAL.lock();
+
             writeln!(
                 serial,
                 "[{}:{}] {}",

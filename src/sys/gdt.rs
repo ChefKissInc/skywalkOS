@@ -5,15 +5,9 @@
 
 pub static ENTRIES: [amd64::sys::gdt::SegmentDescriptor; 5] = [
     amd64::sys::gdt::SegmentDescriptor::default(),
-    amd64::sys::gdt::SegmentDescriptor::new_from_ty(
-        amd64::sys::gdt::DescriptorType::CodeSegment,
-    ),
-    amd64::sys::gdt::SegmentDescriptor::new_from_ty(
-        amd64::sys::gdt::DescriptorType::DataSegment,
-    ),
-    amd64::sys::gdt::SegmentDescriptor::new_from_ty(
-        amd64::sys::gdt::DescriptorType::TaskSegment,
-    ),
+    amd64::sys::gdt::SegmentDescriptor::new_from_ty(amd64::sys::gdt::DescriptorType::CodeSegment),
+    amd64::sys::gdt::SegmentDescriptor::new_from_ty(amd64::sys::gdt::DescriptorType::DataSegment),
+    amd64::sys::gdt::SegmentDescriptor::new_from_ty(amd64::sys::gdt::DescriptorType::TaskSegment),
     amd64::sys::gdt::SegmentDescriptor::default(),
 ];
 
