@@ -50,7 +50,7 @@ pub unsafe extern "C" fn isr_handler(regs: &mut amd64::sys::cpu::RegisterState) 
     let n = (regs.int_num & 0xFF) as u8;
     info!("Got interrupt {:?}", n);
     let handler = (*super::HANDLERS.0.get()).get(n as usize).unwrap();
-    (*handler.func)(regs);
+    (handler.func)(regs);
     if !handler.should_iret && !handler.is_irq {
         loop {
             asm!("hlt")

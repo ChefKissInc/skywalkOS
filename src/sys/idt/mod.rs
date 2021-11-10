@@ -10,7 +10,7 @@ seq_macro::seq!(N in 0..256 {
     static HANDLERS: SafeCell<[InterruptHandler; 256]> = SafeCell(UnsafeCell::new([
         #(
             InterruptHandler {
-                func: crate::utils::debuggable::create_debuggable!(default_handler),
+                func: default_handler,
                 is_irq: false,
                 should_iret: false,
             },
@@ -22,13 +22,8 @@ pub struct SafeCell<T: ?Sized>(pub UnsafeCell<T>);
 
 unsafe impl<T: ?Sized> Sync for SafeCell<T> {}
 
-pub type HandlerFn = crate::utils::debuggable::Debuggable<
-    unsafe extern "sysv64" fn(&mut amd64::sys::cpu::RegisterState),
->;
-
-#[derive(Debug)]
 pub struct InterruptHandler {
-    pub func: HandlerFn,
+    pub func: unsafe extern "sysv64" fn(&mut amd64::sys::cpu::RegisterState),
     pub is_irq: bool,
     pub should_iret: bool,
 }

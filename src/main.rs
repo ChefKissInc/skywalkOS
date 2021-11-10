@@ -26,6 +26,7 @@ mod utils;
 #[no_mangle]
 pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     sys::io::serial::SERIAL.lock().init();
+    info!("Copyright VisualDevelopment 2021.");
 
     if cfg!(debug_assertions) {
         log::set_logger(&utils::logger::SERIAL_LOGGER)
@@ -36,6 +37,12 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
     }
 
     unsafe {
+        info!("Initialising thine GDT.");
+        sys::gdt::GDTR.load(
+            amd64::sys::cpu::SegmentSelector::new(1, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
+            amd64::sys::cpu::SegmentSelector::new(2, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
+        );
+        info!("Initialising thine PIC.");
         // PIC initialization. temporary
         amd64::io::port::Port::<u8>::new(0x20).write(0x11);
         amd64::io::port::Port::<u8>::new(0xA0).write(0x11);
@@ -50,20 +57,13 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
         slave.write(1);
         slave.write(0);
         master.write(0);
-
-        sys::gdt::GDTR.load(
-            amd64::sys::cpu::SegmentSelector::new(1, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
-            amd64::sys::cpu::SegmentSelector::new(2, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
-        );
+        info!("Initialising thine IDT.");
         sys::idt::init();
-
-        asm!("div {:x}", in(reg) 0)
     }
 
     utils::parse_tags(explosion.tags);
 
     // At this point, memory allocations are now possible
-    info!("Copyright VisualDevelopment 2021.");
     assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
     info!("Thoust fuseth hast been igniteth!");
 
@@ -71,7 +71,7 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
     debug!("test = {:#X?}", test);
     core::mem::drop(test);
 
-    info!("Wowse! We artst sending thoust ourst greatesth welcomes!.");
+    info!("Wowse! We artst sending thoust ourst greatesth welcomes!");
 
     loop {
         unsafe { asm!("hlt") }
