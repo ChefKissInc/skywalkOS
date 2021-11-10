@@ -18,7 +18,7 @@ impl log::Log for SerialLogger {
 
             writeln!(
                 serial,
-                "[{}:{}] {}",
+                "[{} | {}] {}",
                 record.target(),
                 record.level(),
                 record.args()

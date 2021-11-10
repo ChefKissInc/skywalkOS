@@ -73,6 +73,11 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
 
     info!("Wowse! We artst sending thoust ourst greatesth welcomes!");
 
+    // Test interrupt handler
+    unsafe {
+        asm!("div {:x}", in(reg) 0);
+    }
+
     loop {
         unsafe { asm!("hlt") }
     }
