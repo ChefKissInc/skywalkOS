@@ -5,6 +5,7 @@
 
 pub mod allocator;
 pub mod gdt;
+pub mod idt;
 pub mod io;
 mod panic;
 pub mod pmm;
