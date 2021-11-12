@@ -13,6 +13,8 @@
 #![feature(const_raw_ptr_deref)]
 #![feature(const_size_of_val)]
 #![feature(naked_functions)]
+#![feature(asm_sym)]
+#![feature(asm_const)]
 
 extern crate alloc;
 
