@@ -6,7 +6,8 @@
 use core::cell::UnsafeCell;
 
 use amd64::utilities::alignment::Alignment;
-use log::{debug, info};
+use log::info;
+// use log::{debug, info};
 
 extern "C" {
     static __kernel_top: u64;
@@ -118,14 +119,14 @@ impl BitmapAllocator {
                             }
                         }
 
-                        if cfg!(debug_assertions) {
-                            for i in 0..bitmap_sz {
-                                debug!(
-                                    "{:b}",
-                                    bitmap.as_mut_ptr().add(i as usize).as_ref().unwrap()
-                                );
-                            }
-                        }
+                        // if cfg!(debug_assertions) {
+                        //     for i in 0..bitmap_sz {
+                        //         debug!(
+                        //             "{:b}",
+                        //             bitmap.as_mut_ptr().add(i as usize).as_ref().unwrap()
+                        //         );
+                        //     }
+                        // }
 
                         return Ok(Self {
                             bitmap,

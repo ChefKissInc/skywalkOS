@@ -20,6 +20,7 @@ extern crate alloc;
 
 use alloc::boxed::Box;
 
+use amd64::paging::{KERNEL_VIRT_OFFSET, PML4};
 use log::{debug, info};
 
 mod sys;
@@ -61,6 +62,9 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
         master.write(0);
         info!("Initialising thine IDT.");
         sys::idt::init();
+
+        let pml4 = <amd64::paging::PageTable as PML4>::get();
+        info!("Testing PML4: KERNEL_VIRT_OFFSET + 0x20_0000 = {:#X?}", pml4.virt_to_phys(KERNEL_VIRT_OFFSET + 0x20_0000));
     }
 
     utils::parse_tags(explosion.tags);
