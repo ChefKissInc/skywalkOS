@@ -19,7 +19,7 @@ pub fn parse_tags(tags: &'static [kaboom::tags::TagType]) {
                 crate::sys::allocator::GLOBAL_ALLOCATOR.init(pmm);
             }
             TagType::FrameBuffer(frame_buffer) => info!("Got frame-buffer: {:X?}", *frame_buffer),
-            TagType::ACPI(rsdp) => info!("Got ACPI RSDP: {:X?}", *rsdp),
+            TagType::Acpi(rsdp) => info!("Got ACPI RSDP: {:X?}", *rsdp),
         }
     }
 }

@@ -20,7 +20,6 @@ extern crate alloc;
 
 use alloc::boxed::Box;
 
-use amd64::paging::{Pml4, KERNEL_VIRT_OFFSET};
 use log::{debug, info};
 
 mod sys;
@@ -29,6 +28,7 @@ mod utils;
 #[no_mangle]
 pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     sys::io::serial::SERIAL.lock().init();
+    assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
     info!("Copyright VisualDevelopment 2021.");
 
     if cfg!(debug_assertions) {
@@ -62,18 +62,20 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
         master.write(0);
         info!("Initialising thine IDT.");
         sys::idt::init();
-
-        let pml4 = <amd64::paging::PageTable as Pml4>::get();
-        info!(
-            "Testing PML4: KERNEL_VIRT_OFFSET + 0x20_0000 = {:#X?}",
-            pml4.virt_to_phys(KERNEL_VIRT_OFFSET + 0x20_0000)
-        );
     }
 
     utils::parse_tags(explosion.tags);
 
     // At this point, memory allocations are now possible
-    assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
+    info!("Initializing paging");
+    let pml4 = Box::leak(Box::new(amd64::paging::PageTable::new()));
+    unsafe {
+        info!(
+            "Testing PML4: KERNEL_VIRT_OFFSET + 0x20_0000 = {:#X?}",
+            pml4.virt_to_phys(amd64::paging::KERNEL_VIRT_OFFSET + 0x20_0000)
+        );
+
+    }
     info!("Thoust fuseth hast been igniteth!");
 
     let test = Box::new(5);
