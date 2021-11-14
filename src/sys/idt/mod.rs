@@ -20,6 +20,14 @@ seq_macro::seq!(N in 0..256 {
 
 pub struct SafeCell<T: ?Sized>(pub UnsafeCell<T>);
 
+impl<T: ?Sized> core::ops::Deref for SafeCell<T> {
+    type Target = UnsafeCell<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 unsafe impl<T: ?Sized> Sync for SafeCell<T> {}
 
 pub struct InterruptHandler {
