@@ -3,26 +3,19 @@
  * This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
  */
 
-use core::{cell::UnsafeCell, ptr::null_mut};
+use log::info;
 
 #[global_allocator]
 pub static GLOBAL_ALLOCATOR: KernAllocator = KernAllocator::new();
 
-pub struct KernAllocator {
-    pmm: UnsafeCell<spin::Once<super::pmm::BitmapAllocator>>,
-}
+#[derive(Debug)]
+pub struct KernAllocator(pub core::cell::UnsafeCell<super::pmm::BitmapAllocator>);
 
 impl KernAllocator {
     pub const fn new() -> Self {
-        Self {
-            pmm: UnsafeCell::new(spin::Once::new()),
-        }
-    }
-
-    pub fn init(&self, allocator: super::pmm::BitmapAllocator) {
-        unsafe {
-            (*self.pmm.get()).call_once(|| allocator);
-        }
+        Self(core::cell::UnsafeCell::new(
+            super::pmm::BitmapAllocator::new(),
+        ))
     }
 }
 
@@ -30,30 +23,22 @@ unsafe impl Sync for KernAllocator {}
 
 unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        if let Some(pmm) = (*self.pmm.get()).get_mut() {
-            if let Ok(ptr) = pmm.alloc(layout.size()) {
-                ptr.add(amd64::paging::PHYS_VIRT_OFFSET as usize)
-            } else {
-                null_mut()
-            }
+        info!("Allocating memory {:#X?}", layout);
+        if let Some(ptr) = self.0.get().as_mut().unwrap().alloc(layout.size()) {
+            ptr.add(amd64::paging::PHYS_VIRT_OFFSET as usize)
         } else {
-            null_mut()
+            core::ptr::null_mut()
         }
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
-        if let Some(pmm) = (*self.pmm.get()).get_mut() {
-            assert!(ptr as u64 > amd64::paging::PHYS_VIRT_OFFSET);
-            pmm.free(
-                ptr.sub(amd64::paging::PHYS_VIRT_OFFSET as usize),
-                layout.size(),
-            );
-        } else {
-            panic!(
-                "Failed to deallocate memory at {:#X?}, layout = {:#X?}",
-                ptr, layout
-            );
-        }
+        info!("Deallocating memory at {:#X?}", ptr);
+        assert!(ptr as usize > amd64::paging::PHYS_VIRT_OFFSET);
+        self.0
+            .get()
+            .as_mut()
+            .unwrap()
+            .free(ptr.sub(amd64::paging::PHYS_VIRT_OFFSET), layout.size());
     }
 }
 

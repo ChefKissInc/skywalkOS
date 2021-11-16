@@ -53,8 +53,8 @@ macro_rules! isr_stub {
 
 pub unsafe extern "C" fn isr_handler(regs: &mut amd64::sys::cpu::RegisterState) {
     let n = (regs.int_num & 0xFF) as u8;
-    info!("Got interrupt {}\n{:#X?}", n, regs);
-    let handler = (*super::HANDLERS.get()).get(n as usize).unwrap();
+    let handler = &super::HANDLERS.get().as_mut().unwrap()[n as usize];
+    info!("Handler for ISR {:#X?}: {:#X?}", n, handler);
     (handler.func)(regs);
     if !handler.should_iret && !handler.is_irq {
         loop {

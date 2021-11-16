@@ -7,27 +7,34 @@
 #![no_main]
 #![deny(warnings, clippy::cargo, unused_extern_crates, rust_2021_compatibility)]
 #![feature(asm)]
-#![feature(panic_info_message)]
-#![feature(alloc_error_handler)]
-#![feature(allocator_api)]
-#![feature(const_raw_ptr_deref)]
-#![feature(const_size_of_val)]
-#![feature(naked_functions)]
 #![feature(asm_sym)]
 #![feature(asm_const)]
+#![feature(alloc_error_handler)]
+#![feature(allocator_api)]
+#![feature(const_size_of_val)]
+#![feature(const_mut_refs)]
+#![feature(panic_info_message)]
+#![feature(naked_functions)]
 
 extern crate alloc;
 
 use alloc::boxed::Box;
 
-use log::{debug, info};
+use log::info;
 
 mod sys;
 mod utils;
 
+static STACK: [u8; 4096] = [0; 4096];
+
+#[link_section = ".kaboom"]
+#[used]
+static EXPLOSION_FUEL: kaboom::ExplosionFuel = kaboom::ExplosionFuel::new(&STACK[4095]);
+
 #[no_mangle]
 pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     sys::io::serial::SERIAL.lock().init();
+
     assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
     info!("Copyright VisualDevelopment 2021.");
 
@@ -45,21 +52,6 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
             amd64::sys::cpu::SegmentSelector::new(1, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
             amd64::sys::cpu::SegmentSelector::new(2, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
         );
-        info!("Initialising thine PIC.");
-        // PIC initialization. temporary
-        amd64::io::port::Port::<u8>::new(0x20).write(0x11);
-        amd64::io::port::Port::<u8>::new(0xA0).write(0x11);
-        let (master, slave) = (
-            amd64::io::port::Port::<u8>::new(0x21),
-            amd64::io::port::Port::<u8>::new(0xA1),
-        );
-        master.write(32);
-        master.write(4);
-        slave.write(2);
-        master.write(1);
-        slave.write(1);
-        slave.write(0);
-        master.write(0);
         info!("Initialising thine IDT.");
         sys::idt::init();
     }
@@ -68,19 +60,17 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
 
     // At this point, memory allocations are now possible
     info!("Initializing paging");
-    let pml4 = Box::leak(Box::new(amd64::paging::PageTable::new()));
+    let pml4 = Box::leak(Box::new(sys::paging::Pml4::new()));
     unsafe {
+        pml4.map_higher_half();
         info!(
             "Testing PML4: KERNEL_VIRT_OFFSET + 0x20_0000 = {:#X?}",
             pml4.virt_to_phys(amd64::paging::KERNEL_VIRT_OFFSET + 0x20_0000)
         );
 
+        pml4.set()
     }
     info!("Thoust fuseth hast been igniteth!");
-
-    let test = Box::new(5);
-    debug!("test = {:#X?}", test);
-    core::mem::drop(test);
 
     info!("Wowse! We artst sending thoust ourst greatesth welcomes!");
 

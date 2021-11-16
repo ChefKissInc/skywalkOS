@@ -5,149 +5,129 @@
 
 use core::cell::UnsafeCell;
 
-use amd64::utilities::alignment::Alignment;
 use log::info;
-// use log::{debug, info};
 
 extern "C" {
     static __kernel_top: u64;
 }
 
 #[derive(Debug)]
-pub enum AllocInitError {
-    UnknownError,
-}
-
 pub struct BitmapAllocator {
-    bitmap: &'static mut [u64],
+    bitmap: *mut i64,
     highest_page: usize,
     last_index: usize,
 }
 
 impl BitmapAllocator {
-    pub fn new(
-        mmap: &'static [UnsafeCell<kaboom::tags::MemoryEntry>],
-    ) -> Result<Self, AllocInitError> {
-        // SAFETY: Linker symbol; immutable
-        let alloc_base =
-            unsafe { &__kernel_top } as *const _ as u64 - amd64::paging::KERNEL_VIRT_OFFSET;
-        info!("alloc_base: {}", alloc_base);
+    pub const fn new() -> Self {
+        Self {
+            bitmap: core::ptr::null_mut(),
+            highest_page: 0,
+            last_index: 0,
+        }
+    }
+
+    pub unsafe fn init(
+        &mut self,
+        mmap: &'static [UnsafeCell<kaboom::tags::memory_map::MemoryEntry>],
+    ) {
+        let alloc_base = &__kernel_top as *const _ as usize - amd64::paging::KERNEL_VIRT_OFFSET;
+        info!("alloc_base: {:#X?}", alloc_base);
 
         // Find the highest available address
-        // SAFETY: Uhhhhh...uhhhhhhh...uhhhhhhhhhhhh
-        // end my suffering
-        let mut highest_page = 0u64;
-
         for mmap_ent in mmap {
-            if let kaboom::tags::MemoryEntry::Usable(v) = unsafe { &*mmap_ent.get() } {
-                let mut base = v.base.align_up(0x1000);
-                let mut pages = v.pages - ((base - v.base) / 0x1000).align_down(0x1000);
-                let top = base + pages;
-                info!(
-                    "Base: {}, v.base: {}, pages: {}, v.pages: {}, top: {}",
-                    base, v.base, pages, v.pages, top
-                );
+            match mmap_ent.get().as_mut().unwrap() {
+                kaboom::tags::memory_map::MemoryEntry::Usable(v)
+                | kaboom::tags::memory_map::MemoryEntry::BootLoaderReclaimable(v) => {
+                    let top = v.base + v.length;
+                    info!(
+                        "v.base: {:#X?}, v.pages: {:#X?}, top: {:#X?}",
+                        v.base, v.length, top
+                    );
 
-                if base < alloc_base {
-                    if top > alloc_base {
-                        pages -= alloc_base - base;
-                        base = alloc_base;
-                    } else {
-                        unsafe {
+                    if v.base < alloc_base {
+                        if top > alloc_base {
+                            v.length -= alloc_base - v.base;
+                            v.base = alloc_base;
+                        } else {
                             mmap_ent
                                 .get()
-                                .write(kaboom::tags::MemoryEntry::BadMemory(*v));
-                        }
+                                .write(kaboom::tags::memory_map::MemoryEntry::BadMemory(*v));
 
-                        continue;
+                            continue;
+                        }
+                    }
+
+                    if top > self.highest_page {
+                        self.highest_page = top as usize;
                     }
                 }
-
-                unsafe {
-                    mmap_ent.get().write(kaboom::tags::MemoryEntry::Usable(
-                        kaboom::tags::MemoryData { base, pages },
-                    ));
-                }
-
-                if top > highest_page {
-                    highest_page = top;
-                }
+                _ => {}
             }
         }
 
-        info!("Memory Map after processing part 1: {:X?}", mmap);
-
-        let bitmap_sz = (highest_page / 0x1000) / 8;
-        info!("highest_page: {}, bitmap_sz: {}", highest_page, bitmap_sz);
+        let bitmap_sz = self.highest_page / 0x1000 / 8;
+        info!(
+            "highest_page: {:#X?}, bitmap_sz: {:#X?}",
+            self.highest_page, bitmap_sz
+        );
 
         // Find a memory hole for the bitmap
         for mmap_ent in mmap {
-            if let kaboom::tags::MemoryEntry::Usable(v) = unsafe { *mmap_ent.get() } {
-                if v.pages >= bitmap_sz {
-                    unsafe {
-                        let ptr = (v.base + amd64::paging::PHYS_VIRT_OFFSET) as *mut u64;
-                        let bitmap = core::slice::from_raw_parts_mut(ptr, bitmap_sz as usize);
-                        info!("Ptr: {:#X?}", ptr);
-                        info!(":confused_blink: {:#X?}", mmap_ent.get());
-                        info!(":confused_blink: {:#X?}", mmap_ent.get().read());
+            if let kaboom::tags::memory_map::MemoryEntry::Usable(v) =
+                mmap_ent.get().as_mut().unwrap()
+            {
+                if v.length >= bitmap_sz {
+                    self.bitmap = (v.base + amd64::paging::PHYS_VIRT_OFFSET) as *mut i64;
 
-                        mmap_ent.get().write(kaboom::tags::MemoryEntry::Usable(
-                            kaboom::tags::MemoryData {
+                    mmap_ent
+                        .get()
+                        .write(kaboom::tags::memory_map::MemoryEntry::Usable(
+                            kaboom::tags::memory_map::MemoryData {
                                 base: v.base + bitmap_sz,
-                                pages: v.pages - bitmap_sz,
+                                length: v.length - bitmap_sz,
                             },
                         ));
 
-                        for i in 0..bitmap_sz {
-                            bitmap.as_mut_ptr().add(i as usize).write(!0u64);
-                        }
+                    self.bitmap.write_bytes(0xFF, bitmap_sz);
 
-                        info!("Memory Map after processing part 2: {:X?}", mmap);
-
-                        // Populate the bitmap
-                        for mmap_ent in mmap {
-                            if let kaboom::tags::MemoryEntry::Usable(v) = &*mmap_ent.get() {
-                                let base = v.base as usize / 0x1000;
-                                let end = base + v.pages as usize;
-                                info!("Base: {}, End: {}", base, end);
-
-                                // I don't understand how this works
-                                for j in 0..(v.pages) {
-                                    let idx = (v.base + j * 0x1000) as usize / 0x1000;
-                                    bitmap[idx / 64] &= !(1u64 << (idx % 64));
-                                }
-                            }
-                        }
-
-                        // if cfg!(debug_assertions) {
-                        //     for i in 0..bitmap_sz {
-                        //         debug!(
-                        //             "{:b}",
-                        //             bitmap.as_mut_ptr().add(i as usize).as_ref().unwrap()
-                        //         );
-                        //     }
-                        // }
-
-                        return Ok(Self {
-                            bitmap,
-                            highest_page: highest_page.try_into().unwrap(),
-                            last_index: 0,
-                        });
-                    }
+                    break;
                 }
             }
         }
 
-        Err(AllocInitError::UnknownError)
+        // Populate the bitmap
+        for mmap_ent in mmap {
+            if let kaboom::tags::memory_map::MemoryEntry::Usable(v) =
+                mmap_ent.get().as_mut().unwrap()
+            {
+                info!("Base: {:#X?}, End: {:#X?}", v.base, v.base + v.length);
+
+                for j in 0..(v.length / 0x1000) {
+                    core::arch::x86_64::_bittestandreset64(
+                        self.bitmap,
+                        ((v.base + j * 0x1000) / 0x1000).try_into().unwrap(),
+                    );
+                }
+            }
+        }
+
+        // let mut serial = super::io::serial::SERIAL.lock();
+        // for i in 0..bitmap_sz {
+        //     write!(serial, "{:b}", self.bitmap.add(i).read()).unwrap();
+        // }
+        info!("");
     }
 
-    unsafe fn internal_alloc(&mut self, count: usize, limit: usize) -> Result<*mut u8, ()> {
+    unsafe fn internal_alloc(&mut self, count: usize, limit: usize) -> Option<*mut u8> {
         let mut p = 0usize;
 
         while self.last_index < limit {
+            let res =
+                core::arch::x86_64::_bittest64(self.bitmap, self.last_index.try_into().unwrap())
+                    == 0;
             self.last_index += 1;
-
-            if (self.bitmap[self.last_index / 64] & !(1u64 << (self.last_index % 64))) == 0 {
+            if res {
                 p += 1;
 
                 if p == count {
@@ -155,24 +135,24 @@ impl BitmapAllocator {
 
                     // Mark memory hole as used
                     for i in page..self.last_index {
-                        self.bitmap[i / 64] |= 1u64 << (i % 64);
+                        core::arch::x86_64::_bittestandset64(self.bitmap, i.try_into().unwrap());
                     }
 
-                    return Ok(core::mem::transmute(page * 0x1000));
+                    return Some(core::mem::transmute(page * 0x1000));
                 }
             } else {
                 p = 0;
             }
         }
 
-        Err(())
+        None
     }
 
-    pub unsafe fn alloc(&mut self, count: usize) -> Result<*mut u8, ()> {
+    pub unsafe fn alloc(&mut self, count: usize) -> Option<*mut u8> {
         let l = self.last_index;
 
-        if let Ok(ret) = self.internal_alloc(count, self.highest_page / 0x1000) {
-            Ok(ret)
+        if let Some(ret) = self.internal_alloc(count, self.highest_page / 0x1000) {
+            Some(ret)
         } else {
             self.last_index = 0;
             self.internal_alloc(count, l)
@@ -183,8 +163,8 @@ impl BitmapAllocator {
         let idx = ptr as usize / 0x1000;
 
         // Mark memory hole as free
-        for i in idx..idx + count {
-            self.bitmap[i / 64] &= !(1u64 << (i % 64));
+        for i in idx..(idx + count) {
+            core::arch::x86_64::_bittestandreset64(self.bitmap, i.try_into().unwrap());
         }
     }
 }

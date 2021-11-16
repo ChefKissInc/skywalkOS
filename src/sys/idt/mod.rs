@@ -30,10 +30,22 @@ impl<T: ?Sized> core::ops::Deref for SafeCell<T> {
 
 unsafe impl<T: ?Sized> Sync for SafeCell<T> {}
 
+type HandlerFn = unsafe extern "sysv64" fn(&mut amd64::sys::cpu::RegisterState);
+
 pub struct InterruptHandler {
-    pub func: unsafe extern "sysv64" fn(&mut amd64::sys::cpu::RegisterState),
+    pub func: HandlerFn,
     pub is_irq: bool,
     pub should_iret: bool,
+}
+
+impl core::fmt::Debug for InterruptHandler {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("InterruptHandler")
+            .field("func", &(self.func as usize))
+            .field("is_irq", &self.is_irq)
+            .field("should_iret", &self.should_iret)
+            .finish()
+    }
 }
 
 unsafe extern "sysv64" fn default_handler(regs: &mut amd64::sys::cpu::RegisterState) {
@@ -63,4 +75,20 @@ pub unsafe fn init() {
     };
 
     idtr.load()
+}
+
+pub fn set_handler(isr: u64, handler: HandlerFn, is_irq: bool, should_iret: bool) {
+    unsafe {
+        HANDLERS
+            .get()
+            .as_mut()
+            .unwrap()
+            .as_mut_ptr()
+            .add(isr as usize)
+            .write(InterruptHandler {
+                func: handler,
+                is_irq,
+                should_iret,
+            });
+    }
 }

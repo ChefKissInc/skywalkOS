@@ -13,10 +13,14 @@ pub fn parse_tags(tags: &'static [kaboom::tags::TagType]) {
             TagType::MemoryMap(mmap) => {
                 info!("Got memory map: {:X?}", *mmap);
 
-                // I know what I'm doing... kind of
-                let pmm = crate::sys::pmm::BitmapAllocator::new(*mmap)
-                    .expect("Failed to initialize Physical Memory Management");
-                crate::sys::allocator::GLOBAL_ALLOCATOR.init(pmm);
+                unsafe {
+                    crate::sys::allocator::GLOBAL_ALLOCATOR
+                        .0
+                        .get()
+                        .as_mut()
+                        .unwrap()
+                        .init(*mmap);
+                }
             }
             TagType::FrameBuffer(frame_buffer) => info!("Got frame-buffer: {:X?}", *frame_buffer),
             TagType::Acpi(rsdp) => info!("Got ACPI RSDP: {:X?}", *rsdp),
