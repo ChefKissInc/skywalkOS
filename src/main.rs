@@ -25,18 +25,16 @@ use log::info;
 mod sys;
 mod utils;
 
-static STACK: [u8; 4096] = [0; 4096];
+static STACK: [u8; 0x20_0000] = [0; 0x20_0000];
 
 #[link_section = ".kaboom"]
 #[used]
-static EXPLOSION_FUEL: kaboom::ExplosionFuel = kaboom::ExplosionFuel::new(&STACK[4095]);
+static EXPLOSION_FUEL: kaboom::ExplosionFuel =
+    kaboom::ExplosionFuel::new(&STACK[0x20_0000 - 1] as *const _);
 
 #[no_mangle]
 pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     sys::io::serial::SERIAL.lock().init();
-
-    assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
-    info!("Copyright VisualDevelopment 2021.");
 
     if cfg!(debug_assertions) {
         log::set_logger(&utils::logger::SERIAL_LOGGER)
@@ -45,6 +43,9 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
     } else {
         log::set_logger(&utils::logger::SERIAL_LOGGER).unwrap();
     }
+
+    assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
+    info!("Copyright VisualDevelopment 2021.");
 
     unsafe {
         info!("Initialising thine GDT.");
