@@ -25,6 +25,7 @@ use log::info;
 mod sys;
 mod utils;
 
+#[used]
 static STACK: [u8; 0x5_0000] = [0; 0x5_0000];
 
 #[link_section = ".kaboom"]
@@ -33,7 +34,7 @@ static EXPLOSION_FUEL: kaboom::ExplosionFuel =
     kaboom::ExplosionFuel::new(&STACK[0x5_0000 - 1] as *const _);
 
 #[no_mangle]
-pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
+extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     sys::io::serial::SERIAL.lock().init();
 
     if cfg!(debug_assertions) {
@@ -41,7 +42,9 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
             .map(|()| log::set_max_level(log::LevelFilter::Trace))
             .unwrap();
     } else {
-        log::set_logger(&utils::logger::SERIAL_LOGGER).unwrap();
+        log::set_logger(&utils::logger::SERIAL_LOGGER)
+            .map(|()| log::set_max_level(log::LevelFilter::Info))
+            .unwrap();
     }
 
     assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
