@@ -13,7 +13,6 @@ lto = "thin"
 
 [profile.release]
 lto = true
-opt-level = 3
 
 [dependencies]
 log = { version = "0.4.14", default-features = false }
