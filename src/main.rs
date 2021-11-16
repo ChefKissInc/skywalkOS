@@ -25,12 +25,12 @@ use log::info;
 mod sys;
 mod utils;
 
-static STACK: [u8; 0x20_0000] = [0; 0x20_0000];
+static STACK: [u8; 0x5_0000] = [0; 0x5_0000];
 
 #[link_section = ".kaboom"]
 #[used]
 static EXPLOSION_FUEL: kaboom::ExplosionFuel =
-    kaboom::ExplosionFuel::new(&STACK[0x20_0000 - 1] as *const _);
+    kaboom::ExplosionFuel::new(&STACK[0x5_0000 - 1] as *const _);
 
 #[no_mangle]
 pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
@@ -76,6 +76,7 @@ pub extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) 
     info!("Wowse! We artst sending thoust ourst greatesth welcomes!");
 
     // Test interrupt handler
+    info!("Testing the IDT; the below is intentional!");
     unsafe {
         asm!("div {:x}", in(reg) 0);
     }
