@@ -13,7 +13,8 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
 
     if let Some(loc) = info.location() {
         error!(
-            "Wowse! Your system hast crasth... Onceth panic hast occurred in thine file {} and thinest positionst ({}, {}). ",
+            "Wowse! Your system hast crasth... Onceth panic hast occurred in thine file {} and \
+             thinest positionst ({}, {}). ",
             loc.file(),
             loc.line(),
             loc.column()
@@ -28,7 +29,11 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
             error!("Noneth messageth hast been provideth!");
         }
     } else {
-        error!("Wowse! Your system hast crasth... Onceth panic hast occurred, and thine payload arst: {:#X?}", info.payload());
+        error!(
+            "Wowse! Your system hast crasth... Onceth panic hast occurred, and thine payload \
+             arst: {:#X?}",
+            info.payload()
+        );
     }
 
     loop {
