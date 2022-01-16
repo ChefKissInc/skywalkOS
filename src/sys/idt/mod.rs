@@ -59,7 +59,7 @@ pub unsafe fn init() {
             [
                 #(
                     amd64::sys::idt::Entry::new(
-                        isr::isr #N as usize as u64,
+                        isr::isr~N as usize as u64,
                         amd64::sys::cpu::SegmentSelector::new(1, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
                         0,
                         amd64::sys::idt::EntryType::InterruptGate, 0, true

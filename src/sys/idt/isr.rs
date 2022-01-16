@@ -1,3 +1,5 @@
+use core::arch::asm;
+
 use log::info;
 
 macro_rules! isr_stub {
@@ -82,15 +84,15 @@ macro_rules! isr_err {
 }
 
 seq_macro::seq!(N in 0..8 {
-    isr_noerr!(isr #N, N);
+    isr_noerr!(isr~N, N);
 });
 isr_err!(isr8, 8);
 isr_noerr!(isr9, 9);
 seq_macro::seq!(N in 10..16 {
-    isr_err!(isr #N, N);
+    isr_err!(isr~N, N);
 });
 seq_macro::seq!(N in 16..255 {
-    isr_noerr!(isr #N, N);
+    isr_noerr!(isr~N, N);
 });
 
 #[naked]

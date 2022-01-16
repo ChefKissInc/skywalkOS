@@ -6,7 +6,6 @@
 #![no_std]
 #![no_main]
 #![deny(warnings, clippy::cargo, unused_extern_crates, rust_2021_compatibility)]
-#![feature(asm)]
 #![feature(asm_sym)]
 #![feature(asm_const)]
 #![feature(alloc_error_handler)]
@@ -19,6 +18,7 @@
 extern crate alloc;
 
 use alloc::boxed::Box;
+use core::arch::asm;
 
 use log::info;
 

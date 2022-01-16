@@ -30,4 +30,4 @@ modular-bitfield = "0.11.2"
 amd64 = { path = "../AMD64" }
 acpi = { path = "../ACPI" }
 kaboom = { path = "../Kaboom" }
-seq-macro = "0.2.2"
+seq-macro = "0.3.0"

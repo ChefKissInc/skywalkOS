@@ -3,6 +3,8 @@
  * This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
  */
 
+use core::arch::asm;
+
 use log::error;
 
 #[panic_handler]
