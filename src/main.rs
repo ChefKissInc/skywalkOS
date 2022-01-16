@@ -6,14 +6,15 @@
 #![no_std]
 #![no_main]
 #![deny(warnings, clippy::cargo, unused_extern_crates, rust_2021_compatibility)]
-#![feature(asm_sym)]
-#![feature(asm_const)]
-#![feature(alloc_error_handler)]
-#![feature(allocator_api)]
-#![feature(const_size_of_val)]
-#![feature(const_mut_refs)]
-#![feature(panic_info_message)]
-#![feature(naked_functions)]
+#![feature(
+    asm_sym,
+    asm_const,
+    alloc_error_handler,
+    allocator_api,
+    const_size_of_val,
+    panic_info_message,
+    naked_functions
+)]
 
 extern crate alloc;
 
@@ -58,6 +59,8 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         );
         info!("Initialising thine IDT.");
         sys::idt::init();
+        info!("Initialising thine exceptionst handleth.");
+        sys::exceptions::init();
     }
 
     utils::parse_tags(explosion.tags);

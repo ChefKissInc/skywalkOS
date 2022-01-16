@@ -1,6 +1,11 @@
+/*
+ * Copyright (c) VisualDevelopment 2021-2021.
+ * This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
+ */
+
 use core::cell::UnsafeCell;
 
-use log::info;
+use log::{error, info};
 
 mod isr;
 
@@ -79,16 +84,24 @@ pub unsafe fn init() {
 
 pub fn set_handler(isr: u64, handler: HandlerFn, is_irq: bool, should_iret: bool) {
     unsafe {
-        HANDLERS
+        let handlers_ptr = HANDLERS
             .get()
             .as_mut()
             .unwrap()
             .as_mut_ptr()
-            .add(isr as usize)
-            .write(InterruptHandler {
-                func: handler,
-                is_irq,
-                should_iret,
-            });
+            .add(isr as usize);
+
+        if handlers_ptr.read().func as usize != default_handler as usize {
+            error!(
+                "Tried to register already existing ISR #{}. This may be a bug!",
+                isr
+            )
+        }
+
+        handlers_ptr.write(InterruptHandler {
+            func: handler,
+            is_irq,
+            should_iret,
+        });
     }
 }
