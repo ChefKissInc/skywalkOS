@@ -29,6 +29,10 @@ jobs:
         with:
           repository: "Firework-OS/Kaboom"
           path: "_work/Kaboom"
+      - uses: actions/checkout@v2
+        with:
+          repository: "Firework-OS/VESA"
+          path: "_work/VESA"
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
@@ -62,6 +66,10 @@ jobs:
         with:
           repository: "Firework-OS/Kaboom"
           path: "_work/Kaboom"
+      - uses: actions/checkout@v2
+        with:
+          repository: "Firework-OS/VESA"
+          path: "_work/VESA"
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly

@@ -39,13 +39,4 @@ SECTIONS
     }
 
     __kernel_top = .;
-
-    /DISCARD/ :
-    {
-        *(.comment*)
-        *(.eh_frame*)
-        *(.gcc_except_table*)
-        *(.note*)
-        *(.rel.eh_frame*)
-    }
 }

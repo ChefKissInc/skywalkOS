@@ -22,6 +22,7 @@ extern crate alloc;
 use alloc::boxed::Box;
 use core::arch::asm;
 
+use font8x8::UnicodeFonts;
 use log::info;
 
 mod sys;
@@ -64,7 +65,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         sys::exceptions::init();
     }
 
-    utils::parse_tags(explosion.tags);
+    let fb = utils::parse_tags(explosion.tags);
 
     // At this point, memory allocations are now possible
     info!("Initializing paging");
@@ -81,6 +82,48 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
     info!("Thoust fuseth hast been igniteth!");
 
     info!("Wowse! We artst sending thoust ourst greatesth welcomes!");
+
+    info!("{:#X?}", fb);
+
+    // Display test
+    if let Some(fb) = fb {
+        unsafe {
+            pml4.map_huge_pages(
+                fb.base as usize,
+                fb.base as usize - amd64::paging::PHYS_VIRT_OFFSET,
+                (fb.width * fb.pitch + 0x20_0000 - 1) / 0x20_0000,
+                amd64::paging::PageTableEntry::new()
+                    .with_writable(true)
+                    .with_present(true),
+            );
+        }
+        fb.clear(vesa::pixel::Colour::new(0x00, 0x00, 0x00, 0x00).to_u32(fb.bitmask))
+            .unwrap();
+
+        let mut x = fb.width as usize / 2 - 4 * 8;
+        for c in "Firework".chars() {
+            let mut y = fb.height as usize / 2 - 4;
+            for x_bit in &font8x8::BASIC_FONTS.get(c).unwrap() {
+                for bit in 0..8 {
+                    fb.draw_pixel(
+                        x + bit,
+                        y,
+                        match *x_bit & (1 << bit) {
+                            0 => {
+                                vesa::pixel::Colour::new(0x00, 0x00, 0x00, 0x00).to_u32(fb.bitmask)
+                            }
+                            _ => {
+                                vesa::pixel::Colour::new(0xFF, 0xFF, 0xFF, 0xFF).to_u32(fb.bitmask)
+                            }
+                        },
+                    )
+                    .unwrap();
+                }
+                y += 1;
+            }
+            x += 8;
+        }
+    }
 
     // Test interrupt handler
     info!("Testing the IDT; the below is intentional!");
