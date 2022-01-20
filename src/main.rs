@@ -13,7 +13,8 @@
     allocator_api,
     const_size_of_val,
     panic_info_message,
-    naked_functions
+    naked_functions,
+    const_mut_refs
 )]
 
 extern crate alloc;
@@ -38,15 +39,15 @@ static EXPLOSION_FUEL: kaboom::ExplosionFuel =
 extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     sys::io::serial::SERIAL.lock().init();
 
-    if cfg!(debug_assertions) {
-        log::set_logger(&utils::logger::SERIAL_LOGGER)
-            .map(|()| log::set_max_level(log::LevelFilter::Trace))
-            .unwrap();
-    } else {
-        log::set_logger(&utils::logger::SERIAL_LOGGER)
-            .map(|()| log::set_max_level(log::LevelFilter::Info))
-            .unwrap();
-    }
+    log::set_logger(&utils::logger::SERIAL_LOGGER)
+        .map(|()| {
+            log::set_max_level(if cfg!(debug_assertions) {
+                log::LevelFilter::Trace
+            } else {
+                log::LevelFilter::Info
+            })
+        })
+        .unwrap();
 
     assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
     info!("Copyright VisualDevelopment 2021.");
