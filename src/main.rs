@@ -105,19 +105,17 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
             let mut y = fb.height as usize / 2 - 4;
             for x_bit in &font8x8::BASIC_FONTS.get(c).unwrap() {
                 for bit in 0..8 {
-                    fb.draw_pixel(
-                        x + bit,
-                        y,
-                        match *x_bit & (1 << bit) {
-                            0 => {
-                                vesa::pixel::Colour::new(0x00, 0x00, 0x00, 0x00).to_u32(fb.bitmask)
-                            }
-                            _ => {
-                                vesa::pixel::Colour::new(0xFF, 0xFF, 0xFF, 0xFF).to_u32(fb.bitmask)
-                            }
-                        },
-                    )
-                    .unwrap();
+                    match *x_bit & (1 << bit) {
+                        0 => {}
+                        _ => {
+                            fb.draw_pixel(
+                                x + bit,
+                                y,
+                                vesa::pixel::Colour::new(0xFF, 0xFF, 0xFF, 0xFF).to_u32(fb.bitmask),
+                            )
+                            .unwrap();
+                        }
+                    }
                 }
                 y += 1;
             }
