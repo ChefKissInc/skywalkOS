@@ -8,6 +8,6 @@ pub mod exceptions;
 pub mod gdt;
 pub mod idt;
 pub mod io;
-pub mod vmm;
 mod panic;
 pub mod pmm;
+pub mod vmm;
