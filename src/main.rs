@@ -22,6 +22,7 @@ extern crate alloc;
 use alloc::boxed::Box;
 use core::arch::asm;
 
+use amd64::paging::pml4::Pml4;
 use font8x8::UnicodeFonts;
 use log::info;
 
@@ -94,7 +95,8 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                 (fb.width * fb.pitch + 0x20_0000 - 1) / 0x20_0000,
                 amd64::paging::PageTableEntry::new()
                     .with_writable(true)
-                    .with_present(true),
+                    .with_present(true)
+                    .with_huge_or_pat2(true),
             );
         }
 
