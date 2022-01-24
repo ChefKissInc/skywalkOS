@@ -69,7 +69,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
 
     // At this point, memory allocations are now possible
     info!("Initializing paging");
-    let pml4 = Box::leak(Box::new(sys::paging::Pml4::new()));
+    let pml4 = Box::leak(Box::new(sys::vmm::Pml4::new()));
     unsafe {
         pml4.map_higher_half();
         info!(
@@ -97,24 +97,16 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                     .with_present(true),
             );
         }
-        fb.clear(vesa::pixel::Colour::new(0x00, 0x00, 0x00, 0x00).to_u32(fb.bitmask))
-            .unwrap();
+
+        fb.clear(0).unwrap();
 
         let mut x = fb.width as usize / 2 - 4 * 8;
         for c in "Firework".chars() {
             let mut y = fb.height as usize / 2 - 4;
-            for x_bit in &font8x8::BASIC_FONTS.get(c).unwrap() {
+            for &x_bit in &font8x8::BASIC_FONTS.get(c).unwrap() {
                 for bit in 0..8 {
-                    match *x_bit & (1 << bit) {
-                        0 => {}
-                        _ => {
-                            fb.draw_pixel(
-                                x + bit,
-                                y,
-                                vesa::pixel::Colour::new(0xFF, 0xFF, 0xFF, 0xFF).to_u32(fb.bitmask),
-                            )
-                            .unwrap();
-                        }
+                    if x_bit & (1 << bit) != 0 {
+                        fb.draw_pixel(x + bit, y, !0u32).unwrap();
                     }
                 }
                 y += 1;
