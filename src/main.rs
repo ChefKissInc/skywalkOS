@@ -72,13 +72,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
     info!("Initializing paging");
     let pml4 = Box::leak(Box::new(sys::vmm::Pml4::new()));
     unsafe {
-        pml4.map_higher_half();
-        info!(
-            "Testing PML4: KERNEL_VIRT_OFFSET + 0x20_0000 = {:#X?}",
-            pml4.virt_to_phys(amd64::paging::KERNEL_VIRT_OFFSET + 0x20_0000)
-        );
-
-        pml4.set()
+        pml4.init();
     }
     info!("Thoust fuseth hast been igniteth!");
 
@@ -92,11 +86,11 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
             pml4.map_huge_pages(
                 fb.base as usize,
                 fb.base as usize - amd64::paging::PHYS_VIRT_OFFSET,
-                (fb.width * fb.pitch + 0x20_0000 - 1) / 0x20_0000,
+                (fb.height * fb.pitch + 0x20_0000 - 1) / 0x20_0000,
                 amd64::paging::PageTableEntry::new()
                     .with_writable(true)
                     .with_present(true)
-                    .with_huge_or_pat2(true),
+                    .with_pwt(true),
             );
         }
 
