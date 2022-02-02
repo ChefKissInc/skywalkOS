@@ -90,7 +90,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                 amd64::paging::PageTableEntry::new()
                     .with_writable(true)
                     .with_present(true)
-                    .with_pwt(true),
+                    .with_pcd(true),
             );
         }
 
