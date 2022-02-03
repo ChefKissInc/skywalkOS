@@ -1,4 +1,4 @@
-# Fuse
+# Fuse [![Run lints](https://github.com/Firework-OS/Fuse/actions/workflows/run_lints.yml/badge.svg)](https://github.com/Firework-OS/Fuse/actions/workflows/run_lints.yml)
 
 The Firework kernel.
 
