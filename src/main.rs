@@ -105,10 +105,8 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         terminal.write_str("Type here: ").unwrap();
         info!("typing");
         loop {
-            if let Ok(key) = ps2ctrl.wait_for_key() {
-                if let KeyEvent::Pressed(c) = key {
-                    terminal.write_char(c).unwrap();
-                }
+            if let Ok(KeyEvent::Pressed(c)) = ps2ctrl.wait_for_key() {
+                terminal.write_char(c).unwrap();
             }
         }
     }
