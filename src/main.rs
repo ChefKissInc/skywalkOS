@@ -20,12 +20,13 @@
 extern crate alloc;
 
 use alloc::boxed::Box;
-use core::arch::asm;
+use core::{arch::asm, fmt::Write};
 
-use amd64::paging::pml4::Pml4;
-use font8x8::UnicodeFonts;
 use log::info;
 
+use crate::driver::ps2::{KeyEvent, PS2Ctl};
+
+mod driver;
 mod sys;
 mod utils;
 
@@ -66,55 +67,50 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         sys::exceptions::init();
     }
 
-    let fb = utils::parse_tags(explosion.tags);
+    utils::parse_tags(explosion.tags);
 
     // At this point, memory allocations are now possible
     info!("Initializing paging");
-    let pml4 = Box::leak(Box::new(sys::vmm::Pml4::new()));
     unsafe {
-        pml4.init();
+        crate::sys::state::SYS_STATE
+            .pml4
+            .get()
+            .as_mut()
+            .unwrap()
+            .call_once(|| Box::leak(Box::new(sys::vmm::Pml4::new())));
+        crate::sys::state::SYS_STATE
+            .pml4
+            .get()
+            .as_mut()
+            .unwrap()
+            .get_mut()
+            .unwrap()
+            .init();
     }
     info!("Thoust fuseth hast been igniteth!");
 
     info!("Wowse! We artst sending thoust ourst greatesth welcomes!");
 
-    info!("{:#X?}", fb);
+    // Terminal
+    if let Some(terminal) = unsafe { sys::state::SYS_STATE.terminal.get().as_mut() }
+        .unwrap()
+        .get_mut()
+    {
+        terminal.map_fb();
+        terminal.clear();
 
-    // Display test
-    if let Some(fb) = fb {
-        unsafe {
-            pml4.map_huge_pages(
-                fb.base as usize,
-                fb.base as usize - amd64::paging::PHYS_VIRT_OFFSET,
-                (fb.height * fb.pitch + 0x20_0000 - 1) / 0x20_0000,
-                amd64::paging::PageTableEntry::new()
-                    .with_writable(true)
-                    .with_present(true)
-                    .with_pcd(true),
-            );
-        }
-
-        fb.clear(0).unwrap();
-
-        let mut x = fb.width as usize / 2 - 4 * 8;
-        for c in "Firework".chars() {
-            let mut y = fb.height as usize / 2 - 4;
-            for &x_bit in &font8x8::BASIC_FONTS.get(c).unwrap() {
-                for bit in 0..8 {
-                    if x_bit & (1 << bit) != 0 {
-                        fb.draw_pixel(x + bit, y, !0u32).unwrap();
-                    }
+        terminal.write_str("Welcome to Firework!\n").unwrap();
+        let mut ps2ctrl = PS2Ctl::new();
+        ps2ctrl.init();
+        terminal.write_str("Type here: ").unwrap();
+        info!("typing");
+        loop {
+            if let Ok(key) = ps2ctrl.wait_for_key() {
+                if let KeyEvent::Pressed(c) = key {
+                    terminal.write_char(c).unwrap();
                 }
-                y += 1;
             }
-            x += 8;
         }
-    }
-
-    // Test interrupt handler
-    info!("Testing the IDT; the below is intentional!");
-    unsafe {
-        asm!("div {:x}", in(reg) 0);
     }
 
     loop {

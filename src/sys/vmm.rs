@@ -9,7 +9,6 @@ use amd64::{
     paging::pml4::Pml4 as Pml4Trait,
     registers::msr::{Msr, Pat, PatEntry},
 };
-use log::info;
 
 #[repr(transparent)]
 #[derive(Debug)]
@@ -23,17 +22,15 @@ impl Pml4 {
     }
 
     pub unsafe fn init(&mut self) {
-        self.map_higher_half();
-
         // Fix performance by utilising the PAT mechanism
-        let new_pat = Pat::new()
+        Pat::new()
             .with_pat0(PatEntry::WriteBack)
             .with_pat1(PatEntry::WriteThrough)
             .with_pat2(PatEntry::WriteCombining)
-            .with_pat3(PatEntry::WriteProtected);
-        info!("PAT before: {:#X?}\nAfter: {:#X?}", Pat::read(), new_pat);
-        new_pat.write();
+            .with_pat3(PatEntry::WriteProtected)
+            .write();
 
+        self.map_higher_half();
         self.set();
     }
 }

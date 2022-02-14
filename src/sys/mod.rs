@@ -10,4 +10,6 @@ pub mod idt;
 pub mod io;
 mod panic;
 pub mod pmm;
+pub mod state;
+pub mod terminal;
 pub mod vmm;
