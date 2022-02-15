@@ -19,7 +19,7 @@
 
 extern crate alloc;
 
-use alloc::boxed::Box;
+use alloc::{boxed::Box, string::String};
 use core::{arch::asm, fmt::Write};
 
 use log::info;
@@ -99,14 +99,68 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         terminal.map_fb();
         terminal.clear();
 
-        terminal.write_str("Welcome to Firework!\n").unwrap();
+        writeln!(terminal, "We welcome thoust to Firework").unwrap();
+        writeln!(
+            terminal,
+            "I arst thine Firework kerneleth debugging terminalth (FKDBGT) (patent pending)"
+        )
+        .unwrap();
+        writeln!(
+            terminal,
+            "Typeth thine 'help' commandst to seeth available commandst."
+        )
+        .unwrap();
         let mut ps2ctrl = PS2Ctl::new();
         ps2ctrl.init();
-        terminal.write_str("Type here: ").unwrap();
-        info!("typing");
-        loop {
-            if let Ok(KeyEvent::Pressed(c)) = ps2ctrl.wait_for_key() {
-                terminal.write_char(c).unwrap();
+        'menu: loop {
+            write!(terminal, "\nFirework# ").unwrap();
+            let mut cmd = String::new();
+            loop {
+                if let Ok(KeyEvent::Pressed(c)) = ps2ctrl.wait_for_key() {
+                    terminal.write_char(c).unwrap();
+                    match c {
+                        '\n' => {
+                            match cmd.as_str() {
+                                "help" => {
+                                    writeln!(
+                                        terminal,
+                                        "Fireworkst Kerneleth debugging terminalth (FKDBGT)"
+                                    )
+                                    .unwrap();
+                                    writeln!(terminal, "Available commandst:").unwrap();
+                                    writeln!(
+                                        terminal,
+                                        "    greeting <= Very epicst exampleth commandeth"
+                                    )
+                                    .unwrap();
+                                    writeln!(
+                                        terminal,
+                                        "    restart  <= Restarteth thoust machineth by resetting \
+                                         thine CPU"
+                                    )
+                                    .unwrap();
+                                    writeln!(
+                                        terminal,
+                                        "    help     <= Displayeth thine currenst messageth"
+                                    )
+                                    .unwrap();
+                                }
+                                "greeting" => {
+                                    writeln!(
+                                        terminal,
+                                        "Greetings, thoust veryth estimeedeth consumerst"
+                                    )
+                                    .unwrap()
+                                }
+                                "restart" => ps2ctrl.reset_cpu(),
+                                _ => writeln!(terminal, "Unknownst commandeth").unwrap(),
+                            }
+
+                            continue 'menu;
+                        }
+                        _ => cmd.push(c),
+                    }
+                }
             }
         }
     }

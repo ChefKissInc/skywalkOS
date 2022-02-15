@@ -10,7 +10,7 @@ use log::info;
 pub enum PS2CtlCmd {
     ReadControllerCfg = 0x20,
     WriteControllerCfg = 0x60,
-    // ResetCPU = 0xFE,
+    ResetCPU = 0xFE,
 }
 
 #[derive(Debug)]
@@ -70,9 +70,9 @@ impl PS2Ctl {
         while self.input_full() {}
     }
 
-    // pub fn reset_cpu(&self) {
-    //     self.send_cmd(PS2ControllerCmd::ResetCPU);
-    // }
+    pub fn reset_cpu(&self) {
+        self.send_cmd(PS2CtlCmd::ResetCPU, false);
+    }
 
     pub fn wait_for_key(&self) -> Result<KeyEvent, ()> {
         while !self.output_full() {}
