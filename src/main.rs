@@ -72,20 +72,9 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
     // At this point, memory allocations are now possible
     info!("Initializing paging");
     unsafe {
-        crate::sys::state::SYS_STATE
-            .pml4
-            .get()
-            .as_mut()
-            .unwrap()
-            .call_once(|| Box::leak(Box::new(sys::vmm::Pml4::new())));
-        crate::sys::state::SYS_STATE
-            .pml4
-            .get()
-            .as_mut()
-            .unwrap()
-            .get_mut()
-            .unwrap()
-            .init();
+        let pml4 = crate::sys::state::SYS_STATE.pml4.get().as_mut().unwrap();
+        pml4.call_once(|| Box::leak(Box::new(sys::vmm::Pml4::new())));
+        pml4.get_mut().unwrap().init();
     }
     info!("Thoust fuseth hast been igniteth!");
 
