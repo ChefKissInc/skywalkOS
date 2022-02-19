@@ -56,14 +56,14 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
     info!("Copyright VisualDevelopment 2021.");
 
     unsafe {
-        info!("Initialising thine GDT.");
+        info!("Initialising the GDT.");
         sys::gdt::GDTR.load(
             amd64::sys::cpu::SegmentSelector::new(1, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
             amd64::sys::cpu::SegmentSelector::new(2, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
         );
-        info!("Initialising thine IDT.");
+        info!("Initialising the IDT.");
         sys::idt::init();
-        info!("Initialising thine exceptionst handleth.");
+        info!("Initialising the exception handlers.");
         sys::exceptions::init();
     }
 
@@ -76,9 +76,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         pml4.call_once(|| Box::leak(Box::new(sys::vmm::Pml4::new())));
         pml4.get_mut().unwrap().init();
     }
-    info!("Thoust fuseth hast been igniteth!");
-
-    info!("Wowse! We artst sending thoust ourst greatesth welcomes!");
+    info!("Fuse has been ignited!");
 
     // Terminal
     if let Some(terminal) = unsafe { sys::state::SYS_STATE.terminal.get().as_mut() }
@@ -88,17 +86,9 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         terminal.map_fb();
         terminal.clear();
 
-        writeln!(terminal, "We welcome thoust to Firework").unwrap();
-        writeln!(
-            terminal,
-            "I arst thine Firework kerneleth debugging terminalth (FKDBGT) (patent pending)"
-        )
-        .unwrap();
-        writeln!(
-            terminal,
-            "Typeth thine 'help' commandst to seeth available commandst."
-        )
-        .unwrap();
+        writeln!(terminal, "We welcome you to Firework").unwrap();
+        writeln!(terminal, "I am the Fuse debug terminal (FDBGT)").unwrap();
+        writeln!(terminal, "Type 'help' to see the available commands.").unwrap();
         let mut ps2ctrl = PS2Ctl::new();
         ps2ctrl.init();
         'menu: loop {
@@ -111,38 +101,20 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                         '\n' => {
                             match cmd.as_str() {
                                 "help" => {
+                                    writeln!(terminal, "Fuse debug terminal (FDBGT)").unwrap();
+                                    writeln!(terminal, "Available commands:").unwrap();
+                                    writeln!(terminal, "    greeting <= Very epic example command")
+                                        .unwrap();
                                     writeln!(
                                         terminal,
-                                        "Fireworkst Kerneleth debugging terminalth (FKDBGT)"
+                                        "    restart  <= Restart machine by resetting CPU"
                                     )
                                     .unwrap();
-                                    writeln!(terminal, "Available commandst:").unwrap();
-                                    writeln!(
-                                        terminal,
-                                        "    greeting <= Very epicst exampleth commandeth"
-                                    )
-                                    .unwrap();
-                                    writeln!(
-                                        terminal,
-                                        "    restart  <= Restarteth thoust machineth by resetting \
-                                         thine CPU"
-                                    )
-                                    .unwrap();
-                                    writeln!(
-                                        terminal,
-                                        "    help     <= Displayeth thine currenst messageth"
-                                    )
-                                    .unwrap();
+                                    writeln!(terminal, "    help     <= Display this").unwrap();
                                 }
-                                "greeting" => {
-                                    writeln!(
-                                        terminal,
-                                        "Greetings, thoust veryth estimeedeth consumerst"
-                                    )
-                                    .unwrap()
-                                }
+                                "greeting" => writeln!(terminal, "Greetings, User.").unwrap(),
                                 "restart" => ps2ctrl.reset_cpu(),
-                                _ => writeln!(terminal, "Unknownst commandeth").unwrap(),
+                                _ => writeln!(terminal, "Unknown command").unwrap(),
                             }
 
                             continue 'menu;

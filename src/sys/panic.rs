@@ -9,14 +9,14 @@ use log::error;
 
 #[panic_handler]
 pub fn panic(info: &core::panic::PanicInfo) -> ! {
+    unsafe { asm!("cli") }
     if super::io::serial::SERIAL.is_locked() {
         unsafe { super::io::serial::SERIAL.force_unlock() }
     }
 
     if let Some(loc) = info.location() {
         error!(
-            "Wowse! Your system hast crasth... Onceth panic hast occurred in thine file {} and \
-             thinest positionst ({}, {}). ",
+            "Oops. Thoust system hast craseth... Panic hast occurred in thine file {} at {}:{}.",
             loc.file(),
             loc.line(),
             loc.column()
@@ -28,12 +28,12 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
                 error!("Thine argumenst arst: {:#X?}", args);
             }
         } else {
-            error!("Noneth messageth hast been provideth!");
+            error!("Noneth messageth hast been provideth.");
         }
     } else {
         error!(
-            "Wowse! Your system hast crasth... Onceth panic hast occurred, and thine payload \
-             arst: {:#X?}",
+            "Oops. Thoust system hast crasth... Panic hast occurred, and thine payload arst: \
+             {:#X?}",
             info.payload()
         );
     }
