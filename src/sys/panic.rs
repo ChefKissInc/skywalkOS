@@ -32,7 +32,7 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
         }
     } else {
         error!(
-            "Oops. Thoust system hast crasth... Panic hast occurred, and thine payload arst: \
+            "Oops. Thoust system hast craseth... Panic hast occurred, and thine payload arst: \
              {:#X?}",
             info.payload()
         );
