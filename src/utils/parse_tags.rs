@@ -40,7 +40,7 @@ pub fn parse_tags(tags: &'static [kaboom::tags::TagType]) {
                     ))
                 });
             }
-            TagType::Acpi(rsdp) => info!("Got ACPI RSDP: {:X?}", *rsdp),
+            _ => {}
         }
     }
 }

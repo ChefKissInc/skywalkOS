@@ -20,9 +20,13 @@ extern crate alloc;
 use alloc::{boxed::Box, string::String};
 use core::{arch::asm, fmt::Write};
 
+use kaboom::tags::TagType;
 use log::info;
 
-use crate::driver::ps2::{KeyEvent, PS2Ctl};
+use crate::driver::{
+    acpi::Acpi,
+    ps2::{KeyEvent, PS2Ctl},
+};
 
 mod driver;
 mod sys;
@@ -67,6 +71,27 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
 
     utils::parse_tags(explosion.tags);
 
+    let rsdp = explosion
+        .tags
+        .iter()
+        .find_map(|t| {
+            if let TagType::Acpi(rsdp) = t {
+                Some(rsdp)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+
+    info!("Got ACPI RSDP: {:X?}", rsdp);
+    unsafe { crate::sys::state::SYS_STATE.acpi.get().as_mut().unwrap() }
+        .call_once(|| Acpi::new(*rsdp));
+
+    let acpi = unsafe { sys::state::SYS_STATE.acpi.get().as_mut() }
+        .unwrap()
+        .get_mut()
+        .unwrap();
+
     // At this point, memory allocations are now possible
     info!("Initializing paging");
     unsafe {
@@ -75,6 +100,12 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         pml4.get_mut().unwrap().init();
     }
     info!("Fuse has been ignited!");
+
+    info!(
+        "ACPI version: {}, has MADT? {}",
+        acpi.version,
+        acpi.find::<acpi::tables::Madt>("APIC").is_some()
+    );
 
     // Terminal
     if let Some(terminal) = unsafe { sys::state::SYS_STATE.terminal.get().as_mut() }
@@ -101,17 +132,29 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                 "help" => {
                                     writeln!(terminal, "Fuse debug terminal (FDBGT)").unwrap();
                                     writeln!(terminal, "Available commands:").unwrap();
-                                    writeln!(terminal, "    greeting <= Very epic example command")
+                                    writeln!(
+                                        terminal,
+                                        "    greeting   <= Very epic example command"
+                                    )
+                                    .unwrap();
+                                    writeln!(terminal, "    acpidump   <= Dump ACPI information")
                                         .unwrap();
                                     writeln!(
                                         terminal,
-                                        "    restart  <= Restart machine by resetting CPU"
+                                        "    restart    <= Restart machine by resetting CPU"
                                     )
                                     .unwrap();
-                                    writeln!(terminal, "    help     <= Display this").unwrap();
+                                    writeln!(terminal, "    help       <= Display this").unwrap();
                                 }
                                 "greeting" => writeln!(terminal, "Greetings, User.").unwrap(),
                                 "restart" => ps2ctrl.reset_cpu(),
+                                "acpidump" => {
+                                    writeln!(terminal, "ACPI version {}", acpi.version).unwrap();
+                                    for table in &acpi.tables {
+                                        writeln!(terminal, "Table '{}': {:#X?}", table.0, table.1)
+                                            .unwrap()
+                                    }
+                                }
                                 _ => writeln!(terminal, "Unknown command").unwrap(),
                             }
 

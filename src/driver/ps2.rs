@@ -14,6 +14,10 @@ pub enum PS2CtlCmd {
 #[derive(Debug)]
 #[allow(dead_code)]
 pub enum KeyEvent {
+    ArrowLeft,
+    ArrowRight,
+    ArrowUp,
+    ArrowDown,
     Pressed(char),
     Released(char),
 }
