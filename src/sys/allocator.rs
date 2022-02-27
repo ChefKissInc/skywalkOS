@@ -1,7 +1,5 @@
-/*
- * Copyright (c) VisualDevelopment 2021-2022.
- * This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
- */
+//! Copyright (c) VisualDevelopment 2021-2022.
+//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 #[global_allocator]
 pub static GLOBAL_ALLOCATOR: KernAllocator = KernAllocator;

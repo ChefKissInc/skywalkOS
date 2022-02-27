@@ -1,7 +1,5 @@
-/*
- * Copyright (c) VisualDevelopment 2021-2022.
- * This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
- */
+//! Copyright (c) VisualDevelopment 2021-2022.
+//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 #[inline]
 pub fn bit_test(bitmap: &mut [u64], index: usize) -> bool {
