@@ -15,14 +15,11 @@ pub struct Acpi {
 
 impl Acpi {
     pub fn new(rsdp: &'static acpi::tables::Rsdp) -> Self {
-        info!("RSDP: {:#X?}", rsdp as *const _);
         let mut tables = HashMap::new();
 
         match rsdp.into_type() {
             RsdtType::Rsdt(rsdt) => {
-                info!("RSDT: {:#X?}", rsdt as *const _);
                 for ent in rsdt.iter() {
-                    info!("ent: {:#X?}", ent as *const _);
                     if ent.validate() {
                         tables.try_insert(ent.signature(), ent).unwrap();
                     } else {
@@ -31,9 +28,7 @@ impl Acpi {
                 }
             }
             RsdtType::Xsdt(xsdt) => {
-                info!("XSDT: {:#X?}", xsdt as *const _);
                 for ent in xsdt.iter() {
-                    info!("ent: {:#X?}", ent as *const _);
                     if ent.validate() {
                         tables.try_insert(ent.signature(), ent).unwrap();
                     } else {
