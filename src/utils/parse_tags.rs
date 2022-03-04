@@ -4,7 +4,10 @@
 use kaboom::tags::TagType;
 use log::info;
 
-use crate::sys::{pmm::BitmapAllocator, terminal::Terminal};
+use crate::{
+    sys::{pmm::BitmapAllocator, terminal::Terminal},
+    Acpi,
+};
 
 pub fn parse_tags(tags: &'static [kaboom::tags::TagType]) {
     for tag in tags {
@@ -40,7 +43,11 @@ pub fn parse_tags(tags: &'static [kaboom::tags::TagType]) {
                     ))
                 });
             }
-            _ => {}
+            TagType::Acpi(rsdp) => {
+                info!("Got ACPI RSDP: {:X?}", rsdp);
+                unsafe { crate::sys::state::SYS_STATE.acpi.get().as_mut().unwrap() }
+                    .call_once(|| Acpi::new(*rsdp));
+            }
         }
     }
 }

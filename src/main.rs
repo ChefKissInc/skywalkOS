@@ -20,7 +20,6 @@ extern crate alloc;
 use alloc::{boxed::Box, string::String};
 use core::{arch::asm, fmt::Write};
 
-use kaboom::tags::TagType;
 use log::info;
 
 use crate::driver::{
@@ -71,27 +70,6 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
 
     utils::parse_tags(explosion.tags);
 
-    let rsdp = explosion
-        .tags
-        .iter()
-        .find_map(|t| {
-            if let TagType::Acpi(rsdp) = t {
-                Some(rsdp)
-            } else {
-                None
-            }
-        })
-        .unwrap();
-
-    info!("Got ACPI RSDP: {:X?}", rsdp);
-    unsafe { crate::sys::state::SYS_STATE.acpi.get().as_mut().unwrap() }
-        .call_once(|| Acpi::new(*rsdp));
-
-    let acpi = unsafe { sys::state::SYS_STATE.acpi.get().as_mut() }
-        .unwrap()
-        .get_mut()
-        .unwrap();
-
     // At this point, memory allocations are now possible
     info!("Initializing paging");
     unsafe {
@@ -101,13 +79,21 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
     }
     info!("Fuse has been ignited!");
 
-    info!(
-        "ACPI version: {}, has MADT? {}",
-        acpi.version,
-        acpi.find::<acpi::tables::Madt>("APIC").is_some()
-    );
+    let acpi = unsafe { sys::state::SYS_STATE.acpi.get().as_mut() }
+        .unwrap()
+        .get_mut()
+        .unwrap();
 
-    // Terminal
+    info!("ACPI version {}", acpi.version);
+
+    if let Some(madt) = acpi.find::<acpi::tables::Madt>("APIC") {
+        madt.into_ic_vec()
+            .iter()
+            .for_each(|ent| info!("MADT entry: {:#X?}", ent.into_type()))
+    } else {
+        panic!("No MADT found.")
+    }
+
     if let Some(terminal) = unsafe { sys::state::SYS_STATE.terminal.get().as_mut() }
         .unwrap()
         .get_mut()
@@ -116,7 +102,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         terminal.clear();
 
         writeln!(terminal, "We welcome you to Firework").unwrap();
-        writeln!(terminal, "I am the Fuse debug terminal (FDBGT)").unwrap();
+        writeln!(terminal, "I am the Fuse debug terminal").unwrap();
         writeln!(terminal, "Type 'help' to see the available commands.").unwrap();
         let mut ps2ctrl = PS2Ctl::new();
         ps2ctrl.init();
@@ -130,7 +116,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                         '\n' => {
                             match cmd.as_str() {
                                 "help" => {
-                                    writeln!(terminal, "Fuse debug terminal (FDBGT)").unwrap();
+                                    writeln!(terminal, "Fuse debug terminal").unwrap();
                                     writeln!(terminal, "Available commands:").unwrap();
                                     writeln!(
                                         terminal,
