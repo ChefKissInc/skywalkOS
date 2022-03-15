@@ -124,12 +124,10 @@ impl BitmapAllocator {
     pub unsafe fn alloc(&mut self, count: usize) -> Option<*mut u8> {
         let l = self.last_index;
 
-        if let Some(ret) = self.internal_alloc(count, self.highest_page / 0x1000) {
-            Some(ret)
-        } else {
+        self.internal_alloc(count, self.highest_page / 0x1000).or({
             self.last_index = 0;
             self.internal_alloc(count, l)
-        }
+        })
     }
 
     pub unsafe fn free(&mut self, ptr: *mut u8, count: usize) {
