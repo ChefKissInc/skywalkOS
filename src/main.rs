@@ -70,7 +70,6 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
 
     utils::parse_tags(explosion.tags);
 
-    // At this point, memory allocations are now possible
     info!("Initializing paging");
     unsafe {
         let pml4 = crate::sys::state::SYS_STATE.pml4.get().as_mut().unwrap();
@@ -86,13 +85,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
 
     info!("ACPI version {}", acpi.version);
 
-    if let Some(madt) = acpi.find::<acpi::tables::Madt>("APIC") {
-        madt.into_ic_vec()
-            .iter()
-            .for_each(|ent| info!("MADT entry: {:#X?}", ent.into_type()))
-    } else {
-        panic!("No MADT found.")
-    }
+    let _madt = driver::acpi::madt::Madt::new(acpi.find::<acpi::tables::Madt>("APIC").unwrap());
 
     if let Some(terminal) = unsafe { sys::state::SYS_STATE.terminal.get().as_mut() }
         .unwrap()
