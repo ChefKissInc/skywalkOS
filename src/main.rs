@@ -85,7 +85,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
 
     info!("ACPI version {}", acpi.version);
 
-    let _madt = driver::acpi::madt::Madt::new(acpi.find::<acpi::tables::Madt>("APIC").unwrap());
+    let _madt = driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap());
 
     if let Some(terminal) = unsafe { sys::state::SYS_STATE.terminal.get().as_mut() }
         .unwrap()

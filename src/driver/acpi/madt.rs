@@ -3,7 +3,7 @@
 
 use alloc::vec::Vec;
 
-use acpi::tables::ic::{ioapic::IoApic, lapic::LocalApic, InterruptController};
+use acpi::tables::madt::ic::{ioapic::IoApic, lapic::LocalApic, InterruptController};
 use log::info;
 
 pub struct Madt {
@@ -12,7 +12,7 @@ pub struct Madt {
 }
 
 impl Madt {
-    pub fn new(madt: &'static acpi::tables::Madt) -> Self {
+    pub fn new(madt: &'static acpi::tables::madt::Madt) -> Self {
         // Disable PIC
         unsafe {
             amd64::io::port::Port::<u8>::new(0xA1).write(0xFF);

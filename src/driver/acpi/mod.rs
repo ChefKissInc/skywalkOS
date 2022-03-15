@@ -1,7 +1,7 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use acpi::tables::{RsdtType, SdtHeader};
+use acpi::tables::{rsdp::RsdtType, SdtHeader};
 use hashbrown::HashMap;
 use log::info;
 
@@ -14,7 +14,7 @@ pub struct Acpi {
 }
 
 impl Acpi {
-    pub fn new(rsdp: &'static acpi::tables::Rsdp) -> Self {
+    pub fn new(rsdp: &'static acpi::tables::rsdp::Rsdp) -> Self {
         let mut tables = HashMap::new();
 
         match rsdp.into_type() {
