@@ -150,11 +150,10 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                                     },
                                                     pci.io.as_ref(),
                                                 );
-                                                let vendor_id: u16 = device.cfg_read(
+                                                let vendor_id = device.cfg_read(
                                                     driver::pci::PciConfigOffset::VendorId as _,
                                                     PciIoAccessSize::Word,
-                                                )
-                                                    as u16;
+                                                );
                                                 if vendor_id != 0xFFFF {
                                                     writeln!(
                                                         terminal,
