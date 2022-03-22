@@ -24,6 +24,7 @@ use log::info;
 
 use crate::driver::{
     acpi::Acpi,
+    pci::{PciAddress, PciIoAccessSize},
     ps2::{KeyEvent, PS2Ctl},
 };
 
@@ -86,6 +87,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
     info!("ACPI version {}", acpi.version);
 
     let _madt = driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap());
+    let pci = driver::pci::Pci::new();
 
     if let Some(terminal) = unsafe { sys::state::SYS_STATE.terminal.get().as_mut() }
         .unwrap()
@@ -118,6 +120,8 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                     .unwrap();
                                     writeln!(terminal, "    acpidump   <= Dump ACPI information")
                                         .unwrap();
+                                    writeln!(terminal, "    pcidump    <= Dump PCI devices")
+                                        .unwrap();
                                     writeln!(
                                         terminal,
                                         "    restart    <= Restart machine by resetting CPU"
@@ -126,7 +130,6 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                     writeln!(terminal, "    help       <= Display this").unwrap();
                                 }
                                 "greeting" => writeln!(terminal, "Greetings, User.").unwrap(),
-                                "restart" => ps2ctrl.reset_cpu(),
                                 "acpidump" => {
                                     writeln!(terminal, "ACPI version {}", acpi.version).unwrap();
                                     for table in &acpi.tables {
@@ -134,6 +137,52 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                             .unwrap()
                                     }
                                 }
+                                "pcidump" => {
+                                    for bus in 0..=255 {
+                                        for slot in 0..32 {
+                                            for func in 0..8 {
+                                                let device = driver::pci::PciDevice::new(
+                                                    PciAddress {
+                                                        bus,
+                                                        slot,
+                                                        func,
+                                                        ..Default::default()
+                                                    },
+                                                    pci.io.as_ref(),
+                                                );
+                                                let vendor_id: u16 = device.cfg_read(
+                                                    driver::pci::PciConfigOffset::VendorId as _,
+                                                    PciIoAccessSize::Word,
+                                                )
+                                                    as u16;
+                                                if vendor_id != 0xFFFF {
+                                                    writeln!(
+                                                        terminal,
+                                                        "PCI Device at {}:{}:{} has vendor ID \
+                                                         {:#06X} and device ID {:#06X}, class \
+                                                         code {:#06X}",
+                                                        bus,
+                                                        slot,
+                                                        func,
+                                                        vendor_id,
+                                                        device.cfg_read(
+                                                            driver::pci::PciConfigOffset::DeviceId
+                                                                as _,
+                                                            PciIoAccessSize::Word
+                                                        ),
+                                                        device.cfg_read(
+                                                            driver::pci::PciConfigOffset::ClassCode
+                                                                as _,
+                                                            PciIoAccessSize::Word
+                                                        ),
+                                                    )
+                                                    .unwrap();
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                "restart" => ps2ctrl.reset_cpu(),
                                 _ => writeln!(terminal, "Unknown command").unwrap(),
                             }
 
