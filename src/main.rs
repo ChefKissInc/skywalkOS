@@ -12,7 +12,8 @@
     const_size_of_val,
     panic_info_message,
     naked_functions,
-    const_mut_refs
+    const_mut_refs,
+    derive_default_enum
 )]
 
 extern crate alloc;
@@ -88,6 +89,15 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
 
     let _madt = driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap());
     let pci = driver::pci::Pci::new();
+    let _ac97 = driver::ac97::Ac97::new(
+        pci.find(move |dev| {
+            dev.cfg_read(
+                driver::pci::PciConfigOffset::ClassCode as _,
+                PciIoAccessSize::Word,
+            ) == 0x0401
+        })
+        .unwrap(),
+    );
 
     if let Some(terminal) = unsafe { sys::state::SYS_STATE.terminal.get().as_mut() }
         .unwrap()
