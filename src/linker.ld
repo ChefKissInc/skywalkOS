@@ -1,3 +1,8 @@
+/*
+    Copyright (c) VisualDevelopment 2021-2022.
+    This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
+*/
+
 ENTRY(kernel_main)
 OUTPUT_ARCH(x86-64)
 OUTPUT_FORMAT(elf64-x86-64)

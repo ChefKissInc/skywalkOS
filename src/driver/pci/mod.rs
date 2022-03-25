@@ -1,3 +1,6 @@
+//! Copyright (c) VisualDevelopment 2021-2022.
+//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
+
 #![allow(dead_code)]
 
 use alloc::boxed::Box;
