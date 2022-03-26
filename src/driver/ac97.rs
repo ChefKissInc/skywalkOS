@@ -1,7 +1,7 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use alloc::{vec, vec::Vec};
+use alloc::vec::Vec;
 
 use amd64::io::port::Port;
 use log::info;
@@ -187,28 +187,21 @@ impl<'a> Ac97<'a> {
         let mixer_pcm_vol = Port::<u16>::new(mixer + NamRegs::PcmOutVolume as u16);
         let mixer_sample_rate = Port::<u16>::new(mixer + NamRegs::SampleRate as u16);
 
-        let bdl: Vec<_> = vec![
-            BufferDescriptor {
-                addr: 0x200000,
+        let modules = unsafe { crate::sys::state::SYS_STATE.modules.get().as_ref().unwrap() }
+            .get()
+            .unwrap();
+        let addr = modules.iter().find(|v| v.name == "testaudio").unwrap().addr as u32;
+        let off_calc = |ent: u32| 0xFFFE * 2 * ent as u32;
+
+        let mut bdl = Vec::new();
+        for i in 0..0x1F {
+            bdl.push(BufferDescriptor {
+                addr: addr + off_calc(15 + i),
                 samples: 0xFFFE,
                 ..Default::default()
-            },
-            BufferDescriptor {
-                addr: 0x200000,
-                samples: 0xFFFE,
-                ..Default::default()
-            },
-            BufferDescriptor {
-                addr: 0x200000,
-                samples: 0xFFFE,
-                ..Default::default()
-            },
-            BufferDescriptor {
-                addr: 0x200000,
-                ctl: BufferDescCtl::new().with_last(true),
-                samples: 0xFFFE,
-            },
-        ];
+            })
+        }
+        bdl.last_mut().unwrap().ctl.set_last(true);
         unsafe {
             // Resume from cold reset
             global_ctl.write(u32::from(

@@ -1,6 +1,8 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
+use alloc::vec::Vec;
+
 use kaboom::tags::TagType;
 use log::info;
 
@@ -47,6 +49,18 @@ pub fn parse_tags(tags: &'static [kaboom::tags::TagType]) {
                 info!("Got ACPI RSDP: {:X?}", rsdp);
                 unsafe { crate::sys::state::SYS_STATE.acpi.get().as_mut().unwrap() }
                     .call_once(|| Acpi::new(*rsdp));
+            }
+            TagType::Module { name, size, addr } => {
+                let modules =
+                    unsafe { crate::sys::state::SYS_STATE.modules.get().as_mut().unwrap() };
+                if modules.get().is_none() {
+                    modules.call_once(Vec::new);
+                }
+                modules.get_mut().unwrap().push(crate::sys::state::Module {
+                    name,
+                    size: *size,
+                    addr: *addr,
+                });
             }
         }
     }
