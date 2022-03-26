@@ -48,6 +48,19 @@ pub struct RegBoxTransfer {
     __: B3,
 }
 
+#[bitfield(bits = 16)]
+#[derive(Default, Debug, Clone, Copy)]
+#[repr(u16)]
+pub struct RegBoxStatus {
+    pub transfer_data: bool,
+    pub end_of_transfer: bool,
+    pub last_ent_fire_intr: bool,
+    pub ioc_intr: bool,
+    pub fifo_err_intr: bool,
+    #[skip]
+    __: B11,
+}
+
 #[derive(Debug, BitfieldSpecifier, Default, Clone, Copy)]
 #[bits = 2]
 pub enum PcmChannels {
@@ -125,7 +138,7 @@ pub enum NabmRegs {
     PcmOutBdlAddr = 0x10,
     // PcmOutCurrentEnt = 0x14,
     PcmOutLastEnt = 0x15,
-    // PcmOutStatus = 0x16,
+    PcmOutStatus = 0x16,
     // PcmOutTransferedSamples = 0x18,
     // PcmOutNextProcessedEnt = 0x1A,
     PcmOutTransferControl = 0x1B,
@@ -144,6 +157,8 @@ pub struct Ac97<'a> {
     pub pcm_out_bdl_last_ent: Port<u8>,
     pub pcm_out_bdl_addr: Port<u32>,
     pub pcm_out_transf_ctl: Port<u8>,
+    pub pcm_out_transf_sts: Port<u16>,
+    pub buf: Vec<u8>,
     pub bdl: Vec<BufferDescriptor>,
 }
 
@@ -170,6 +185,7 @@ impl<'a> Ac97<'a> {
         let pcm_out_bdl_addr = Port::<u32>::new(audio_bus + NabmRegs::PcmOutBdlAddr as u16);
         let pcm_out_transf_ctl =
             Port::<u8>::new(audio_bus + NabmRegs::PcmOutTransferControl as u16);
+        let pcm_out_transf_sts = Port::<u16>::new(audio_bus + NabmRegs::PcmOutStatus as u16);
         let mixer =
             (dev.cfg_read(PciConfigOffset::BaseAddr0 as _, PciIoAccessSize::DWord) as u16) & !1u16;
         info!("{:#X?}", mixer);
@@ -178,16 +194,15 @@ impl<'a> Ac97<'a> {
         let mixer_pcm_vol = Port::<u16>::new(mixer + NamRegs::PcmOutVolume as u16);
         let mixer_sample_rate = Port::<u16>::new(mixer + NamRegs::SampleRate as u16);
 
-        let modules = unsafe { crate::sys::state::SYS_STATE.modules.get().as_ref().unwrap() }
-            .get()
-            .unwrap();
-        let addr = modules.iter().find(|v| v.name == "testaudio").unwrap().addr as u32;
         let off_calc = |ent: u32| 0xFFFE * 2 * ent as u32;
 
+        let mut buf = Vec::new();
+        buf.resize(0x1F * 0xFFFE * 2, 0);
         let mut bdl = Vec::new();
         for i in 0..0x1F {
             bdl.push(BufferDescriptor {
-                addr: addr + off_calc(15 + i),
+                addr: (buf.as_ptr() as usize - amd64::paging::PHYS_VIRT_OFFSET) as u32
+                    + off_calc(i),
                 samples: 0xFFFE,
                 ..Default::default()
             })
@@ -215,6 +230,8 @@ impl<'a> Ac97<'a> {
                     .with_left(0x1F)
                     .with_mute(false),
             ));
+            info!("Sample rate: {:#?}", mixer_sample_rate.read());
+            // NOTE: QEMU has a bug and 48KHz audio doesn't work
             mixer_sample_rate.write(44100);
 
             // Reset output channel
@@ -228,11 +245,6 @@ impl<'a> Ac97<'a> {
             // Set BDL address and last entry
             pcm_out_bdl_addr.write((bdl.as_ptr() as usize - amd64::paging::PHYS_VIRT_OFFSET) as _);
             pcm_out_bdl_last_ent.write((bdl.len() - 1) as _);
-
-            // Begin transfer
-            pcm_out_transf_ctl.write(u8::from(
-                RegBoxTransfer::from(pcm_out_transf_ctl.read()).with_transfer_data(true),
-            ));
         }
 
         Self {
@@ -246,7 +258,48 @@ impl<'a> Ac97<'a> {
             pcm_out_bdl_last_ent,
             pcm_out_bdl_addr,
             pcm_out_transf_ctl,
+            pcm_out_transf_sts,
+            buf,
             bdl,
+        }
+    }
+
+    pub fn play_audio(&mut self, data: &[u8]) {
+        let mut off = 0;
+        while off < data.len() {
+            unsafe {
+                // Reset output channel
+                self.pcm_out_transf_ctl.write(u8::from(
+                    RegBoxTransfer::from(self.pcm_out_transf_ctl.read()).with_reset(true),
+                ));
+                while RegBoxTransfer::from(self.pcm_out_transf_ctl.read()).reset() {
+                    core::arch::asm!("pause");
+                }
+
+                // Set BDL address and last entry
+                self.pcm_out_bdl_addr
+                    .write((self.bdl.as_ptr() as usize - amd64::paging::PHYS_VIRT_OFFSET) as _);
+                self.pcm_out_bdl_last_ent.write((self.bdl.len() - 1) as _);
+
+                // Copy audio data to BDL
+                for (a, b) in self
+                    .buf
+                    .iter_mut()
+                    .zip(data[off..].iter().chain(core::iter::repeat(&0)))
+                {
+                    *a = *b
+                }
+
+                // Begin transfer
+                self.pcm_out_transf_ctl.write(u8::from(
+                    RegBoxTransfer::from(self.pcm_out_transf_ctl.read()).with_transfer_data(true),
+                ));
+
+                while !RegBoxStatus::from(self.pcm_out_transf_sts.read()).end_of_transfer() {
+                    core::arch::asm!("pause");
+                }
+            }
+            off += 0x1F * 0xFFFE * 2;
         }
     }
 }

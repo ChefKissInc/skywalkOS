@@ -89,7 +89,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
 
     let _madt = driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap());
     let pci = driver::pci::Pci::new();
-    let _ac97 = driver::ac97::Ac97::new(
+    let mut ac97 = driver::ac97::Ac97::new(
         pci.find(move |dev| {
             dev.cfg_read(
                 driver::pci::PciConfigOffset::ClassCode as _,
@@ -190,6 +190,21 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                             }
                                         }
                                     }
+                                }
+                                "audiotest" => {
+                                    let modules = unsafe {
+                                        crate::sys::state::SYS_STATE.modules.get().as_ref().unwrap()
+                                    }
+                                    .get()
+                                    .unwrap();
+                                    let module =
+                                        modules.iter().find(|v| v.name == "testaudio").unwrap();
+                                    writeln!(
+                                        terminal,
+                                        "Starting playback of audio in bootloader module audiotest"
+                                    )
+                                    .unwrap();
+                                    ac97.play_audio(module.data)
                                 }
                                 "restart" => ps2ctrl.reset_cpu(),
                                 _ => writeln!(terminal, "Unknown command").unwrap(),

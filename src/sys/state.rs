@@ -11,8 +11,7 @@ pub static SYS_STATE: SystemState = SystemState::new();
 
 pub struct Module {
     pub name: &'static str,
-    pub size: usize,
-    pub addr: u64,
+    pub data: &'static [u8],
 }
 
 #[derive(Debug)]

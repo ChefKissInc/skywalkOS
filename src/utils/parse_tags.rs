@@ -50,17 +50,16 @@ pub fn parse_tags(tags: &'static [kaboom::tags::TagType]) {
                 unsafe { crate::sys::state::SYS_STATE.acpi.get().as_mut().unwrap() }
                     .call_once(|| Acpi::new(*rsdp));
             }
-            TagType::Module { name, size, addr } => {
+            TagType::Module { name, data } => {
                 let modules =
                     unsafe { crate::sys::state::SYS_STATE.modules.get().as_mut().unwrap() };
                 if modules.get().is_none() {
                     modules.call_once(Vec::new);
                 }
-                modules.get_mut().unwrap().push(crate::sys::state::Module {
-                    name,
-                    size: *size,
-                    addr: *addr,
-                });
+                modules
+                    .get_mut()
+                    .unwrap()
+                    .push(crate::sys::state::Module { name, data });
             }
         }
     }
