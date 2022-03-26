@@ -149,24 +149,15 @@ pub struct Ac97<'a> {
 
 impl<'a> Ac97<'a> {
     pub fn new(dev: PciDevice<'a>) -> Self {
-        info!(
-            "PCICMD was set to {:#X?}",
-            PciCmd::from_bytes(
-                (dev.cfg_read(PciConfigOffset::Command as _, PciIoAccessSize::Word) as u16)
-                    .to_le_bytes()
-            )
-        );
+        let devcmd =
+            PciCmd::from(dev.cfg_read(PciConfigOffset::Command as _, PciIoAccessSize::Word) as u16);
         dev.cfg_write(
             PciConfigOffset::Command as _,
-            u16::from_le_bytes(
-                PciCmd::from_bytes(
-                    (dev.cfg_read(PciConfigOffset::Command as _, PciIoAccessSize::Word) as u16)
-                        .to_le_bytes(),
-                )
-                .with_pio(true)
-                .with_bus_master(true)
-                .with_disable_intrs(true)
-                .into_bytes(),
+            u16::from(
+                devcmd
+                    .with_pio(true)
+                    .with_bus_master(true)
+                    .with_disable_intrs(true),
             ) as _,
             PciIoAccessSize::Word,
         );

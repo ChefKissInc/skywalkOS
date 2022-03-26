@@ -25,6 +25,7 @@ pub struct PciAddress {
 
 #[bitfield(bits = 16)]
 #[derive(Debug)]
+#[repr(u16)]
 pub struct PciCmd {
     pub pio: bool,
     pub mmio: bool,
