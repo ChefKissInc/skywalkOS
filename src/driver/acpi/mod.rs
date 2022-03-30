@@ -5,6 +5,7 @@ use acpi::tables::{rsdp::RsdtType, SdtHeader};
 use hashbrown::HashMap;
 use log::info;
 
+pub mod ioapic;
 pub mod madt;
 
 #[derive(Debug)]

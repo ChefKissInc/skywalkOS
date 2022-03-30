@@ -74,7 +74,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
 
     info!("Initializing paging");
     unsafe {
-        let pml4 = crate::sys::state::SYS_STATE.pml4.get().as_mut().unwrap();
+        let pml4 = sys::state::SYS_STATE.pml4.get().as_mut().unwrap();
         pml4.call_once(|| Box::leak(Box::new(sys::vmm::Pml4::new())));
         pml4.get_mut().unwrap().init();
     }
@@ -87,7 +87,21 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
 
     info!("ACPI version {}", acpi.version);
 
-    let _madt = driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap());
+    unsafe {
+        sys::state::SYS_STATE
+            .madt
+            .get()
+            .as_mut()
+            .unwrap()
+            .call_once(|| driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap()));
+        sys::state::SYS_STATE
+            .ioapic
+            .get()
+            .as_mut()
+            .unwrap()
+            .call_once(driver::acpi::ioapic::IoApic::new);
+    }
+
     let pci = driver::pci::Pci::new();
     let mut ac97 = driver::ac97::Ac97::new(
         pci.find(move |dev| {
@@ -109,6 +123,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         writeln!(terminal, "We welcome you to Firework").unwrap();
         writeln!(terminal, "I am the Fuse debug terminal").unwrap();
         writeln!(terminal, "Type 'help' to see the available commands.").unwrap();
+
         let mut ps2ctrl = PS2Ctl::new();
         ps2ctrl.init();
         'menu: loop {
@@ -193,7 +208,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                 }
                                 "audiotest" => {
                                     let modules = unsafe {
-                                        crate::sys::state::SYS_STATE.modules.get().as_ref().unwrap()
+                                        sys::state::SYS_STATE.modules.get().as_ref().unwrap()
                                     }
                                     .get()
                                     .unwrap();

@@ -178,7 +178,6 @@ impl<'a> Ac97<'a> {
         );
         let audio_bus =
             (dev.cfg_read(PciConfigOffset::BaseAddr1 as _, PciIoAccessSize::DWord) as u16) & !1u16;
-        info!("{:#X?}", audio_bus);
         let global_ctl = Port::<u32>::new(audio_bus + NabmRegs::GlobalControl as u16);
         let global_sts = Port::<u32>::new(audio_bus + NabmRegs::GlobalStatus as u16);
         let pcm_out_bdl_last_ent = Port::<u8>::new(audio_bus + NabmRegs::PcmOutLastEnt as u16);
@@ -188,7 +187,6 @@ impl<'a> Ac97<'a> {
         let pcm_out_transf_sts = Port::<u16>::new(audio_bus + NabmRegs::PcmOutStatus as u16);
         let mixer =
             (dev.cfg_read(PciConfigOffset::BaseAddr0 as _, PciIoAccessSize::DWord) as u16) & !1u16;
-        info!("{:#X?}", mixer);
         let mixer_reset = Port::<u16>::new(mixer + NamRegs::Reset as u16);
         let mixer_master_vol = Port::<u16>::new(mixer + NamRegs::MasterVolume as u16);
         let mixer_pcm_vol = Port::<u16>::new(mixer + NamRegs::PcmOutVolume as u16);
@@ -215,7 +213,7 @@ impl<'a> Ac97<'a> {
                     .with_cold_reset(true)
                     .with_interrupts(false),
             ));
-            mixer_reset.write(0xFFFF);
+            mixer_reset.write(!0);
 
             // Set volume and sample rate
             mixer_master_vol.write(u16::from(
