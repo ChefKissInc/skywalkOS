@@ -39,3 +39,4 @@ Cargo.lock
 *.code-workspace
 .history
 .ionide
+.idea
