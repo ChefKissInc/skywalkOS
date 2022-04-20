@@ -12,8 +12,7 @@
     const_size_of_val,
     panic_info_message,
     naked_functions,
-    const_mut_refs,
-    derive_default_enum
+    const_mut_refs
 )]
 
 extern crate alloc;
