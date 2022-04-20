@@ -20,11 +20,12 @@ extern crate alloc;
 use alloc::{boxed::Box, string::String};
 use core::{arch::asm, fmt::Write};
 
-use log::info;
+use amd64::sys::cpu::{PrivilegeLevel, SegmentSelector};
+use log::{debug, info};
 
 use crate::driver::{
     acpi::Acpi,
-    pci::{PciAddress, PciIoAccessSize},
+    pci::{PciAddress, PciConfigOffset, PciDevice, PciIoAccessSize},
     ps2::{KeyEvent, PS2Ctl},
 };
 
@@ -58,20 +59,20 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
     info!("Copyright VisualDevelopment 2021.");
 
     unsafe {
-        info!("Initialising the GDT.");
+        debug!("Initialising the GDT.");
         sys::gdt::GDTR.load(
-            amd64::sys::cpu::SegmentSelector::new(1, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
-            amd64::sys::cpu::SegmentSelector::new(2, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
+            SegmentSelector::new(1, PrivilegeLevel::Hypervisor),
+            SegmentSelector::new(2, PrivilegeLevel::Hypervisor),
         );
-        info!("Initialising the IDT.");
+        debug!("Initialising the IDT.");
         sys::idt::init();
-        info!("Initialising the exception handlers.");
+        debug!("Initialising the exception handlers.");
         sys::exceptions::init();
     }
 
     utils::parse_tags(explosion.tags);
 
-    info!("Initializing paging");
+    debug!("Initializing paging");
     unsafe {
         let pml4 = sys::state::SYS_STATE.pml4.get().as_mut().unwrap();
         pml4.call_once(|| Box::leak(Box::new(sys::vmm::Pml4::new())));
@@ -84,7 +85,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         .get_mut()
         .unwrap();
 
-    info!("ACPI version {}", acpi.version);
+    debug!("ACPI version {}", acpi.version);
 
     unsafe {
         sys::state::SYS_STATE
@@ -102,15 +103,14 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
     }
 
     let pci = driver::pci::Pci::new();
-    let mut ac97 = driver::ac97::Ac97::new(
-        pci.find(move |dev| {
+    let mut ac97 = pci
+        .find(move |dev| {
             dev.cfg_read(
                 driver::pci::PciConfigOffset::ClassCode as _,
                 PciIoAccessSize::Word,
             ) == 0x0401
         })
-        .unwrap(),
-    );
+        .map(driver::ac97::Ac97::new);
 
     if let Some(terminal) = unsafe { sys::state::SYS_STATE.terminal.get().as_mut() }
         .unwrap()
@@ -151,6 +151,11 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                         "    restart    <= Restart machine by resetting CPU"
                                     )
                                     .unwrap();
+                                    writeln!(
+                                        terminal,
+                                        "    audiotest  <= Play test sound through AC97"
+                                    )
+                                    .unwrap();
                                     writeln!(terminal, "    help       <= Display this").unwrap();
                                 }
                                 "greeting" => writeln!(terminal, "Greetings, User.").unwrap(),
@@ -165,7 +170,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                     for bus in 0..=255 {
                                         for slot in 0..32 {
                                             for func in 0..8 {
-                                                let device = driver::pci::PciDevice::new(
+                                                let device = PciDevice::new(
                                                     PciAddress {
                                                         bus,
                                                         slot,
@@ -175,7 +180,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                                     pci.io.as_ref(),
                                                 );
                                                 let vendor_id = device.cfg_read(
-                                                    driver::pci::PciConfigOffset::VendorId as _,
+                                                    PciConfigOffset::VendorId as _,
                                                     PciIoAccessSize::Word,
                                                 );
                                                 if vendor_id != 0xFFFF {
@@ -189,13 +194,11 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                                         func,
                                                         vendor_id,
                                                         device.cfg_read(
-                                                            driver::pci::PciConfigOffset::DeviceId
-                                                                as _,
+                                                            PciConfigOffset::DeviceId as _,
                                                             PciIoAccessSize::Word
                                                         ),
                                                         device.cfg_read(
-                                                            driver::pci::PciConfigOffset::ClassCode
-                                                                as _,
+                                                            PciConfigOffset::ClassCode as _,
                                                             PciIoAccessSize::Word
                                                         ),
                                                     )
@@ -206,19 +209,20 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                     }
                                 }
                                 "audiotest" => {
-                                    let modules = unsafe {
-                                        sys::state::SYS_STATE.modules.get().as_ref().unwrap()
+                                    if let Some(ac97) = &mut ac97 {
+                                        let modules = unsafe {
+                                            sys::state::SYS_STATE.modules.get().as_ref().unwrap()
+                                        }
+                                        .get()
+                                        .unwrap();
+                                        let module =
+                                            modules.iter().find(|v| v.name == "testaudio").unwrap();
+                                        writeln!(terminal, "Starting playback of test audio")
+                                            .unwrap();
+                                        ac97.play_audio(module.data)
+                                    } else {
+                                        writeln!(terminal, "No sound device available!").unwrap();
                                     }
-                                    .get()
-                                    .unwrap();
-                                    let module =
-                                        modules.iter().find(|v| v.name == "testaudio").unwrap();
-                                    writeln!(
-                                        terminal,
-                                        "Starting playback of audio in bootloader module audiotest"
-                                    )
-                                    .unwrap();
-                                    ac97.play_audio(module.data)
                                 }
                                 "restart" => ps2ctrl.reset_cpu(),
                                 _ => writeln!(terminal, "Unknown command").unwrap(),

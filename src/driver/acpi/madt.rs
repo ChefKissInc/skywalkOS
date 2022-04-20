@@ -31,19 +31,22 @@ impl Madt {
         for ent in madt.into_iter() {
             match ent {
                 InterruptController::LocalApic(lapic) => {
-                    info!("Local APIC: {:#X?}", lapic);
+                    info!("Found Local APIC: {:#X?}", lapic);
                     lapics.push(lapic);
                 }
                 InterruptController::IoApic(ioapic) => {
-                    info!("I/O APIC: {:#X?}", ioapic);
-                    info!("I/O APIC ver: {:#X?}", ioapic.read_ver());
+                    info!(
+                        "Found I/O APIC with ver {:#X?}: {:#X?}",
+                        ioapic.read_ver(),
+                        ioapic,
+                    );
                     ioapics.push(ioapic);
                 }
                 InterruptController::Iso(iso) => {
-                    info!("Interrupt Source Override: {:#X?}", iso);
+                    info!("Found Interrupt Source Override: {:#X?}", iso);
                     isos.push(iso);
                 }
-                _ => {}
+                rest => info!("Dunno how to handle this: {:#X?}", rest),
             }
         }
 

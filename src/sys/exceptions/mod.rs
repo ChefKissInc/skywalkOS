@@ -5,7 +5,7 @@ macro_rules! exc_msg {
     ($name:expr, $regs:expr) => {
         use log::error;
 
-        if crate::sys::io::serial::SERIAL.is_locked() {
+        while crate::sys::io::serial::SERIAL.is_locked() {
             crate::sys::io::serial::SERIAL.force_unlock()
         }
 

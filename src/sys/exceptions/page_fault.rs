@@ -10,15 +10,12 @@ pub(crate) unsafe extern "sysv64" fn handler(regs: &mut amd64::sys::cpu::Registe
     asm!("mov {}, cr2", out(reg) cr2, options(nomem, nostack, preserves_flags));
 
     error!(
-        "There was {}",
+        "There was {} while {} a {} at {:#X?}{}{}{}{}",
         if (regs.err_code & (1 << 0)) == 0 {
             "a Non-present page access"
         } else {
             "a Page Level protection violation"
-        }
-    );
-    error!(
-        "while {} a {} at {:#X?}",
+        },
         if (regs.err_code & (1 << 1)) == 0 {
             "reading"
         } else {
@@ -29,18 +26,26 @@ pub(crate) unsafe extern "sysv64" fn handler(regs: &mut amd64::sys::cpu::Registe
         } else {
             "user page"
         },
-        cr2
+        cr2,
+        if (regs.err_code & (1 << 3)) != 0 {
+            "\nThe page was reserved"
+        } else {
+            ""
+        },
+        if (regs.err_code & (1 << 4)) != 0 {
+            "\nAnd failed while doing an instruction fetch"
+        } else {
+            ""
+        },
+        if (regs.err_code & (1 << 5)) != 0 {
+            "\nThe protection key was violated"
+        } else {
+            ""
+        },
+        if (regs.err_code & (1 << 15)) != 0 {
+            "\nSGX was violated"
+        } else {
+            ""
+        },
     );
-    if (regs.err_code & (1 << 3)) != 0 {
-        error!("The page was reserved");
-    }
-    if (regs.err_code & (1 << 4)) != 0 {
-        error!("And failed while doing an instruction fetch");
-    }
-    if (regs.err_code & (1 << 5)) != 0 {
-        error!("The protection key was violated");
-    }
-    if (regs.err_code & (1 << 15)) != 0 {
-        error!("SGX was violated");
-    }
 }

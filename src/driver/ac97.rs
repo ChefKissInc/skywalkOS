@@ -264,6 +264,7 @@ impl<'a> Ac97<'a> {
 
     pub fn play_audio(&mut self, data: &[u8]) {
         let mut off = 0;
+
         while off < data.len() {
             unsafe {
                 // Reset output channel

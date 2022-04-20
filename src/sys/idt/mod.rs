@@ -80,7 +80,7 @@ pub unsafe fn init() {
     idtr.load()
 }
 
-pub fn set_handler(isr: u64, handler: HandlerFn, is_irq: bool, should_iret: bool) {
+pub fn set_handler(isr: u64, func: HandlerFn, is_irq: bool, should_iret: bool) {
     unsafe {
         let handlers_ptr = HANDLERS
             .get()
@@ -97,7 +97,7 @@ pub fn set_handler(isr: u64, handler: HandlerFn, is_irq: bool, should_iret: bool
         }
 
         handlers_ptr.write(InterruptHandler {
-            func: handler,
+            func,
             is_irq,
             should_iret,
         });
