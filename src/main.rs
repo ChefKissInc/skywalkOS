@@ -67,7 +67,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         debug!("Initialising the IDT.");
         sys::idt::init();
         debug!("Initialising the exception handlers.");
-        sys::exceptions::init();
+        sys::exc::init();
     }
 
     utils::parse_tags(explosion.tags);
