@@ -3,7 +3,7 @@
 
 use acpi::tables::SdtHeader;
 use hashbrown::HashMap;
-use log::info;
+use log::debug;
 
 pub mod ioapic;
 pub mod madt;
@@ -22,7 +22,7 @@ impl Acpi {
             if ent.validate() {
                 tables.try_insert(ent.signature(), ent).unwrap();
             } else {
-                info!("Invalid table: {:?}", ent);
+                debug!("Invalid table: {:?}", ent);
             }
         }
 

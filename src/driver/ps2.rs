@@ -2,7 +2,7 @@
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use amd64::io::port::Port;
-use log::info;
+use log::debug;
 
 #[repr(u8)]
 pub enum PS2CtlCmd {
@@ -59,14 +59,14 @@ impl PS2Ctl {
         while self.output_full() {
             let _ = unsafe { self.data_port.read() };
         }
-        info!("ps2: flushed buffer");
+        debug!("ps2: flushed buffer");
         // Disable interrupts for now
-        info!("ps2: reading controller config");
+        debug!("ps2: reading controller config");
         self.send_cmd(PS2CtlCmd::ReadControllerCfg, false);
         while !self.output_full() {}
-        info!("ps2: disabling interrupts and translation");
+        debug!("ps2: disabling interrupts and translation");
         let cfg = unsafe { self.data_port.read() & !(1u8 | (1u8 << 1)) };
-        info!("ps2: writing controller config");
+        debug!("ps2: writing controller config");
         self.send_cmd(PS2CtlCmd::WriteControllerCfg, false);
         unsafe { self.data_port.write(cfg) }
         while self.input_full() {}

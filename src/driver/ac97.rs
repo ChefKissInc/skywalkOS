@@ -4,7 +4,7 @@
 use alloc::vec::Vec;
 
 use amd64::io::port::Port;
-use log::info;
+use log::debug;
 use modular_bitfield::prelude::*;
 
 use super::pci::{PciCmd, PciConfigOffset, PciDevice, PciIoAccessSize};
@@ -228,7 +228,7 @@ impl<'a> Ac97<'a> {
                     .with_left(0x1F)
                     .with_mute(false),
             ));
-            info!("Sample rate: {:#?}", mixer_sample_rate.read());
+            debug!("Sample rate: {:#?}", mixer_sample_rate.read());
             // NOTE: QEMU has a bug and 48KHz audio doesn't work
             mixer_sample_rate.write(44100);
 

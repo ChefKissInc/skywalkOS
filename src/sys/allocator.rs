@@ -8,11 +8,7 @@ pub struct KernAllocator;
 
 unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        if let Some(ptr) = super::state::SYS_STATE
-            .pmm
-            .get()
-            .as_mut()
-            .unwrap()
+        if let Some(ptr) = (&mut *super::state::SYS_STATE.pmm.get())
             .get_mut()
             .expect("PMM uninitialised")
             .alloc((layout.size() + 0xFFF) / 0x1000)
@@ -24,11 +20,7 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
-        super::state::SYS_STATE
-            .pmm
-            .get()
-            .as_mut()
-            .unwrap()
+        (&mut *super::state::SYS_STATE.pmm.get())
             .get_mut()
             .expect("PMM uninitialised")
             .free(

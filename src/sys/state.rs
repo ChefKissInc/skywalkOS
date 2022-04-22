@@ -4,7 +4,7 @@
 use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 
-use kaboom::tags::module::Module;
+use kaboom::tags::{module::Module, SpecialisedSettings};
 
 use super::{pmm::BitmapAllocator, terminal::Terminal, vmm::Pml4};
 use crate::driver::acpi::{ioapic::IoApic, madt::Madt, Acpi};
@@ -14,6 +14,7 @@ pub static SYS_STATE: SystemState = SystemState::new();
 #[derive(Debug)]
 pub struct SystemState {
     pub modules: UnsafeCell<spin::Once<Vec<Module>>>,
+    pub boot_settings: UnsafeCell<spin::Once<SpecialisedSettings>>,
     pub pmm: UnsafeCell<spin::Once<BitmapAllocator>>,
     pub pml4: UnsafeCell<spin::Once<&'static mut Pml4>>,
     pub terminal: UnsafeCell<spin::Once<Terminal>>,
@@ -28,6 +29,7 @@ impl SystemState {
     pub const fn new() -> Self {
         Self {
             modules: UnsafeCell::new(spin::Once::new()),
+            boot_settings: UnsafeCell::new(spin::Once::new()),
             pmm: UnsafeCell::new(spin::Once::new()),
             pml4: UnsafeCell::new(spin::Once::new()),
             terminal: UnsafeCell::new(spin::Once::new()),

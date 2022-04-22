@@ -45,14 +45,8 @@ static EXPLOSION_FUEL: kaboom::ExplosionFuel =
 extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     sys::io::serial::SERIAL.lock().init();
 
-    log::set_logger(&utils::logger::SERIAL_LOGGER)
-        .map(|()| {
-            log::set_max_level(if cfg!(debug_assertions) {
-                log::LevelFilter::Trace
-            } else {
-                log::LevelFilter::Info
-            })
-        })
+    log::set_logger(&utils::logger::LOGGER)
+        .map(|()| log::set_max_level(log::LevelFilter::Trace))
         .unwrap();
 
     assert_eq!(explosion.revision, kaboom::CURRENT_REVISION);
@@ -70,36 +64,27 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         sys::exc::init();
     }
 
-    utils::parse_tags(explosion.tags);
+    utils::tags::parse(explosion.tags);
 
     debug!("Initializing paging");
-    unsafe {
-        let pml4 = sys::state::SYS_STATE.pml4.get().as_mut().unwrap();
-        pml4.call_once(|| Box::leak(Box::new(sys::vmm::Pml4::new())));
-        pml4.get_mut().unwrap().init();
+
+    let pml4 = unsafe { &mut *sys::state::SYS_STATE.pml4.get() };
+    pml4.call_once(|| Box::leak(Box::new(sys::vmm::Pml4::new())));
+    unsafe { pml4.get_mut().unwrap().init() }
+
+    if let Some(terminal) = unsafe { (&mut *sys::state::SYS_STATE.terminal.get()).get_mut() } {
+        terminal.map_fb();
     }
     info!("Fuse has been ignited!");
 
-    let acpi = unsafe { sys::state::SYS_STATE.acpi.get().as_mut() }
-        .unwrap()
-        .get_mut()
-        .unwrap();
+    let acpi = unsafe { (&mut *sys::state::SYS_STATE.acpi.get()).get_mut().unwrap() };
 
     debug!("ACPI version {}", acpi.version);
 
     unsafe {
-        sys::state::SYS_STATE
-            .madt
-            .get()
-            .as_mut()
-            .unwrap()
+        (&*sys::state::SYS_STATE.madt.get())
             .call_once(|| driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap()));
-        sys::state::SYS_STATE
-            .ioapic
-            .get()
-            .as_mut()
-            .unwrap()
-            .call_once(driver::acpi::ioapic::IoApic::new);
+        (&*sys::state::SYS_STATE.ioapic.get()).call_once(driver::acpi::ioapic::IoApic::new);
     }
 
     let pci = driver::pci::Pci::new();
@@ -112,13 +97,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
         })
         .map(driver::ac97::Ac97::new);
 
-    if let Some(terminal) = unsafe { sys::state::SYS_STATE.terminal.get().as_mut() }
-        .unwrap()
-        .get_mut()
-    {
-        terminal.map_fb();
-        terminal.clear();
-
+    if let Some(terminal) = unsafe { (&mut *sys::state::SYS_STATE.terminal.get()).get_mut() } {
         writeln!(terminal, "We welcome you to Firework").unwrap();
         writeln!(terminal, "I am the Fuse debug terminal").unwrap();
         writeln!(terminal, "Type 'help' to see the available commands.").unwrap();
@@ -210,11 +189,10 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                 }
                                 "audiotest" => {
                                     if let Some(ac97) = &mut ac97 {
-                                        let modules = unsafe {
-                                            sys::state::SYS_STATE.modules.get().as_ref().unwrap()
-                                        }
-                                        .get()
-                                        .unwrap();
+                                        let modules =
+                                            unsafe { &*sys::state::SYS_STATE.modules.get() }
+                                                .get()
+                                                .unwrap();
                                         let module =
                                             modules.iter().find(|v| v.name == "testaudio").unwrap();
                                         writeln!(terminal, "Starting playback of test audio")

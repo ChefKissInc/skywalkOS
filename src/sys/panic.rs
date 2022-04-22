@@ -7,9 +7,11 @@ use log::error;
 
 #[panic_handler]
 pub fn panic(info: &core::panic::PanicInfo) -> ! {
-    unsafe { asm!("cli") }
-    if super::io::serial::SERIAL.is_locked() {
-        unsafe { super::io::serial::SERIAL.force_unlock() }
+    unsafe {
+        asm!("cli");
+        while super::io::serial::SERIAL.is_locked() {
+            super::io::serial::SERIAL.force_unlock()
+        }
     }
 
     if let Some(loc) = info.location() {

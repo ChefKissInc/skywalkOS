@@ -3,15 +3,13 @@
 
 use acpi::tables::madt::ic::ioapic;
 use amd64::spec::mps::{Polarity, TriggerMode};
-use log::info;
+use log::debug;
 
 pub struct IoApic;
 
 impl IoApic {
     pub fn new() -> Self {
-        let madt = unsafe { crate::sys::state::SYS_STATE.madt.get().as_ref().unwrap() }
-            .get()
-            .unwrap();
+        let madt = unsafe { (&*crate::sys::state::SYS_STATE.madt.get()).get().unwrap() };
 
         for iso in &madt.isos {
             let ioapic = Self::find_for_gsi(iso.gsi).unwrap();
@@ -21,7 +19,7 @@ impl IoApic {
                 .with_active_high(iso.flags.polarity() == Polarity::ActiveHigh)
                 .with_trigger_at_level(iso.flags.trigger_mode() == TriggerMode::LevelTriggered)
                 .with_masked(true);
-            info!("{:?}", redir);
+            debug!("{:?}", redir);
             ioapic.write_redir(iso.gsi - ioapic.gsi_base, redir);
         }
 
@@ -29,8 +27,7 @@ impl IoApic {
     }
 
     pub fn find_for_gsi(gsi: u32) -> Option<&'static ioapic::IoApic> {
-        unsafe { crate::sys::state::SYS_STATE.madt.get().as_ref()? }
-            .get()?
+        unsafe { (&*crate::sys::state::SYS_STATE.madt.get()).get()? }
             .ioapics
             .iter()
             .find(|ioapic| {
