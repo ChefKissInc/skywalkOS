@@ -16,9 +16,9 @@ pub fn parse(tags: &'static [kaboom::tags::TagType]) {
         match tag {
             TagType::SpecialisedSettings(settings) => {
                 debug!("Got boot settings: {:X?}", settings);
-                unsafe {
-                    (&*crate::sys::state::SYS_STATE.boot_settings.get()).call_once(|| *settings);
-                }
+                crate::sys::state::SYS_STATE
+                    .boot_settings
+                    .call_once(|| *settings);
             }
             TagType::MemoryMap(mmap) => {
                 debug!("Got memory map: {:X?}", *mmap);

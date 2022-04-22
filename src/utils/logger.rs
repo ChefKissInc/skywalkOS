@@ -39,7 +39,8 @@ impl log::Log for FuseLogger {
         .unwrap();
 
         unsafe {
-            let verbose = (&*crate::sys::state::SYS_STATE.boot_settings.get())
+            let verbose = crate::sys::state::SYS_STATE
+                .boot_settings
                 .get()
                 .unwrap_or(&SpecialisedSettings { verbose: false })
                 .verbose;
