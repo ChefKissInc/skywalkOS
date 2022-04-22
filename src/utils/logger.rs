@@ -31,7 +31,7 @@ impl log::Log for FuseLogger {
 
         writeln!(
             serial,
-            "{}//{}: {}",
+            "[{}] {}: {}",
             record.level(),
             record.target(),
             record.args()
@@ -48,7 +48,7 @@ impl log::Log for FuseLogger {
                 if let Some(terminal) = (&mut *self.terminal.get()).get_mut() {
                     writeln!(
                         terminal,
-                        "{}//{}: {}",
+                        "[{}] {}: {}",
                         record.level(),
                         record.target(),
                         record.args()
