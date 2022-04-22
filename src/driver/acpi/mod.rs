@@ -18,7 +18,7 @@ impl Acpi {
     pub fn new(rsdp: &'static acpi::tables::rsdp::Rsdp) -> Self {
         let mut tables = HashMap::new();
 
-        for ent in rsdp.into_type().iter() {
+        for ent in rsdp.as_type().iter() {
             if ent.validate() {
                 tables.try_insert(ent.signature(), ent).unwrap();
             } else {
