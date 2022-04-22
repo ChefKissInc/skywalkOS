@@ -59,14 +59,14 @@ impl PS2Ctl {
         while self.output_full() {
             let _ = unsafe { self.data_port.read() };
         }
-        debug!("ps2: flushed buffer");
+        debug!("flushed buffer");
         // Disable interrupts for now
-        debug!("ps2: reading controller config");
+        debug!("reading controller config");
         self.send_cmd(PS2CtlCmd::ReadControllerCfg, false);
         while !self.output_full() {}
-        debug!("ps2: disabling interrupts and translation");
+        debug!("disabling interrupts and translation");
         let cfg = unsafe { self.data_port.read() & !(1u8 | (1u8 << 1)) };
-        debug!("ps2: writing controller config");
+        debug!("writing controller config");
         self.send_cmd(PS2CtlCmd::WriteControllerCfg, false);
         unsafe { self.data_port.write(cfg) }
         while self.input_full() {}
