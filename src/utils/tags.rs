@@ -59,7 +59,7 @@ pub fn parse(tags: &'static [kaboom::tags::TagType]) {
                 }
             }
             TagType::Module(module) => {
-                debug!("Got module: {:X?}", module);
+                debug!("Got module '{}' of type {:#X?}", module.name, module.type_);
                 unsafe { &mut *crate::sys::state::SYS_STATE.modules.get() }.call_once(Vec::new);
                 unsafe { &mut *crate::sys::state::SYS_STATE.modules.get() }
                     .get_mut()
