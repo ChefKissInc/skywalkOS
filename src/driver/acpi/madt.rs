@@ -46,7 +46,7 @@ impl Madt {
                     debug!("Found Interrupt Source Override: {:#X?}", iso);
                     isos.push(iso);
                 }
-                rest => debug!("Dunno how to handle this: {:#X?}", rest),
+                rest => debug!("Ignoring {:X?}", rest),
             }
         }
 

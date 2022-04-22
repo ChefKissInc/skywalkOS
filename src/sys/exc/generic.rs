@@ -22,7 +22,7 @@ pub(crate) unsafe extern "sysv64" fn reserved_handler(regs: &mut RegisterState) 
 }
 
 super::generic_exception!(x87_fp_handler, "x87 floating-point");
-super::generic_exception!(align_chk_handler, "alignment_check");
+super::generic_exception!(align_chk_handler, "alignment check");
 super::generic_exception!(machine_chk_handler, "machine check");
 super::generic_exception!(simd_fp_handler, "SIMD floating-point");
 super::generic_exception!(hv_injection_handler, "hypervisor injection");

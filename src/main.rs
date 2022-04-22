@@ -21,7 +21,7 @@ use alloc::{boxed::Box, string::String};
 use core::{arch::asm, fmt::Write};
 
 use amd64::sys::cpu::{PrivilegeLevel, SegmentSelector};
-use log::{debug, info};
+use log::{debug, error, info};
 
 use crate::driver::{
     acpi::Acpi,
@@ -89,7 +89,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
 
     let pci = driver::pci::Pci::new();
     let mut ac97 = pci
-        .find(move |dev| {
+        .find(move |dev| unsafe {
             dev.cfg_read(
                 driver::pci::PciConfigOffset::ClassCode as _,
                 PciIoAccessSize::Word,
@@ -114,35 +114,22 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                         '\n' => {
                             match cmd.as_str() {
                                 "help" => {
-                                    writeln!(terminal, "Fuse debug terminal").unwrap();
-                                    writeln!(terminal, "Available commands:").unwrap();
-                                    writeln!(
-                                        terminal,
-                                        "    greeting   <= Very epic example command"
-                                    )
-                                    .unwrap();
-                                    writeln!(terminal, "    acpidump   <= Dump ACPI information")
-                                        .unwrap();
-                                    writeln!(terminal, "    pcidump    <= Dump PCI devices")
-                                        .unwrap();
-                                    writeln!(
-                                        terminal,
-                                        "    restart    <= Restart machine by resetting CPU"
-                                    )
-                                    .unwrap();
-                                    writeln!(
-                                        terminal,
-                                        "    audiotest  <= Play test sound through AC97"
-                                    )
-                                    .unwrap();
-                                    writeln!(terminal, "    help       <= Display this").unwrap();
+                                    info!(
+                                        r#"Fuse debug terminal
+Available commands:
+    greeting   <= Very epic example command
+    acpidump   <= Dump ACPI information
+    pcidump    <= Dump PCI devices
+    audiotest  <= Play test sound through AC97
+    restart    <= Restart machine by resetting CPU
+    help       <= Display this"#
+                                    );
                                 }
-                                "greeting" => writeln!(terminal, "Greetings, User.").unwrap(),
+                                "greeting" => info!("Greetings, User."),
                                 "acpidump" => {
-                                    writeln!(terminal, "ACPI version {}", acpi.version).unwrap();
+                                    info!("ACPI version {}", acpi.version);
                                     for table in &acpi.tables {
-                                        writeln!(terminal, "Table '{}': {:#X?}", table.0, table.1)
-                                            .unwrap()
+                                        info!("Table '{}': {:#X?}", table.0, table.1);
                                     }
                                 }
                                 "pcidump" => {
@@ -158,30 +145,30 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                                     },
                                                     pci.io.as_ref(),
                                                 );
-                                                let vendor_id = device.cfg_read(
-                                                    PciConfigOffset::VendorId as _,
-                                                    PciIoAccessSize::Word,
-                                                );
-                                                if vendor_id != 0xFFFF {
-                                                    writeln!(
-                                                        terminal,
-                                                        "PCI Device at {}:{}:{} has vendor ID \
-                                                         {:#06X} and device ID {:#06X}, class \
-                                                         code {:#06X}",
-                                                        bus,
-                                                        slot,
-                                                        func,
-                                                        vendor_id,
-                                                        device.cfg_read(
-                                                            PciConfigOffset::DeviceId as _,
-                                                            PciIoAccessSize::Word
-                                                        ),
-                                                        device.cfg_read(
-                                                            PciConfigOffset::ClassCode as _,
-                                                            PciIoAccessSize::Word
-                                                        ),
-                                                    )
-                                                    .unwrap();
+                                                unsafe {
+                                                    let vendor_id = device.cfg_read(
+                                                        PciConfigOffset::VendorId as _,
+                                                        PciIoAccessSize::Word,
+                                                    );
+                                                    if vendor_id != 0xFFFF {
+                                                        info!(
+                                                            "PCI Device at {}:{}:{} has vendor ID \
+                                                             {:#06X} and device ID {:#06X}, class \
+                                                             code {:#06X}",
+                                                            bus,
+                                                            slot,
+                                                            func,
+                                                            vendor_id,
+                                                            device.cfg_read(
+                                                                PciConfigOffset::DeviceId as _,
+                                                                PciIoAccessSize::Word,
+                                                            ),
+                                                            device.cfg_read(
+                                                                PciConfigOffset::ClassCode as _,
+                                                                PciIoAccessSize::Word,
+                                                            ),
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -193,13 +180,18 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                             unsafe { &*sys::state::SYS_STATE.modules.get() }
                                                 .get()
                                                 .unwrap();
-                                        let module =
-                                            modules.iter().find(|v| v.name == "testaudio").unwrap();
-                                        writeln!(terminal, "Starting playback of test audio")
-                                            .unwrap();
-                                        ac97.play_audio(module.data)
+                                        if let Some(module) =
+                                            modules.iter().find(|v| v.name == "testaudio")
+                                        {
+                                            info!("Starting playback of test audio");
+                                            ac97.play_audio(module.data)
+                                        } else {
+                                            error!(
+                                                "Failure to find 'testaudio' boot loader module"
+                                            );
+                                        }
                                     } else {
-                                        writeln!(terminal, "No sound device available!").unwrap();
+                                        error!("No sound device available!");
                                     }
                                 }
                                 "restart" => ps2ctrl.reset_cpu(),

@@ -3,7 +3,7 @@
 
 use core::cell::UnsafeCell;
 
-use log::{error, info};
+use log::{debug, error};
 
 mod isr;
 
@@ -53,7 +53,7 @@ impl core::fmt::Debug for InterruptHandler {
 
 unsafe extern "sysv64" fn default_handler(regs: &mut amd64::sys::cpu::RegisterState) {
     let n = (regs.int_num & 0xFF) as u8;
-    info!("No handler for ISR {}", n);
+    debug!("No handler for ISR #{}", n);
 }
 
 pub unsafe fn init() {
@@ -91,7 +91,7 @@ pub fn set_handler(isr: u64, func: HandlerFn, is_irq: bool, should_iret: bool) {
 
         if handlers_ptr.read().func as usize != default_handler as usize {
             error!(
-                "Tried to register already existing ISR #{}. This may be a bug!",
+                "Tried to register already existing ISR #{}. This is most likely a bug!",
                 isr
             )
         }
