@@ -4,15 +4,12 @@
 use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 
+use kaboom::tags::module::Module;
+
 use super::{pmm::BitmapAllocator, terminal::Terminal, vmm::Pml4};
 use crate::driver::acpi::{ioapic::IoApic, madt::Madt, Acpi};
 
 pub static SYS_STATE: SystemState = SystemState::new();
-
-pub struct Module {
-    pub name: &'static str,
-    pub data: &'static [u8],
-}
 
 #[derive(Debug)]
 pub struct SystemState {
