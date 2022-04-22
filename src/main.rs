@@ -117,6 +117,7 @@ extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> !
                                     info!(
                                         r#"Fuse debug terminal
 Available commands:
+    clear      <= Clear terminal
     greeting   <= Very epic example command
     acpidump   <= Dump ACPI information
     pcidump    <= Dump PCI devices
@@ -125,6 +126,7 @@ Available commands:
     help       <= Display this"#
                                     );
                                 }
+                                "clear" => terminal.clear(),
                                 "greeting" => info!("Greetings, User."),
                                 "acpidump" => {
                                     info!("ACPI version {}", acpi.version);

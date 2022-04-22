@@ -45,8 +45,10 @@ impl Terminal {
         }
     }
 
-    pub fn clear(&self) {
+    pub fn clear(&mut self) {
         self.fb.clear(0).unwrap();
+        self.x = 0;
+        self.y = 0;
     }
 
     pub fn draw_char(&mut self, c: char) {
