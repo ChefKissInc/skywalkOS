@@ -8,9 +8,6 @@ authors = ["VisualDevelopment"]
 edition = "2021"
 license-file = "LICENSE"
 
-[profile.dev]
-lto = "thin"
-
 [profile.release]
 lto = true
 
