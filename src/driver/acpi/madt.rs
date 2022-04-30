@@ -5,13 +5,13 @@ use alloc::vec::Vec;
 
 use acpi::tables::madt::ic::{
     ioapic::{IoApic, Iso},
-    lapic::LocalApic,
+    proc_lapic::ProcessorLocalApic,
     InterruptController,
 };
 use log::debug;
 
 pub struct Madt {
-    pub lapics: Vec<&'static LocalApic>,
+    pub proc_lapics: Vec<&'static ProcessorLocalApic>,
     pub ioapics: Vec<&'static IoApic>,
     pub isos: Vec<&'static Iso>,
 }
@@ -19,20 +19,19 @@ pub struct Madt {
 impl Madt {
     pub fn new(madt: &'static acpi::tables::madt::Madt) -> Self {
         // Disable PIC
-        unsafe {
-            amd64::io::port::Port::<u8>::new(0xA1).write(0xFF);
-            amd64::io::port::Port::<u8>::new(0x21).write(0xFF);
+        if madt.flags.pcat_compat() {
+            amd64::sys::pic::Pic::new().remap_and_disable();
         }
 
-        let mut lapics = Vec::new();
+        let mut proc_lapics = Vec::new();
         let mut ioapics = Vec::new();
         let mut isos = Vec::new();
 
         for ent in madt.into_iter() {
             match ent {
-                InterruptController::LocalApic(lapic) => {
+                InterruptController::ProcessorLocalApic(lapic) => {
                     debug!("Found Local APIC: {:#X?}", lapic);
-                    lapics.push(lapic);
+                    proc_lapics.push(lapic);
                 }
                 InterruptController::IoApic(ioapic) => {
                     debug!(
@@ -51,7 +50,7 @@ impl Madt {
         }
 
         Self {
-            lapics,
+            proc_lapics,
             ioapics,
             isos,
         }
