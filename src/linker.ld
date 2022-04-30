@@ -25,6 +25,8 @@ SECTIONS
         *(.text*)
     }
 
+    PROVIDE(__etext = .);
+
     .rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VIRT_OFF)
     {
         *(.rodata*)
@@ -41,6 +43,13 @@ SECTIONS
         *(COMMON)
         *(.bss*)
         __bss_end = .;
+    }
+
+    .eh_frame ALIGN(4K) : AT(ADDR(.eh_frame) - KERNEL_VIRT_OFF)
+    {
+        __eh_frame = .;
+        KEEP(*(.eh_frame))
+        *(.eh_frame.*)
     }
 
     __kernel_top = .;

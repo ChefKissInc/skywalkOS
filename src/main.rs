@@ -41,8 +41,7 @@ static STACK: [u8; 0x5_0000] = [0; 0x5_0000];
 static EXPLOSION_FUEL: kaboom::ExplosionFuel =
     kaboom::ExplosionFuel::new(&STACK[0x5_0000 - 1] as *const _);
 
-#[no_mangle]
-extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
+fn real_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     sys::io::serial::SERIAL.lock().init();
 
     log::set_logger(&utils::logger::LOGGER)
@@ -212,4 +211,9 @@ Available commands:
     loop {
         unsafe { asm!("hlt") }
     }
+}
+
+#[no_mangle]
+extern "sysv64" fn kernel_main(explosion: &'static kaboom::ExplosionResult) -> ! {
+    unwinding::panic::catch_unwind(|| real_main(explosion)).unwrap()
 }
