@@ -5,7 +5,10 @@ use alloc::boxed::Box;
 
 use amd64::{
     paging::pml4::Pml4 as Pml4Trait,
-    registers::msr::{Msr, Pat, PatEntry},
+    registers::msr::{
+        pat::{Pat, PatEntry},
+        Msr,
+    },
 };
 
 #[repr(transparent)]
