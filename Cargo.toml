@@ -30,4 +30,10 @@ kaboom = { path = "../Kaboom" }
 seq-macro = "0.3.0"
 vesa = { path = "../VESA" }
 hashbrown = { version = "0.12.0", features = ["nightly"] }
-unwinding = { version = "0.1.4", default-features = false, features = [ "unwinder", "fde-static", "personality", "panic"] }
+unwinding = { version = "0.1.4", default-features = false, features = [
+    "unwinder",
+    "fde-static",
+    "personality",
+    "panic",
+    "hide-trace",
+] }
