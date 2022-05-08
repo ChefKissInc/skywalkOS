@@ -166,10 +166,10 @@ impl<'a> Ac97<'a> {
     pub fn new(dev: PciDevice<'a>) -> Self {
         unsafe {
             dev.cfg_write(
-                PciConfigOffset::Command as _,
+                PciConfigOffset::Command,
                 u16::from(
                     PciCmd::from(
-                        dev.cfg_read(PciConfigOffset::Command as _, PciIoAccessSize::Word) as u16,
+                        dev.cfg_read(PciConfigOffset::Command, PciIoAccessSize::Word) as u16,
                     )
                     .with_pio(true)
                     .with_bus_master(true)
@@ -179,7 +179,7 @@ impl<'a> Ac97<'a> {
             );
         }
         let audio_bus = unsafe {
-            (dev.cfg_read(PciConfigOffset::BaseAddr1 as _, PciIoAccessSize::DWord) as u16) & !1u16
+            (dev.cfg_read(PciConfigOffset::BaseAddr1, PciIoAccessSize::DWord) as u16) & !1u16
         };
         let global_ctl = Port::<u32>::new(audio_bus + NabmRegs::GlobalControl as u16);
         let global_sts = Port::<u32>::new(audio_bus + NabmRegs::GlobalStatus as u16);
@@ -189,7 +189,7 @@ impl<'a> Ac97<'a> {
             Port::<u8>::new(audio_bus + NabmRegs::PcmOutTransferControl as u16);
         let pcm_out_transf_sts = Port::<u16>::new(audio_bus + NabmRegs::PcmOutStatus as u16);
         let mixer = unsafe {
-            (dev.cfg_read(PciConfigOffset::BaseAddr0 as _, PciIoAccessSize::DWord) as u16) & !1u16
+            (dev.cfg_read(PciConfigOffset::BaseAddr0, PciIoAccessSize::DWord) as u16) & !1u16
         };
         let mixer_reset = Port::<u16>::new(mixer + NamRegs::Reset as u16);
         let mixer_master_vol = Port::<u16>::new(mixer + NamRegs::MasterVolume as u16);

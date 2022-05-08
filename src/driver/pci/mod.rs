@@ -1,6 +1,7 @@
 use alloc::boxed::Box;
 
 use modular_bitfield::prelude::*;
+use num_enum::IntoPrimitive;
 
 mod pio;
 
@@ -39,6 +40,7 @@ pub struct PciCmd {
 }
 
 #[allow(dead_code)]
+#[derive(IntoPrimitive)]
 #[repr(u8)]
 pub enum PciConfigOffset {
     VendorId = 0x0,
@@ -86,12 +88,18 @@ impl<'a> PciDevice<'a> {
         Self { addr, io }
     }
 
-    pub unsafe fn cfg_read(&self, off: u8, access_size: PciIoAccessSize) -> u32 {
-        self.io.cfg_read(self.addr, off, access_size)
+    pub unsafe fn cfg_read<T>(&self, off: T, access_size: PciIoAccessSize) -> u32
+    where
+        T: Into<u8>,
+    {
+        self.io.cfg_read(self.addr, off.into(), access_size)
     }
 
-    pub unsafe fn cfg_write(&self, off: u8, value: u32, access_size: PciIoAccessSize) {
-        self.io.cfg_write(self.addr, off, value, access_size)
+    pub unsafe fn cfg_write<T>(&self, off: T, value: u32, access_size: PciIoAccessSize)
+    where
+        T: Into<u8>,
+    {
+        self.io.cfg_write(self.addr, off.into(), value, access_size)
     }
 }
 

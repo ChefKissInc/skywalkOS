@@ -12,7 +12,17 @@ license-file = "LICENSE"
 lto = true
 
 [dependencies]
+acpi = { path = "../ACPI" }
+amd64 = { path = "../AMD64" }
+font8x8 = { version = "0.3.1", default-features = false }
+hashbrown = { version = "0.12.0", features = ["nightly"] }
+kaboom = { path = "../Kaboom" }
 log = { version = "0.4.16", default-features = false }
+modular-bitfield = "0.11.2"
+num_enum = { version = "0.5.7", default-features = false, features = [
+    "nightly",
+] }
+seq-macro = "0.3.0"
 spin = { version = "0.9.3", default-features = false, features = [
     "lock_api",
     "mutex",
@@ -22,14 +32,6 @@ spin = { version = "0.9.3", default-features = false, features = [
     "once",
     "barrier",
 ] }
-font8x8 = { version = "0.3.1", default-features = false }
-modular-bitfield = "0.11.2"
-amd64 = { path = "../AMD64" }
-acpi = { path = "../ACPI" }
-kaboom = { path = "../Kaboom" }
-seq-macro = "0.3.0"
-vesa = { path = "../VESA" }
-hashbrown = { version = "0.12.0", features = ["nightly"] }
 unwinding = { version = "0.1.4", default-features = false, features = [
     "unwinder",
     "fde-static",
@@ -37,3 +39,4 @@ unwinding = { version = "0.1.4", default-features = false, features = [
     "panic",
     "hide-trace",
 ] }
+vesa = { path = "../VESA" }

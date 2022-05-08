@@ -90,7 +90,7 @@ fn real_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     let mut ac97 = pci
         .find(move |dev| unsafe {
             dev.cfg_read(
-                driver::pci::PciConfigOffset::ClassCode as _,
+                driver::pci::PciConfigOffset::ClassCode,
                 PciIoAccessSize::Word,
             ) == 0x0401
         })
@@ -148,7 +148,7 @@ Available commands:
                                                 );
                                                 unsafe {
                                                     let vendor_id = device.cfg_read(
-                                                        PciConfigOffset::VendorId as _,
+                                                        PciConfigOffset::VendorId,
                                                         PciIoAccessSize::Word,
                                                     );
                                                     if vendor_id != 0xFFFF {
@@ -161,11 +161,11 @@ Available commands:
                                                             func,
                                                             vendor_id,
                                                             device.cfg_read(
-                                                                PciConfigOffset::DeviceId as _,
+                                                                PciConfigOffset::DeviceId,
                                                                 PciIoAccessSize::Word,
                                                             ),
                                                             device.cfg_read(
-                                                                PciConfigOffset::ClassCode as _,
+                                                                PciConfigOffset::ClassCode,
                                                                 PciIoAccessSize::Word,
                                                             ),
                                                         )
