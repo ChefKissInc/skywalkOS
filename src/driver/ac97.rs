@@ -236,16 +236,6 @@ impl<'a> Ac97<'a> {
             debug!("Sample rate: {:#?}", mixer_sample_rate.read());
             // NOTE: QEMU has a bug and 48KHz audio doesn't work
             mixer_sample_rate.write(44100);
-
-            // Reset output channel
-            pcm_out_transf_ctl.write(pcm_out_transf_ctl.read().with_reset(true));
-            while pcm_out_transf_ctl.read().reset() {
-                core::arch::asm!("hlt");
-            }
-
-            // Set BDL address and last entry
-            pcm_out_bdl_addr.write((bdl.as_ptr() as usize - amd64::paging::PHYS_VIRT_OFFSET) as _);
-            pcm_out_bdl_last_ent.write((bdl.len() - 1) as _);
         }
 
         Self {
