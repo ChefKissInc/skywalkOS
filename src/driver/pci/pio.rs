@@ -10,7 +10,7 @@ impl PciPortIo {
     unsafe fn send_addr(addr: super::PciAddress, off: u8) {
         assert_eq!(addr.segment, 0, "Using segments on PCI non-express");
 
-        Port::<u32>::new(0xCF8).write(
+        Port::<u32, u32>::new(0xCF8).write(
             ((addr.bus as u32) << 16)
                 | ((addr.slot as u32) << 11)
                 | ((addr.func as u32) << 8)
@@ -30,11 +30,15 @@ impl super::PciIo for PciPortIo {
         Self::send_addr(addr, off);
 
         match access_size {
-            super::PciIoAccessSize::Byte => Port::<u8>::new(0xCFC + (off as u16 & 3)).read().into(),
-            super::PciIoAccessSize::Word => {
-                Port::<u16>::new(0xCFC + (off as u16 & 3)).read().into()
+            super::PciIoAccessSize::Byte => {
+                Port::<u8, u8>::new(0xCFC + (off as u16 & 3)).read().into()
             }
-            super::PciIoAccessSize::DWord => Port::<u32>::new(0xCFC + (off as u16 & 3)).read(),
+            super::PciIoAccessSize::Word => {
+                Port::<u16, u16>::new(0xCFC + (off as u16 & 3))
+                    .read()
+                    .into()
+            }
+            super::PciIoAccessSize::DWord => Port::<u32, u32>::new(0xCFC + (off as u16 & 3)).read(),
         }
     }
 
@@ -49,13 +53,13 @@ impl super::PciIo for PciPortIo {
 
         match access_size {
             super::PciIoAccessSize::Byte => {
-                Port::<u8>::new(0xCFC + (off as u16 & 3)).write(value.try_into().unwrap())
+                Port::<u8, u8>::new(0xCFC + (off as u16 & 3)).write(value.try_into().unwrap())
             }
             super::PciIoAccessSize::Word => {
-                Port::<u16>::new(0xCFC + (off as u16 & 3)).write(value.try_into().unwrap())
+                Port::<u16, u16>::new(0xCFC + (off as u16 & 3)).write(value.try_into().unwrap())
             }
             super::PciIoAccessSize::DWord => {
-                Port::<u32>::new(0xCFC + (off as u16 & 3)).write(value)
+                Port::<u32, u32>::new(0xCFC + (off as u16 & 3)).write(value)
             }
         }
     }

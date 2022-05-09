@@ -3,7 +3,9 @@
 
 use amd64::io::port::Port;
 use log::debug;
+use num_enum::IntoPrimitive;
 
+#[derive(IntoPrimitive)]
 #[repr(u8)]
 pub enum PS2CtlCmd {
     ReadControllerCfg = 0x20,
@@ -23,8 +25,8 @@ pub enum KeyEvent {
 }
 
 pub struct PS2Ctl {
-    data_port: Port<u8>,
-    sts_or_cmd_reg: Port<u8>,
+    data_port: Port<u8, u8>,
+    sts_or_cmd_reg: Port<u8, u8>,
 }
 
 impl PS2Ctl {
@@ -48,7 +50,7 @@ impl PS2Ctl {
     }
 
     fn send_cmd(&self, cmd: PS2CtlCmd, wait_for_ack: bool) {
-        unsafe { self.sts_or_cmd_reg.write(cmd as u8) };
+        unsafe { self.sts_or_cmd_reg.write(cmd.into()) };
         if wait_for_ack {
             self.wait_for_ack();
         }
