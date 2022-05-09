@@ -20,6 +20,7 @@ pub enum KeyEvent {
     ArrowRight,
     ArrowUp,
     ArrowDown,
+    BackSpace,
     Pressed(char),
     Released(char),
 }
@@ -83,7 +84,7 @@ impl PS2Ctl {
 
         let key = unsafe { self.data_port.read() };
         match key {
-            0xE => Ok(KeyEvent::Pressed('\r')),
+            0xE => Ok(KeyEvent::BackSpace),
             0x2..=0xA => {
                 Ok(KeyEvent::Pressed(
                     "123456789".chars().nth(key as usize - 0x2).unwrap(),

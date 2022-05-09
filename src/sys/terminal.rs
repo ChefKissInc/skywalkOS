@@ -4,7 +4,7 @@
 use core::fmt::Write;
 
 use amd64::paging::pml4::Pml4;
-use vesa::framebuffer::Framebuffer;
+use vesa::{framebuffer::Framebuffer, pixel::Colour};
 
 pub struct Terminal {
     x: usize,
@@ -51,16 +51,35 @@ impl Terminal {
         self.y = 0;
     }
 
-    pub fn draw_char(&mut self, c: char) {
+    pub fn draw_char(&mut self, c: char, colour: Colour) {
         let x = self.x * 8;
         let mut y = self.y * 8;
         for &x_bit in &font8x8::legacy::BASIC_LEGACY[c as usize] {
             for bit in 0..8 {
                 if x_bit & (1 << bit) != 0 {
-                    self.fb.draw_pixel(x + bit, y, !0u32).unwrap();
+                    self.fb
+                        .draw_pixel(x + bit, y, colour.to_u32(self.fb.bitmask))
+                        .unwrap();
                 }
             }
             y += 1;
+        }
+    }
+
+    pub fn backspace(&mut self) {
+        if self.x > 0 {
+            self.x -= 1;
+        } else {
+            self.y -= 1;
+            self.x = self.width - 1;
+        }
+
+        for y in 0..8 {
+            for x in 0..8 {
+                self.fb
+                    .draw_pixel((self.x * 8) + x, (self.y * 8) + y, 0)
+                    .unwrap();
+            }
         }
     }
 
@@ -87,7 +106,7 @@ impl Write for Terminal {
                     self.handle_scrollback();
                 }
                 _ => {
-                    self.draw_char(c);
+                    self.draw_char(c, Colour::new(0xFF, 0xFF, 0xFF, 0xFF));
                     self.x += 1;
                     if self.x >= self.width {
                         self.y += 1;
