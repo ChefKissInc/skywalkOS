@@ -19,8 +19,7 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
             );
         },
         |v| {
-            let ioapic =
-                find_for_gsi(v.gsi).unwrap_or_else(|| find_for_gsi(0).unwrap());
+            let ioapic = find_for_gsi(v.gsi).unwrap_or_else(|| find_for_gsi(0).unwrap());
             let gsi = v.gsi;
             debug!(
                 "Setting up legacy irq {} on I/O APIC {} at gsi {}",

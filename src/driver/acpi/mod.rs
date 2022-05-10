@@ -5,9 +5,9 @@ use acpi::tables::SdtHeader;
 use hashbrown::HashMap;
 use log::debug;
 
+pub mod apic;
 pub mod ioapic;
 pub mod madt;
-pub mod apic;
 
 #[derive(Debug)]
 pub struct Acpi {

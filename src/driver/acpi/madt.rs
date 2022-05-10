@@ -59,7 +59,7 @@ impl Madt {
             proc_lapics,
             ioapics,
             isos,
-            lapic_addr
+            lapic_addr,
         }
     }
 }
