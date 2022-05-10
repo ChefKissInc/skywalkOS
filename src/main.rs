@@ -20,11 +20,14 @@ extern crate alloc;
 use alloc::{boxed::Box, string::String};
 use core::{arch::asm, fmt::Write};
 
-use amd64::sys::cpu::{PrivilegeLevel, SegmentSelector};
+use amd64::sys::{
+    apic::LocalApic,
+    cpu::{PrivilegeLevel, SegmentSelector},
+};
 use log::{debug, error, info};
 
 use crate::driver::{
-    acpi::Acpi,
+    acpi::{apic::ApicHelper, Acpi},
     pci::{PciAddress, PciConfigOffset, PciDevice, PciIoAccessSize},
     ps2::{KeyEvent, PS2Ctl},
 };
@@ -83,7 +86,13 @@ fn real_main(explosion: &'static kaboom::ExplosionResult) -> ! {
     unsafe {
         (&*sys::state::SYS_STATE.madt.get())
             .call_once(|| driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap()));
-        (&*sys::state::SYS_STATE.ioapic.get()).call_once(driver::acpi::ioapic::IoApic::new);
+        let addr = driver::acpi::apic::get_final_lapic_addr();
+        debug!("LAPIC address: {:?}", addr);
+        driver::acpi::apic::set_lapic_addr(addr);
+        (&*sys::state::SYS_STATE.lapic.get())
+            .call_once(|| LocalApic::new(addr as usize + amd64::paging::PHYS_VIRT_OFFSET))
+            .enable();
+        asm!("sti");
     }
 
     let pci = driver::pci::Pci::new();

@@ -28,3 +28,13 @@ super::generic_exception!(simd_fp_handler, "SIMD floating-point");
 super::generic_exception!(hv_injection_handler, "hypervisor injection");
 super::generic_exception!(vmm_com_handler, "VMM communication");
 super::generic_exception!(security_handler, "security");
+
+pub(crate) unsafe extern "sysv64" fn spurious(_regs: &mut amd64::sys::cpu::RegisterState) {
+    use log::warn;
+
+    while crate::sys::io::serial::SERIAL.is_locked() {
+        crate::sys::io::serial::SERIAL.force_unlock()
+    }
+
+    warn!("Received spurious interrupt.");
+}

@@ -7,6 +7,7 @@ use log::debug;
 
 pub mod ioapic;
 pub mod madt;
+pub mod apic;
 
 #[derive(Debug)]
 pub struct Acpi {

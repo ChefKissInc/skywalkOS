@@ -4,10 +4,11 @@
 use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 
+use amd64::sys::apic::LocalApic;
 use kaboom::tags::{module::Module, SpecialisedSettings};
 
 use super::{pmm::BitmapAllocator, terminal::Terminal, vmm::Pml4};
-use crate::driver::acpi::{ioapic::IoApic, madt::Madt, Acpi};
+use crate::driver::acpi::{madt::Madt, Acpi};
 
 pub static SYS_STATE: SystemState = SystemState::new();
 
@@ -20,7 +21,7 @@ pub struct SystemState {
     pub terminal: UnsafeCell<spin::Once<Terminal>>,
     pub acpi: UnsafeCell<spin::Once<Acpi>>,
     pub madt: UnsafeCell<spin::Once<Madt>>,
-    pub ioapic: UnsafeCell<spin::Once<IoApic>>,
+    pub lapic: UnsafeCell<spin::Once<LocalApic>>,
 }
 
 unsafe impl Sync for SystemState {}
@@ -35,7 +36,7 @@ impl SystemState {
             terminal: UnsafeCell::new(spin::Once::new()),
             acpi: UnsafeCell::new(spin::Once::new()),
             madt: UnsafeCell::new(spin::Once::new()),
-            ioapic: UnsafeCell::new(spin::Once::new()),
+            lapic: UnsafeCell::new(spin::Once::new()),
         }
     }
 }

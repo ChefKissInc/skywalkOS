@@ -3,7 +3,7 @@
 
 use core::arch::asm;
 
-use log::info;
+use log::debug;
 
 macro_rules! isr_stub {
     ($err:expr, $i:expr) => {
@@ -59,8 +59,14 @@ macro_rules! isr_stub {
 pub unsafe extern "C" fn isr_handler(regs: &mut amd64::sys::cpu::RegisterState) {
     let n = (regs.int_num & 0xFF) as u8;
     let handler = &super::HANDLERS.get().as_mut().unwrap()[n as usize];
-    info!("Handler for ISR {:#X?}: {:#X?}", n, handler);
+    debug!("Handler for ISR {:#X?}: {:#X?}", n, handler);
     (handler.func)(regs);
+    if handler.is_irq {
+        (&*crate::sys::state::SYS_STATE.lapic.get())
+            .get()
+            .unwrap()
+            .send_eoi();
+    }
     if !handler.should_iret && !handler.is_irq {
         loop {
             asm!("hlt")
@@ -94,11 +100,6 @@ isr_noerr!(isr9, 9);
 seq_macro::seq!(N in 10..16 {
     isr_err!(isr~N, N);
 });
-seq_macro::seq!(N in 16..255 {
+seq_macro::seq!(N in 16..256 {
     isr_noerr!(isr~N, N);
 });
-
-#[naked]
-pub unsafe extern "C" fn isr255() {
-    asm!("iretq", options(noreturn))
-}

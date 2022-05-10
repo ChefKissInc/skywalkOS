@@ -14,6 +14,7 @@ pub struct Madt {
     pub proc_lapics: Vec<&'static ProcessorLocalApic>,
     pub ioapics: Vec<&'static IoApic>,
     pub isos: Vec<&'static Iso>,
+    pub lapic_addr: u64,
 }
 
 impl Madt {
@@ -26,6 +27,7 @@ impl Madt {
         let mut proc_lapics = Vec::new();
         let mut ioapics = Vec::new();
         let mut isos = Vec::new();
+        let mut lapic_addr = madt.local_ic_addr();
 
         for ent in madt.into_iter() {
             match ent {
@@ -45,6 +47,10 @@ impl Madt {
                     debug!("Found Interrupt Source Override: {:#X?}", iso);
                     isos.push(iso);
                 }
+                InterruptController::LocalApicAddrOverride(a) => {
+                    debug!("Found Local APIC Address Override: {:#X?}", a);
+                    lapic_addr = a.addr;
+                }
                 rest => debug!("Ignoring {:X?}", rest),
             }
         }
@@ -53,6 +59,7 @@ impl Madt {
             proc_lapics,
             ioapics,
             isos,
+            lapic_addr
         }
     }
 }

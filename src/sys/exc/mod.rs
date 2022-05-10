@@ -59,4 +59,5 @@ pub fn init() {
     super::idt::set_handler(29, generic::vmm_com_handler, false, false);
     super::idt::set_handler(30, generic::security_handler, false, false);
     super::idt::set_handler(31, generic::reserved_handler, false, false);
+    super::idt::set_handler(255, generic::spurious, true, true);
 }
