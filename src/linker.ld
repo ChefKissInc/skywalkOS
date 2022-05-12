@@ -15,11 +15,6 @@ SECTIONS
     . = KERNEL_VIRT_OFF + 0x200000 + SIZEOF_HEADERS;
     . = ALIGN(4K);
 
-    .kaboom ALIGN(4K) : AT(ADDR(.kaboom) - KERNEL_VIRT_OFF)
-    {
-        KEEP(*(.kaboom*))
-    }
-
     .text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VIRT_OFF)
     {
         *(.text*)

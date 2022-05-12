@@ -36,15 +36,7 @@ mod driver;
 mod sys;
 mod utils;
 
-#[used]
-static STACK: [u8; 0x5_0000] = [0; 0x5_0000];
-
-#[link_section = ".kaboom"]
-#[used]
-static EXPLOSION_FUEL: kaboom::ExplosionFuel =
-    kaboom::ExplosionFuel::new(&STACK[0x5_0000 - 1] as *const _);
-
-fn real_main(explosion: &'static kaboom::ExplosionResult) -> ! {
+fn real_main(explosion: &'static kaboom::Explosion) -> ! {
     sys::io::serial::SERIAL.lock().init();
 
     log::set_logger(&utils::logger::LOGGER)
