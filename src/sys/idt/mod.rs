@@ -1,7 +1,7 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use core::cell::UnsafeCell;
+use core::cell::SyncUnsafeCell;
 
 use log::{debug, error};
 
@@ -10,7 +10,7 @@ mod isr;
 static ENTRIES: spin::Once<[amd64::sys::idt::Entry; 256]> = spin::Once::new();
 
 seq_macro::seq!(N in 0..256 {
-    static HANDLERS: SafeCell<[InterruptHandler; 256]> = SafeCell(UnsafeCell::new([
+    static HANDLERS: SyncUnsafeCell<[InterruptHandler; 256]> = SyncUnsafeCell::new([
         #(
             InterruptHandler {
                 func: default_handler,
@@ -18,20 +18,8 @@ seq_macro::seq!(N in 0..256 {
                 should_iret: false,
             },
         )*
-    ]));
+    ]);
 });
-
-pub struct SafeCell<T: ?Sized>(pub UnsafeCell<T>);
-
-impl<T: ?Sized> core::ops::Deref for SafeCell<T> {
-    type Target = UnsafeCell<T>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-unsafe impl<T: ?Sized> Sync for SafeCell<T> {}
 
 type HandlerFn = unsafe extern "sysv64" fn(&mut amd64::sys::cpu::RegisterState);
 

@@ -62,7 +62,8 @@ pub unsafe extern "C" fn isr_handler(regs: &mut amd64::sys::cpu::RegisterState) 
     debug!("Handler for ISR {:#X?}: {:#X?}", n, handler);
     (handler.func)(regs);
     if handler.is_irq {
-        (&*crate::sys::state::SYS_STATE.lapic.get())
+        (*crate::sys::state::SYS_STATE.get())
+            .lapic
             .get()
             .unwrap()
             .send_eoi();

@@ -12,7 +12,8 @@
     const_size_of_val,
     panic_info_message,
     naked_functions,
-    const_mut_refs
+    const_mut_refs,
+    sync_unsafe_cell
 )]
 
 extern crate alloc;
@@ -63,30 +64,33 @@ fn real_main(explosion: &'static kaboom::Explosion) -> ! {
 
     debug!("Initializing paging");
 
-    let pml4 = unsafe { &mut *sys::state::SYS_STATE.pml4.get() };
-    pml4.call_once(|| Box::leak(Box::new(sys::vmm::Pml4::new())));
-    unsafe { pml4.get_mut().unwrap().init() }
+    let state = unsafe { &mut *sys::state::SYS_STATE.get() };
 
-    if let Some(terminal) = unsafe { (&mut *sys::state::SYS_STATE.terminal.get()).get_mut() } {
+    let pml4 = Box::leak(Box::new(sys::vmm::Pml4::new()));
+    unsafe { pml4.init() }
+    state.pml4.call_once(|| pml4);
+
+    if let Some(terminal) = state.terminal.get_mut() {
         terminal.map_fb();
     }
     info!("Fuse has been ignited!");
 
-    let acpi = unsafe { (&mut *sys::state::SYS_STATE.acpi.get()).get_mut().unwrap() };
+    let acpi = state.acpi.get_mut().unwrap();
 
     debug!("ACPI version {}", acpi.version);
 
-    unsafe {
-        (&*sys::state::SYS_STATE.madt.get())
-            .call_once(|| driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap()));
-        let addr = driver::acpi::apic::get_final_lapic_addr();
-        debug!("LAPIC address: {:?}", addr);
-        driver::acpi::apic::set_lapic_addr(addr);
-        (&*sys::state::SYS_STATE.lapic.get())
-            .call_once(|| LocalApic::new(addr as usize + amd64::paging::PHYS_VIRT_OFFSET))
-            .enable();
-        asm!("sti");
-    }
+    state
+        .madt
+        .call_once(|| driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap()));
+    let addr = driver::acpi::apic::get_final_lapic_addr();
+    debug!("LAPIC address: {:?}", addr);
+    driver::acpi::apic::set_lapic_addr(addr);
+    state
+        .lapic
+        .call_once(|| LocalApic::new(addr as usize + amd64::paging::PHYS_VIRT_OFFSET))
+        .enable();
+
+    unsafe { asm!("sti") }
 
     let pci = driver::pci::Pci::new();
     let mut ac97 = pci
@@ -98,15 +102,18 @@ fn real_main(explosion: &'static kaboom::Explosion) -> ! {
         })
         .map(driver::ac97::Ac97::new);
 
-    if let Some(terminal) = unsafe { (&mut *sys::state::SYS_STATE.terminal.get()).get_mut() } {
+    if let Some(terminal) = state.terminal.get_mut() {
         writeln!(terminal, "We welcome you to Firework").unwrap();
         writeln!(terminal, "I am the Fuse debug terminal").unwrap();
         writeln!(terminal, "Type 'help' to see the available commands.").unwrap();
 
-        let mut ps2ctrl = PS2Ctl::new();
-        ps2ctrl.init();
+        let mut ps2ctl = PS2Ctl::new();
+        ps2ctl.init();
+        unsafe {
+            (*driver::ps2::INSTANCE.get()).call_once(|| ps2ctl);
+        }
 
-        terminal_loop::terminal_loop(acpi, &pci, terminal, &mut ps2ctrl, &mut ac97);
+        terminal_loop::terminal_loop(acpi, &pci, terminal, &mut ac97);
     }
 
     loop {

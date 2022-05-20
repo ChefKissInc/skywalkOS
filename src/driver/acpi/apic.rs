@@ -7,7 +7,7 @@ use amd64::{
 };
 
 pub fn get_final_lapic_addr() -> u64 {
-    unsafe { (&*crate::sys::state::SYS_STATE.madt.get()).get().unwrap() }.lapic_addr
+    unsafe { (*crate::sys::state::SYS_STATE.get()).madt.get().unwrap() }.lapic_addr
 }
 
 pub fn set_lapic_addr(addr: u64) {

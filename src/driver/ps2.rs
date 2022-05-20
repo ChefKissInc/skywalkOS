@@ -1,6 +1,9 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
+use alloc::collections::VecDeque;
+use core::cell::SyncUnsafeCell;
+
 use amd64::{io::port::Port, sys::cpu::RegisterState};
 use log::debug;
 use modular_bitfield::prelude::*;
@@ -32,7 +35,7 @@ pub struct Ps2Cfg {
 
 #[derive(Debug)]
 #[allow(dead_code)]
-pub enum KeyEvent {
+pub enum Ps2Event {
     ArrowLeft,
     ArrowRight,
     ArrowUp,
@@ -40,41 +43,61 @@ pub enum KeyEvent {
     BackSpace,
     Pressed(char),
     Released(char),
+    Other(u8),
 }
 
 pub struct PS2Ctl {
     data_port: Port<u8, u8>,
     sts_or_cmd_reg: Port<u8, u8>,
+    pub queue: VecDeque<Ps2Event>,
 }
 
+pub static INSTANCE: SyncUnsafeCell<spin::Once<PS2Ctl>> = SyncUnsafeCell::new(spin::Once::new());
+
 pub(crate) unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
-    debug!("PS/2 interrupt handler called!")
+    debug!("PS/2 interrupt handler called!");
+    let this = (&mut *INSTANCE.get()).get_mut().unwrap();
+    let key = this.data_port.read();
+    this.queue.push_back(match key {
+        0xE => Ps2Event::BackSpace,
+        0x2..=0xA => Ps2Event::Pressed("123456789".chars().nth(key as usize - 0x2).unwrap()),
+        0x1C => Ps2Event::Pressed('\n'),
+        0x10..=0x1C => Ps2Event::Pressed("qwertyuiop".chars().nth(key as usize - 0x10).unwrap()),
+        0x1E..=0x26 => Ps2Event::Pressed("asdfghjkl".chars().nth(key as usize - 0x1E).unwrap()),
+        0x29 => Ps2Event::Pressed('0'),
+        0x2C..=0x32 => Ps2Event::Pressed("zxcvbnm".chars().nth(key as usize - 0x2C).unwrap()),
+        0x39 => Ps2Event::Pressed(' '),
+        v => Ps2Event::Other(v),
+    });
+    debug!("Done: {:?}", this.queue);
 }
 
 impl PS2Ctl {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             data_port: Port::new(0x60),
             sts_or_cmd_reg: Port::new(0x64),
+            queue: VecDeque::new(),
         }
     }
 
-    fn wait_for_ack(&self) {
-        unsafe { while self.data_port.read() != 0xFA {} }
-    }
-
+    #[inline]
     fn output_full(&self) -> bool {
         unsafe { self.sts_or_cmd_reg.read() & 1 != 0 }
     }
 
+    #[inline]
     fn input_full(&self) -> bool {
         unsafe { self.sts_or_cmd_reg.read() & (1 << 1) != 0 }
     }
 
+    #[inline]
     fn send_cmd(&self, cmd: PS2CtlCmd, wait_for_ack: bool) {
-        unsafe { self.sts_or_cmd_reg.write(cmd.into()) };
-        if wait_for_ack {
-            self.wait_for_ack();
+        unsafe {
+            self.sts_or_cmd_reg.write(cmd.into());
+            if wait_for_ack {
+                while self.data_port.read() != 0xFA {}
+            }
         }
     }
 
@@ -104,38 +127,5 @@ impl PS2Ctl {
 
     pub fn reset_cpu(&self) {
         self.send_cmd(PS2CtlCmd::ResetCPU, false);
-    }
-
-    pub fn wait_for_key(&self) -> Result<KeyEvent, ()> {
-        while !self.output_full() {}
-
-        let key = unsafe { self.data_port.read() };
-        match key {
-            0xE => Ok(KeyEvent::BackSpace),
-            0x2..=0xA => {
-                Ok(KeyEvent::Pressed(
-                    "123456789".chars().nth(key as usize - 0x2).unwrap(),
-                ))
-            }
-            0x1C => Ok(KeyEvent::Pressed('\n')),
-            0x10..=0x1C => {
-                Ok(KeyEvent::Pressed(
-                    "qwertyuiop".chars().nth(key as usize - 0x10).unwrap(),
-                ))
-            }
-            0x1E..=0x26 => {
-                Ok(KeyEvent::Pressed(
-                    "asdfghjkl".chars().nth(key as usize - 0x1E).unwrap(),
-                ))
-            }
-            0x29 => Ok(KeyEvent::Pressed('0')),
-            0x2C..=0x32 => {
-                Ok(KeyEvent::Pressed(
-                    "zxcvbnm".chars().nth(key as usize - 0x2C).unwrap(),
-                ))
-            }
-            0x39 => Ok(KeyEvent::Pressed(' ')),
-            _ => Err(()),
-        }
     }
 }

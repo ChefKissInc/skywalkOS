@@ -6,7 +6,7 @@ use amd64::spec::mps::{Polarity, TriggerMode};
 use log::debug;
 
 pub fn wire_legacy_irq(irq: u8, masked: bool) {
-    let madt = unsafe { (&*crate::sys::state::SYS_STATE.madt.get()).get().unwrap() };
+    let madt = unsafe { (*crate::sys::state::SYS_STATE.get()).madt.get().unwrap() };
     madt.isos.iter().find(|v| v.irq == irq).map_or_else(
         || {
             let ioapic = find_for_gsi(0).unwrap();
@@ -38,7 +38,7 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
 }
 
 pub fn find_for_gsi(gsi: u32) -> Option<&'static ioapic::IoApic> {
-    unsafe { (&*crate::sys::state::SYS_STATE.madt.get()).get()? }
+    unsafe { (*crate::sys::state::SYS_STATE.get()).madt.get()? }
         .ioapics
         .iter()
         .find(|ioapic| {

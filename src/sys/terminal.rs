@@ -30,7 +30,8 @@ impl Terminal {
 
     pub fn map_fb(&self) {
         unsafe {
-            (&mut *super::state::SYS_STATE.pml4.get())
+            (*super::state::SYS_STATE.get())
+                .pml4
                 .get_mut()
                 .unwrap()
                 .map_huge_pages(

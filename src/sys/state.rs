@@ -2,7 +2,7 @@
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use alloc::vec::Vec;
-use core::cell::UnsafeCell;
+use core::cell::SyncUnsafeCell;
 
 use amd64::sys::apic::LocalApic;
 use kaboom::tags::{module::Module, SpecialisedSettings};
@@ -10,33 +10,30 @@ use kaboom::tags::{module::Module, SpecialisedSettings};
 use super::{pmm::BitmapAllocator, terminal::Terminal, vmm::Pml4};
 use crate::driver::acpi::{madt::Madt, Acpi};
 
-pub static SYS_STATE: SystemState = SystemState::new();
+pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemState::new());
 
-#[derive(Debug)]
 pub struct SystemState {
-    pub modules: UnsafeCell<spin::Once<Vec<Module>>>,
-    pub boot_settings: spin::Once<SpecialisedSettings>,
-    pub pmm: UnsafeCell<spin::Once<BitmapAllocator>>,
-    pub pml4: UnsafeCell<spin::Once<&'static mut Pml4>>,
-    pub terminal: UnsafeCell<spin::Once<Terminal>>,
-    pub acpi: UnsafeCell<spin::Once<Acpi>>,
-    pub madt: UnsafeCell<spin::Once<Madt>>,
-    pub lapic: UnsafeCell<spin::Once<LocalApic>>,
+    pub modules: spin::Once<Vec<Module>>,
+    pub boot_settings: SpecialisedSettings,
+    pub pmm: spin::Once<BitmapAllocator>,
+    pub pml4: spin::Once<&'static mut Pml4>,
+    pub terminal: spin::Once<Terminal>,
+    pub acpi: spin::Once<Acpi>,
+    pub madt: spin::Once<Madt>,
+    pub lapic: spin::Once<LocalApic>,
 }
-
-unsafe impl Sync for SystemState {}
 
 impl SystemState {
     pub const fn new() -> Self {
         Self {
-            modules: UnsafeCell::new(spin::Once::new()),
-            boot_settings: spin::Once::new(),
-            pmm: UnsafeCell::new(spin::Once::new()),
-            pml4: UnsafeCell::new(spin::Once::new()),
-            terminal: UnsafeCell::new(spin::Once::new()),
-            acpi: UnsafeCell::new(spin::Once::new()),
-            madt: UnsafeCell::new(spin::Once::new()),
-            lapic: UnsafeCell::new(spin::Once::new()),
+            modules: spin::Once::new(),
+            boot_settings: SpecialisedSettings { verbose: false },
+            pmm: spin::Once::new(),
+            pml4: spin::Once::new(),
+            terminal: spin::Once::new(),
+            acpi: spin::Once::new(),
+            madt: spin::Once::new(),
+            lapic: spin::Once::new(),
         }
     }
 }
