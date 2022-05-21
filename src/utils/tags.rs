@@ -17,8 +17,8 @@ pub fn parse(tags: &'static [kaboom::tags::TagType]) {
     for tag in tags {
         match tag {
             TagType::SpecialisedSettings(settings) => {
+                state.boot_settings = *settings;
                 debug!("Got boot settings: {:X?}", settings);
-                state.boot_settings = *settings
             }
             TagType::MemoryMap(mmap) => {
                 debug!("Got memory map: {:X?}", *mmap);
