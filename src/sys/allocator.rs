@@ -20,13 +20,10 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
-        (*super::state::SYS_STATE.get())
-            .pmm
-            .assume_init_mut()
-            .free(
-                ptr.sub(amd64::paging::PHYS_VIRT_OFFSET),
-                (layout.size() + 0xFFF) / 0x1000,
-            );
+        (*super::state::SYS_STATE.get()).pmm.assume_init_mut().free(
+            ptr.sub(amd64::paging::PHYS_VIRT_OFFSET),
+            (layout.size() + 0xFFF) / 0x1000,
+        );
     }
 }
 

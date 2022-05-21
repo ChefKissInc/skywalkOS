@@ -52,7 +52,8 @@ pub struct PS2Ctl {
     pub queue: VecDeque<Ps2Event>,
 }
 
-pub static INSTANCE: SyncUnsafeCell<MaybeUninit<PS2Ctl>> = SyncUnsafeCell::new(MaybeUninit::uninit());
+pub static INSTANCE: SyncUnsafeCell<MaybeUninit<PS2Ctl>> =
+    SyncUnsafeCell::new(MaybeUninit::uninit());
 
 pub(crate) unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
     debug!("PS/2 interrupt handler called!");
