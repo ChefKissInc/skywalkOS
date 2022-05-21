@@ -3,9 +3,14 @@
 
 use amd64::io::port::Port;
 
+#[derive(Clone, Copy)]
 pub struct PciPortIo;
 
 impl PciPortIo {
+    pub const fn new() -> Self {
+        Self
+    }
+
     #[inline]
     unsafe fn send_addr(addr: super::PciAddress, off: u8) {
         assert_eq!(addr.segment, 0, "Using segments on PCI non-express");

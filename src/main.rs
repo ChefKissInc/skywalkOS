@@ -94,14 +94,15 @@ fn real_main(explosion: &'static kaboom::Explosion) -> ! {
     unsafe { asm!("sti") }
 
     let pci = driver::pci::Pci::new();
-    let mut ac97 = pci
+    let ac97 = pci
         .find(move |dev| unsafe {
             dev.cfg_read(
                 driver::pci::PciConfigOffset::ClassCode,
                 PciIoAccessSize::Word,
             ) == 0x0401
         })
-        .map(driver::ac97::Ac97::new);
+        .map(driver::ac97::Ac97::new)
+        .map(|v| unsafe { (*driver::ac97::INSTANCE.get()).write(v) });
 
     if let Some(terminal) = &mut state.terminal {
         writeln!(terminal, "We welcome you to Firework").unwrap();
@@ -114,7 +115,7 @@ fn real_main(explosion: &'static kaboom::Explosion) -> ! {
             (*driver::ps2::INSTANCE.get()).write(ps2ctl);
         }
 
-        terminal_loop::terminal_loop(acpi, &pci, terminal, &mut ac97);
+        terminal_loop::terminal_loop(acpi, &pci, terminal, ac97);
     }
 
     loop {

@@ -1,8 +1,6 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use alloc::boxed::Box;
-
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 
@@ -75,49 +73,54 @@ pub enum PciConfigOffset {
     MaximumLatency = 0x3F,
 }
 
-pub trait PciIo {
+pub trait PciIo: Sized + Sync + Clone + Copy {
     unsafe fn cfg_read(&self, addr: PciAddress, off: u8, access_size: PciIoAccessSize) -> u32;
     unsafe fn cfg_write(&self, addr: PciAddress, off: u8, value: u32, access_size: PciIoAccessSize);
 }
 
 #[derive(Clone, Copy)]
-pub struct PciDevice<'a> {
+pub struct PciDevice<T: PciIo>
+where
+    T: PciIo,
+{
     addr: PciAddress,
-    io: &'a dyn PciIo,
+    io: T,
 }
 
-impl<'a> PciDevice<'a> {
-    pub fn new(addr: PciAddress, io: &'a dyn PciIo) -> Self {
+impl<T: PciIo> PciDevice<T> {
+    pub fn new(addr: PciAddress, io: T) -> Self {
         Self { addr, io }
     }
 
-    pub unsafe fn cfg_read<T>(&self, off: T, access_size: PciIoAccessSize) -> u32
+    pub unsafe fn cfg_read<A>(&self, off: A, access_size: PciIoAccessSize) -> u32
     where
-        T: Into<u8>,
+        A: Into<u8>,
     {
         self.io.cfg_read(self.addr, off.into(), access_size)
     }
 
-    pub unsafe fn cfg_write<T>(&self, off: T, value: u32, access_size: PciIoAccessSize)
+    pub unsafe fn cfg_write<A>(&self, off: A, value: u32, access_size: PciIoAccessSize)
     where
-        T: Into<u8>,
+        A: Into<u8>,
     {
         self.io.cfg_write(self.addr, off.into(), value, access_size)
     }
 }
 
-pub struct Pci {
-    pub io: Box<dyn PciIo>,
+pub struct Pci<T: PciIo> {
+    pub io: T,
 }
 
-impl Pci {
-    pub fn new() -> Pci {
+impl Pci<pio::PciPortIo> {
+    pub fn new() -> Self {
         Pci {
-            io: Box::new(pio::PciPortIo),
+            io: pio::PciPortIo::new(),
         }
     }
+}
 
-    pub fn find(&self, predicate: fn(PciDevice) -> bool) -> Option<PciDevice> {
+impl<T: PciIo> Pci<T> {
+    pub fn find(&self, predicate: fn(PciDevice<T>) -> bool) -> Option<PciDevice<T>> {
         for bus in 0..=255 {
             for slot in 0..32 {
                 for func in 0..8 {
@@ -128,7 +131,7 @@ impl Pci {
                             func,
                             ..Default::default()
                         },
-                        self.io.as_ref(),
+                        self.io,
                     );
                     if predicate(device) {
                         return Some(device);

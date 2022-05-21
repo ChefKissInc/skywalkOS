@@ -1,13 +1,14 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use alloc::vec::Vec;
+use alloc::{collections::VecDeque, vec, vec::Vec};
+use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
-use amd64::io::port::Port;
+use amd64::{io::port::Port, sys::cpu::RegisterState};
 use log::debug;
 use modular_bitfield::prelude::*;
 
-use super::pci::{PciCmd, PciConfigOffset, PciDevice, PciIoAccessSize};
+use super::pci::{PciCmd, PciConfigOffset, PciDevice, PciIo, PciIoAccessSize};
 
 #[bitfield(bits = 16)]
 #[derive(Default, Debug, Clone, Copy)]
@@ -146,8 +147,7 @@ pub enum NabmRegs {
     GlobalStatus = 0x30,
 }
 
-pub struct Ac97<'a> {
-    pub dev: PciDevice<'a>,
+pub struct Ac97 {
     pub mixer_reset: Port<u16, u16>,
     pub mixer_master_vol: Port<u16, MasterOutputVolume>,
     pub mixer_pcm_vol: Port<u16, PcmOutputVolume>,
@@ -158,12 +158,29 @@ pub struct Ac97<'a> {
     pub pcm_out_bdl_addr: Port<u32, u32>,
     pub pcm_out_transf_ctl: Port<u8, RegBoxTransfer>,
     pub pcm_out_transf_sts: Port<u16, RegBoxStatus>,
-    pub buf: Vec<u8>,
+    pub buf: VecDeque<u8>,
     pub bdl: Vec<BufferDescriptor>,
 }
 
-impl<'a> Ac97<'a> {
-    pub fn new(dev: PciDevice<'a>) -> Self {
+pub static INSTANCE: SyncUnsafeCell<MaybeUninit<Ac97>> = SyncUnsafeCell::new(MaybeUninit::uninit());
+
+pub(crate) unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
+    debug!("AC'97 interrupt handler called!");
+
+    let this = (&mut *INSTANCE.get()).assume_init_mut();
+
+    for _ in 0..(0xFFFE * 2) {
+        this.buf.pop_front();
+    }
+    this.buf.make_contiguous();
+
+    this.reset();
+    this.set_bdl();
+    this.begin_transfer();
+}
+
+impl Ac97 {
+    pub fn new<T: PciIo>(dev: PciDevice<T>) -> Self {
         unsafe {
             dev.cfg_write(
                 PciConfigOffset::Command,
@@ -173,10 +190,15 @@ impl<'a> Ac97<'a> {
                     )
                     .with_pio(true)
                     .with_bus_master(true)
-                    .with_disable_intrs(true),
+                    .with_disable_intrs(false),
                 ) as _,
                 PciIoAccessSize::Word,
             );
+
+            let irq = dev.cfg_read(PciConfigOffset::InterruptLine, PciIoAccessSize::Byte) as u8;
+            debug!("IRQ: {:#X?}", irq);
+            crate::driver::acpi::ioapic::wire_legacy_irq(irq, false);
+            crate::sys::idt::set_handler(0x20 + irq, handler, true, true);
         }
         let audio_bus = unsafe {
             (dev.cfg_read(PciConfigOffset::BaseAddr1, PciIoAccessSize::DWord) as u16) & !1u16
@@ -196,27 +218,13 @@ impl<'a> Ac97<'a> {
         let mixer_pcm_vol = Port::new(mixer + NamRegs::PcmOutVolume as u16);
         let mixer_sample_rate = Port::new(mixer + NamRegs::SampleRate as u16);
 
-        let off_calc = |ent: u32| 0xFFFE * 2 * ent as u32;
-
-        let mut buf = Vec::new();
-        buf.resize(0x1F * 0xFFFE * 2, 0);
-        let mut bdl = Vec::new();
-        for i in 0..0x1F {
-            bdl.push(BufferDescriptor {
-                addr: (buf.as_ptr() as usize - amd64::paging::PHYS_VIRT_OFFSET) as u32
-                    + off_calc(i),
-                samples: 0xFFFE,
-                ..Default::default()
-            })
-        }
-        bdl.last_mut().unwrap().ctl.set_last(true);
         unsafe {
             // Resume from cold reset
             global_ctl.write(
                 global_ctl
                     .read()
                     .with_cold_reset(true)
-                    .with_interrupts(false),
+                    .with_interrupts(true),
             );
             mixer_reset.write(!0u16);
 
@@ -238,8 +246,16 @@ impl<'a> Ac97<'a> {
             mixer_sample_rate.write(44100);
         }
 
+        let buf = VecDeque::with_capacity(4);
+        let bdl = vec![BufferDescriptor {
+            addr: 0,
+            samples: 0xFFFE,
+            ctl: BufferDescCtl::new()
+                .with_last(true)
+                .with_fire_interrupt(true),
+        }];
+
         Self {
-            dev,
             global_ctl,
             global_sts,
             mixer_reset,
@@ -255,41 +271,42 @@ impl<'a> Ac97<'a> {
         }
     }
 
+    pub unsafe fn reset(&self) {
+        self.pcm_out_transf_ctl
+            .write(self.pcm_out_transf_ctl.read().with_reset(true));
+        while self.pcm_out_transf_ctl.read().reset() {
+            core::arch::asm!("pause");
+        }
+        self.pcm_out_transf_ctl.write(
+            self.pcm_out_transf_ctl
+                .read()
+                .with_last_ent_fire_intr(true)
+                .with_ioc_intr(true),
+        )
+    }
+
+    pub unsafe fn set_bdl(&mut self) {
+        self.bdl[0].addr =
+            (self.buf.as_slices().0.as_ptr() as usize - amd64::paging::PHYS_VIRT_OFFSET) as u32;
+        self.pcm_out_bdl_addr
+            .write((self.bdl.as_ptr() as usize - amd64::paging::PHYS_VIRT_OFFSET) as _);
+        self.pcm_out_bdl_last_ent.write(0);
+    }
+
+    pub unsafe fn begin_transfer(&self) {
+        self.pcm_out_transf_ctl
+            .write(self.pcm_out_transf_ctl.read().with_transfer_data(true));
+    }
+
     pub fn play_audio(&mut self, data: &[u8]) {
-        let mut off = 0;
-
-        while off < data.len() {
-            unsafe {
-                // Reset output channel
-                self.pcm_out_transf_ctl
-                    .write(self.pcm_out_transf_ctl.read().with_reset(true));
-                while self.pcm_out_transf_ctl.read().reset() {
-                    core::arch::asm!("pause");
-                }
-
-                // Set BDL address and last entry
-                self.pcm_out_bdl_addr
-                    .write((self.bdl.as_ptr() as usize - amd64::paging::PHYS_VIRT_OFFSET) as _);
-                self.pcm_out_bdl_last_ent.write((self.bdl.len() - 1) as _);
-
-                // Copy audio data to BDL
-                for (a, b) in self
-                    .buf
-                    .iter_mut()
-                    .zip(data[off..].iter().chain(core::iter::repeat(&0)))
-                {
-                    *a = *b
-                }
-
-                // Begin transfer
-                self.pcm_out_transf_ctl
-                    .write(self.pcm_out_transf_ctl.read().with_transfer_data(true));
-
-                while !self.pcm_out_transf_sts.read().end_of_transfer() {
-                    core::arch::asm!("pause");
-                }
-            }
-            off += 0x1F * 0xFFFE * 2;
+        for a in data {
+            self.buf.push_back(*a);
+        }
+        self.buf.make_contiguous();
+        unsafe {
+            self.reset();
+            self.set_bdl();
+            self.begin_transfer();
         }
     }
 }

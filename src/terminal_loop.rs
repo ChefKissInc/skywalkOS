@@ -10,13 +10,18 @@ use crate::{
     driver::{
         ac97::Ac97,
         acpi::Acpi,
-        pci::{Pci, PciAddress, PciConfigOffset, PciDevice, PciIoAccessSize},
+        pci::{Pci, PciAddress, PciConfigOffset, PciDevice, PciIo, PciIoAccessSize},
         ps2::Ps2Event,
     },
     sys::terminal::Terminal,
 };
 
-pub fn terminal_loop(acpi: &Acpi, pci: &Pci, terminal: &mut Terminal, ac97: &mut Option<Ac97>) {
+pub fn terminal_loop<T: PciIo>(
+    acpi: &Acpi,
+    pci: &Pci<T>,
+    terminal: &mut Terminal,
+    mut ac97: Option<&mut Ac97>,
+) {
     let ps2ctl = unsafe { (&mut *crate::driver::ps2::INSTANCE.get()).assume_init_mut() };
     'menu: loop {
         write!(terminal, "\nFirework# ").unwrap();
@@ -61,7 +66,7 @@ help       <= Display this"#
                                                             func,
                                                             ..Default::default()
                                                         },
-                                                        pci.io.as_ref(),
+                                                        pci.io,
                                                     );
                                                     unsafe {
                                                         let vendor_id = device.cfg_read(
@@ -93,7 +98,7 @@ help       <= Display this"#
                                         }
                                     }
                                     "audiotest" => {
-                                        if let Some(ac97) = ac97 {
+                                        if let Some(ac97) = &mut ac97 {
                                             if let Some(modules) = unsafe {
                                                 &mut (*crate::sys::state::SYS_STATE.get()).modules
                                             } {
