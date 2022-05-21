@@ -72,7 +72,7 @@ pub unsafe fn init() {
     idtr.load()
 }
 
-pub fn set_handler(isr: u64, func: HandlerFn, is_irq: bool, should_iret: bool) {
+pub fn set_handler(isr: u8, func: HandlerFn, is_irq: bool, should_iret: bool) {
     unsafe {
         let handler = &mut HANDLERS.get().as_mut().unwrap()[isr as usize];
 
