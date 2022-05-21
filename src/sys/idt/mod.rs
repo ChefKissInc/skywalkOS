@@ -7,7 +7,18 @@ use log::{debug, error};
 
 mod isr;
 
-static ENTRIES: spin::Once<[amd64::sys::idt::Entry; 256]> = spin::Once::new();
+seq_macro::seq!(N in 0..256 {
+    static ENTRIES: SyncUnsafeCell<[amd64::sys::idt::Entry; 256]> = SyncUnsafeCell::new([
+        #(
+            amd64::sys::idt::Entry::new(
+                0,
+                amd64::sys::cpu::SegmentSelector::new(1, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
+                0,
+                amd64::sys::idt::EntryType::InterruptGate, 0, true
+            ),
+        )*
+    ]);
+});
 
 seq_macro::seq!(N in 0..256 {
     static HANDLERS: SyncUnsafeCell<[InterruptHandler; 256]> = SyncUnsafeCell::new([
@@ -46,23 +57,16 @@ unsafe extern "sysv64" fn default_handler(regs: &mut amd64::sys::cpu::RegisterSt
 
 pub unsafe fn init() {
     seq_macro::seq!(N in 0..256 {
-        ENTRIES.call_once(||
-            [
-                #(
-                    amd64::sys::idt::Entry::new(
-                        isr::isr~N as usize as u64,
-                        amd64::sys::cpu::SegmentSelector::new(1, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
-                        0,
-                        amd64::sys::idt::EntryType::InterruptGate, 0, true
-                    ),
-                )*
-            ]
-        );
+        let base = isr::isr~N as usize;
+        let entry = &mut (*ENTRIES.get())[N];
+        entry.offset_low = base as u16;
+        entry.offset_middle = (base >> 16) as u16;
+        entry.offset_high = (base >> 32) as u32;
     });
 
     let idtr = amd64::sys::idt::Idtr {
         limit: (core::mem::size_of_val(&ENTRIES) - 1) as u16,
-        base: ENTRIES.get().unwrap().as_ptr(),
+        base: (*ENTRIES.get()).as_ptr(),
     };
 
     idtr.load()
@@ -70,24 +74,19 @@ pub unsafe fn init() {
 
 pub fn set_handler(isr: u64, func: HandlerFn, is_irq: bool, should_iret: bool) {
     unsafe {
-        let handlers_ptr = HANDLERS
-            .get()
-            .as_mut()
-            .unwrap()
-            .as_mut_ptr()
-            .add(isr as usize);
+        let handler = &mut HANDLERS.get().as_mut().unwrap()[isr as usize];
 
-        if handlers_ptr.read().func as usize != default_handler as usize {
+        if handler.func as usize != default_handler as usize {
             error!(
                 "Tried to register already existing ISR #{}. This is most likely a bug!",
                 isr
             )
         }
 
-        handlers_ptr.write(InterruptHandler {
+        *handler = InterruptHandler {
             func,
             is_irq,
             should_iret,
-        });
+        };
     }
 }

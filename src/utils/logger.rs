@@ -25,7 +25,7 @@ impl log::Log for FuseLogger {
         unsafe {
             let verbose = (*crate::sys::state::SYS_STATE.get()).boot_settings.verbose;
             if record.metadata().level() <= log::Level::Info || verbose {
-                if let Some(terminal) = (*crate::sys::state::SYS_STATE.get()).terminal.get_mut() {
+                if let Some(terminal) = &mut (*crate::sys::state::SYS_STATE.get()).terminal {
                     writeln!(
                         terminal,
                         "[{}] {}: {}",

@@ -10,8 +10,7 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         if let Some(ptr) = (*super::state::SYS_STATE.get())
             .pmm
-            .get_mut()
-            .expect("PMM uninitialised")
+            .assume_init_mut()
             .alloc((layout.size() + 0xFFF) / 0x1000)
         {
             ptr.add(amd64::paging::PHYS_VIRT_OFFSET)
@@ -23,8 +22,7 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
         (*super::state::SYS_STATE.get())
             .pmm
-            .get_mut()
-            .expect("PMM uninitialised")
+            .assume_init_mut()
             .free(
                 ptr.sub(amd64::paging::PHYS_VIRT_OFFSET),
                 (layout.size() + 0xFFF) / 0x1000,

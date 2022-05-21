@@ -22,7 +22,7 @@ pub fn parse(tags: &'static [kaboom::tags::TagType]) {
             }
             TagType::MemoryMap(mmap) => {
                 debug!("Got memory map: {:X?}", *mmap);
-                state.pmm.call_once(|| BitmapAllocator::new(mmap));
+                state.pmm.write(BitmapAllocator::new(mmap));
             }
             TagType::FrameBuffer(fb_info) => {
                 debug!("Got boot display: {:X?}", *fb_info);
@@ -39,16 +39,18 @@ pub fn parse(tags: &'static [kaboom::tags::TagType]) {
                     fb_info.pitch,
                 ));
                 terminal.clear();
-                state.terminal.call_once(|| terminal);
+                state.terminal = Some(terminal);
             }
             TagType::Acpi(rsdp) => {
                 debug!("Got ACPI RSDP: {:X?}", rsdp);
-                state.acpi.call_once(|| Acpi::new(*rsdp));
+                state.acpi.write(Acpi::new(*rsdp));
             }
             TagType::Module(module) => {
                 debug!("Got module '{}' of type {:#X?}", module.name, module.type_);
-                state.modules.call_once(Vec::new);
-                state.modules.get_mut().unwrap().push(*module);
+                if state.modules.is_none() {
+                    state.modules = Some(Vec::new());
+                }
+                state.modules.as_mut().unwrap().push(*module);
             }
         }
     }

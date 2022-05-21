@@ -32,8 +32,7 @@ impl Terminal {
         unsafe {
             (*super::state::SYS_STATE.get())
                 .pml4
-                .get_mut()
-                .unwrap()
+                .assume_init_mut()
                 .map_huge_pages(
                     self.fb.base as usize,
                     self.fb.base as usize - amd64::paging::PHYS_VIRT_OFFSET,

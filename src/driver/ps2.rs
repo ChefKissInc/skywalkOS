@@ -2,7 +2,7 @@
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use alloc::collections::VecDeque;
-use core::cell::SyncUnsafeCell;
+use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
 use amd64::{io::port::Port, sys::cpu::RegisterState};
 use log::debug;
@@ -52,11 +52,11 @@ pub struct PS2Ctl {
     pub queue: VecDeque<Ps2Event>,
 }
 
-pub static INSTANCE: SyncUnsafeCell<spin::Once<PS2Ctl>> = SyncUnsafeCell::new(spin::Once::new());
+pub static INSTANCE: SyncUnsafeCell<MaybeUninit<PS2Ctl>> = SyncUnsafeCell::new(MaybeUninit::uninit());
 
 pub(crate) unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
     debug!("PS/2 interrupt handler called!");
-    let this = (&mut *INSTANCE.get()).get_mut().unwrap();
+    let this = (*INSTANCE.get()).assume_init_mut();
     let key = this.data_port.read();
     this.queue.push_back(match key {
         0xE => Ps2Event::BackSpace,

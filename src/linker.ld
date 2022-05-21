@@ -43,8 +43,7 @@ SECTIONS
     .eh_frame ALIGN(4K) : AT(ADDR(.eh_frame) - KERNEL_VIRT_OFF)
     {
         __eh_frame = .;
-        KEEP(*(.eh_frame))
-        *(.eh_frame.*)
+        KEEP(*(.eh_frame));
     }
 
     __kernel_top = .;

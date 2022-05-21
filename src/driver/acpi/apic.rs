@@ -6,12 +6,15 @@ use amd64::{
     sys::apic::{LocalApic, SpuriousIntrVector},
 };
 
-pub fn get_final_lapic_addr() -> u64 {
-    unsafe { (*crate::sys::state::SYS_STATE.get()).madt.get().unwrap() }.lapic_addr
-}
-
-pub fn set_lapic_addr(addr: u64) {
-    unsafe { ApicBase::read().with_apic_base(addr).write() }
+pub fn get_set_lapic_addr() -> u64 {
+    unsafe {
+        let addr = (*crate::sys::state::SYS_STATE.get())
+            .madt
+            .assume_init_mut()
+            .lapic_addr;
+        ApicBase::read().with_apic_base(addr).write();
+        addr
+    }
 }
 
 pub trait ApicHelper {

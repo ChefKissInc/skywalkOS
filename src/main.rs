@@ -68,26 +68,27 @@ fn real_main(explosion: &'static kaboom::Explosion) -> ! {
 
     let pml4 = Box::leak(Box::new(sys::vmm::Pml4::new()));
     unsafe { pml4.init() }
-    state.pml4.call_once(|| pml4);
+    state.pml4.write(pml4);
 
-    if let Some(terminal) = state.terminal.get_mut() {
+    if let Some(terminal) = &mut state.terminal {
         terminal.map_fb();
     }
     info!("Fuse has been ignited!");
 
-    let acpi = state.acpi.get_mut().unwrap();
+    let acpi = unsafe { state.acpi.assume_init_mut() };
 
     debug!("ACPI version {}", acpi.version);
 
     state
         .madt
-        .call_once(|| driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap()));
-    let addr = driver::acpi::apic::get_final_lapic_addr();
+        .write(driver::acpi::madt::Madt::new(acpi.find("APIC").unwrap()));
+    let addr = driver::acpi::apic::get_set_lapic_addr();
     debug!("LAPIC address: {:?}", addr);
-    driver::acpi::apic::set_lapic_addr(addr);
     state
         .lapic
-        .call_once(|| LocalApic::new(addr as usize + amd64::paging::PHYS_VIRT_OFFSET))
+        .write(LocalApic::new(
+            addr as usize + amd64::paging::PHYS_VIRT_OFFSET,
+        ))
         .enable();
 
     unsafe { asm!("sti") }
@@ -102,7 +103,7 @@ fn real_main(explosion: &'static kaboom::Explosion) -> ! {
         })
         .map(driver::ac97::Ac97::new);
 
-    if let Some(terminal) = state.terminal.get_mut() {
+    if let Some(terminal) = &mut state.terminal {
         writeln!(terminal, "We welcome you to Firework").unwrap();
         writeln!(terminal, "I am the Fuse debug terminal").unwrap();
         writeln!(terminal, "Type 'help' to see the available commands.").unwrap();
@@ -110,7 +111,7 @@ fn real_main(explosion: &'static kaboom::Explosion) -> ! {
         let mut ps2ctl = PS2Ctl::new();
         ps2ctl.init();
         unsafe {
-            (*driver::ps2::INSTANCE.get()).call_once(|| ps2ctl);
+            (*driver::ps2::INSTANCE.get()).write(ps2ctl);
         }
 
         terminal_loop::terminal_loop(acpi, &pci, terminal, &mut ac97);

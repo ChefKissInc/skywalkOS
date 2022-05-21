@@ -17,11 +17,7 @@ use crate::{
 };
 
 pub fn terminal_loop(acpi: &Acpi, pci: &Pci, terminal: &mut Terminal, ac97: &mut Option<Ac97>) {
-    let ps2ctl = unsafe {
-        (&mut *crate::driver::ps2::INSTANCE.get())
-            .get_mut()
-            .unwrap()
-    };
+    let ps2ctl = unsafe { (&mut *crate::driver::ps2::INSTANCE.get()).assume_init_mut() };
     'menu: loop {
         write!(terminal, "\nFirework# ").unwrap();
         let mut cmd = String::new();
@@ -98,21 +94,20 @@ help       <= Display this"#
                                     }
                                     "audiotest" => {
                                         if let Some(ac97) = ac97 {
-                                            let modules =
-                                                unsafe { &*crate::sys::state::SYS_STATE.get() }
-                                                    .modules
-                                                    .get()
-                                                    .unwrap();
-                                            if let Some(module) =
-                                                modules.iter().find(|v| v.name == "testaudio")
-                                            {
-                                                info!("Starting playback of test audio");
-                                                ac97.play_audio(module.data)
-                                            } else {
-                                                error!(
-                                                    "Failure to find 'testaudio' boot loader \
-                                                     module"
-                                                );
+                                            if let Some(modules) = unsafe {
+                                                &mut (*crate::sys::state::SYS_STATE.get()).modules
+                                            } {
+                                                if let Some(module) =
+                                                    modules.iter().find(|v| v.name == "testaudio")
+                                                {
+                                                    info!("Starting playback of test audio");
+                                                    ac97.play_audio(module.data)
+                                                } else {
+                                                    error!(
+                                                        "Failure to find 'testaudio' boot loader \
+                                                         module"
+                                                    );
+                                                }
                                             }
                                         } else {
                                             error!("No sound device available!");
