@@ -38,11 +38,9 @@ impl super::PciIo for PciPortIo {
             super::PciIoAccessSize::Byte => {
                 Port::<u8, u8>::new(0xCFC + (off as u16 & 3)).read().into()
             }
-            super::PciIoAccessSize::Word => {
-                Port::<u16, u16>::new(0xCFC + (off as u16 & 3))
-                    .read()
-                    .into()
-            }
+            super::PciIoAccessSize::Word => Port::<u16, u16>::new(0xCFC + (off as u16 & 3))
+                .read()
+                .into(),
             super::PciIoAccessSize::DWord => Port::<u32, u32>::new(0xCFC + (off as u16 & 3)).read(),
         }
     }
