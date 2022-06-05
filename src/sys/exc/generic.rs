@@ -1,7 +1,7 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use amd64::sys::cpu::RegisterState;
+use amd64::cpu::RegisterState;
 
 super::generic_exception!(div0_handler, "division by zero");
 super::generic_exception!(debug_handler, "debug");
@@ -29,7 +29,7 @@ super::generic_exception!(hv_injection_handler, "hypervisor injection");
 super::generic_exception!(vmm_com_handler, "VMM communication");
 super::generic_exception!(security_handler, "security");
 
-pub(crate) unsafe extern "sysv64" fn spurious(_regs: &mut amd64::sys::cpu::RegisterState) {
+pub(crate) unsafe extern "sysv64" fn spurious(_regs: &mut RegisterState) {
     use log::warn;
 
     while crate::sys::io::serial::SERIAL.is_locked() {

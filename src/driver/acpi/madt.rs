@@ -21,7 +21,7 @@ impl Madt {
     pub fn new(madt: &'static acpi::tables::madt::Madt) -> Self {
         // Disable PIC
         if madt.flags.pcat_compat() {
-            amd64::sys::pic::Pic::new().remap_and_disable();
+            amd64::intrs::pic::Pic::new().remap_and_disable();
         }
 
         let mut proc_lapics = Vec::new();

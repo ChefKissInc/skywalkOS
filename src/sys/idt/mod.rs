@@ -3,18 +3,24 @@
 
 use core::cell::SyncUnsafeCell;
 
+use amd64::{
+    cpu::{PrivilegeLevel, RegisterState, SegmentSelector},
+    intrs::idt::{Entry, EntryType, Idtr},
+};
 use log::{debug, error};
 
 mod isr;
 
 seq_macro::seq!(N in 0..256 {
-    static ENTRIES: SyncUnsafeCell<[amd64::sys::idt::Entry; 256]> = SyncUnsafeCell::new([
+    static ENTRIES: SyncUnsafeCell<[Entry; 256]> = SyncUnsafeCell::new([
         #(
-            amd64::sys::idt::Entry::new(
+            Entry::new(
                 0,
-                amd64::sys::cpu::SegmentSelector::new(1, amd64::sys::cpu::PrivilegeLevel::Hypervisor),
+                SegmentSelector::new(1, PrivilegeLevel::Hypervisor),
                 0,
-                amd64::sys::idt::EntryType::InterruptGate, 0, true
+                EntryType::InterruptGate,
+                0,
+                true,
             ),
         )*
     ]);
@@ -32,7 +38,7 @@ seq_macro::seq!(N in 0..256 {
     ]);
 });
 
-type HandlerFn = unsafe extern "sysv64" fn(&mut amd64::sys::cpu::RegisterState);
+type HandlerFn = unsafe extern "sysv64" fn(&mut RegisterState);
 
 pub struct InterruptHandler {
     pub func: HandlerFn,
@@ -50,7 +56,7 @@ impl core::fmt::Debug for InterruptHandler {
     }
 }
 
-unsafe extern "sysv64" fn default_handler(regs: &mut amd64::sys::cpu::RegisterState) {
+unsafe extern "sysv64" fn default_handler(regs: &mut RegisterState) {
     let n = (regs.int_num & 0xFF) as u8;
     debug!("No handler for ISR #{}", n);
 }
@@ -64,7 +70,7 @@ pub unsafe fn init() {
         entry.offset_high = (base >> 32) as u32;
     });
 
-    let idtr = amd64::sys::idt::Idtr {
+    let idtr = Idtr {
         limit: (core::mem::size_of_val(&ENTRIES) - 1) as u16,
         base: (*ENTRIES.get()).as_ptr(),
     };

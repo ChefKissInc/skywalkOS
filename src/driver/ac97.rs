@@ -4,7 +4,7 @@
 use alloc::{collections::VecDeque, vec, vec::Vec};
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
-use amd64::{io::port::Port, sys::cpu::RegisterState};
+use amd64::{cpu::RegisterState, io::port::Port};
 use log::debug;
 use modular_bitfield::prelude::*;
 
@@ -165,8 +165,6 @@ pub struct Ac97 {
 pub static INSTANCE: SyncUnsafeCell<MaybeUninit<Ac97>> = SyncUnsafeCell::new(MaybeUninit::uninit());
 
 pub(crate) unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
-    debug!("AC'97 interrupt handler called!");
-
     let this = (&mut *INSTANCE.get()).assume_init_mut();
 
     for _ in 0..(0xFFFE * 2) {

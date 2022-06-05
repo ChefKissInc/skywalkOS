@@ -21,9 +21,9 @@ extern crate alloc;
 use alloc::boxed::Box;
 use core::{arch::asm, fmt::Write};
 
-use amd64::sys::{
-    apic::LocalApic,
+use amd64::{
     cpu::{PrivilegeLevel, SegmentSelector},
+    intrs::apic::LocalApic,
 };
 use log::{debug, info};
 

@@ -16,7 +16,7 @@ macro_rules! exc_msg {
 
 macro_rules! generic_exception {
     ($ident:ident, $name:expr) => {
-        pub(crate) unsafe extern "sysv64" fn $ident(regs: &mut amd64::sys::cpu::RegisterState) {
+        pub(crate) unsafe extern "sysv64" fn $ident(regs: &mut amd64::cpu::RegisterState) {
             exc_msg!($name, regs);
         }
     };

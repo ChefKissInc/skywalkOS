@@ -4,7 +4,7 @@
 use alloc::vec::Vec;
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
-use amd64::sys::apic::LocalApic;
+use amd64::intrs::apic::LocalApic;
 use kaboom::tags::{module::Module, SpecialisedSettings};
 
 use super::{pmm::BitmapAllocator, terminal::Terminal, vmm::Pml4};

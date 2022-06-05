@@ -2,8 +2,8 @@
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use amd64::{
+    intrs::apic::{LocalApic, SpuriousIntrVector},
     registers::msr::{apic::ApicBase, Msr},
-    sys::apic::{LocalApic, SpuriousIntrVector},
 };
 
 pub fn get_set_lapic_addr() -> u64 {

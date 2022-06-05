@@ -56,7 +56,7 @@ macro_rules! isr_stub {
     };
 }
 
-pub unsafe extern "C" fn isr_handler(regs: &mut amd64::sys::cpu::RegisterState) {
+pub unsafe extern "C" fn isr_handler(regs: &mut amd64::cpu::RegisterState) {
     let n = (regs.int_num & 0xFF) as u8;
     let handler = &super::HANDLERS.get().as_mut().unwrap()[n as usize];
     debug!("Handler for ISR {:#X?}: {:#X?}", n, handler);

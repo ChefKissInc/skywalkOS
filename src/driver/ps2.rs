@@ -4,7 +4,7 @@
 use alloc::collections::VecDeque;
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
-use amd64::{io::port::Port, sys::cpu::RegisterState};
+use amd64::{cpu::RegisterState, io::port::Port};
 use log::debug;
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
@@ -56,9 +56,9 @@ pub static INSTANCE: SyncUnsafeCell<MaybeUninit<PS2Ctl>> =
     SyncUnsafeCell::new(MaybeUninit::uninit());
 
 pub(crate) unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
-    debug!("PS/2 interrupt handler called!");
     let this = (*INSTANCE.get()).assume_init_mut();
     let key = this.data_port.read();
+
     this.queue.push_back(match key {
         0xE => Ps2Event::BackSpace,
         0x2..=0xA => Ps2Event::Pressed("123456789".chars().nth(key as usize - 0x2).unwrap()),
@@ -70,7 +70,6 @@ pub(crate) unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
         0x39 => Ps2Event::Pressed(' '),
         v => Ps2Event::Other(v),
     });
-    debug!("Done: {:?}", this.queue);
 }
 
 impl PS2Ctl {
