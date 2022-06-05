@@ -3,7 +3,7 @@
 
 use core::arch::asm;
 
-use log::debug;
+use log::trace;
 
 macro_rules! isr_stub {
     ($err:expr, $i:expr) => {
@@ -56,10 +56,10 @@ macro_rules! isr_stub {
     };
 }
 
-pub unsafe extern "C" fn isr_handler(regs: &mut amd64::cpu::RegisterState) {
+unsafe extern "C" fn isr_handler(regs: &mut amd64::cpu::RegisterState) {
     let n = (regs.int_num & 0xFF) as u8;
     let handler = &super::HANDLERS.get().as_mut().unwrap()[n as usize];
-    debug!("Handler for ISR {:#X?}: {:#X?}", n, handler);
+    trace!("Handler for ISR {:#X?}: {:#X?}", n, handler);
     (handler.func)(regs);
     if handler.is_irq {
         (*crate::sys::state::SYS_STATE.get())
@@ -77,7 +77,7 @@ pub unsafe extern "C" fn isr_handler(regs: &mut amd64::cpu::RegisterState) {
 macro_rules! isr_noerr {
     ($func_name:ident, $i:tt) => {
         #[naked]
-        pub unsafe extern "C" fn $func_name() {
+        pub(super) unsafe extern "C" fn $func_name() {
             isr_stub!("push 0", $i)
         }
     };
@@ -86,7 +86,7 @@ macro_rules! isr_noerr {
 macro_rules! isr_err {
     ($func_name:ident, $i:tt) => {
         #[naked]
-        pub unsafe extern "C" fn $func_name() {
+        pub(super) unsafe extern "C" fn $func_name() {
             isr_stub!("", $i)
         }
     };

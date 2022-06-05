@@ -2,7 +2,7 @@
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use kaboom::tags::memory_map::MemoryEntry;
-use log::debug;
+use log::trace;
 
 extern "C" {
     static __kernel_top: u64;
@@ -19,7 +19,7 @@ impl BitmapAllocator {
     pub fn new(mmap: &'static [MemoryEntry]) -> Self {
         let alloc_base =
             unsafe { &__kernel_top } as *const _ as usize - amd64::paging::KERNEL_VIRT_OFFSET;
-        debug!("alloc_base: {:#X?}", alloc_base);
+        trace!("alloc_base: {:#X?}", alloc_base);
 
         let mut highest_page = 0usize;
         // Find the highest available address
@@ -27,7 +27,7 @@ impl BitmapAllocator {
             match mmap_ent {
                 MemoryEntry::Usable(v) | MemoryEntry::BootLoaderReclaimable(v) => {
                     let top = v.base + v.length;
-                    debug!("{:X?}, top: {:#X?}", mmap_ent, top);
+                    trace!("{:X?}, top: {:#X?}", mmap_ent, top);
 
                     if top > highest_page {
                         highest_page = top;
@@ -38,9 +38,10 @@ impl BitmapAllocator {
         }
 
         let bitmap_sz = (highest_page / 0x1000) / 8;
-        debug!(
+        trace!(
             "highest_page: {:#X?}, bitmap_sz: {:#X?}",
-            highest_page, bitmap_sz
+            highest_page,
+            bitmap_sz
         );
 
         let mut bitmap = Default::default();
@@ -65,7 +66,7 @@ impl BitmapAllocator {
         // Populate the bitmap
         for mmap_ent in mmap {
             if let MemoryEntry::Usable(v) = mmap_ent {
-                debug!("Base: {:#X?}, End: {:#X?}", v.base, v.base + v.length);
+                trace!("Base: {:#X?}, End: {:#X?}", v.base, v.base + v.length);
 
                 let v = if v.base == bitmap.as_ptr() as usize {
                     let mut v = *v;

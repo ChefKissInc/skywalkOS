@@ -8,7 +8,7 @@ use acpi::tables::madt::ic::{
     proc_lapic::ProcessorLocalApic,
     InterruptController,
 };
-use log::debug;
+use log::trace;
 
 pub struct Madt {
     pub proc_lapics: Vec<&'static ProcessorLocalApic>,
@@ -32,11 +32,11 @@ impl Madt {
         for ent in madt.into_iter() {
             match ent {
                 InterruptController::ProcessorLocalApic(lapic) => {
-                    debug!("Found Local APIC: {:#X?}", lapic);
+                    trace!("Found Local APIC: {:#X?}", lapic);
                     proc_lapics.push(lapic);
                 }
                 InterruptController::IoApic(ioapic) => {
-                    debug!(
+                    trace!(
                         "Found I/O APIC with ver {:#X?}: {:#X?}",
                         ioapic.read_ver(),
                         ioapic,
@@ -44,14 +44,14 @@ impl Madt {
                     ioapics.push(ioapic);
                 }
                 InterruptController::Iso(iso) => {
-                    debug!("Found Interrupt Source Override: {:#X?}", iso);
+                    trace!("Found Interrupt Source Override: {:#X?}", iso);
                     isos.push(iso);
                 }
                 InterruptController::LocalApicAddrOverride(a) => {
-                    debug!("Found Local APIC Address Override: {:#X?}", a);
+                    trace!("Found Local APIC Address Override: {:#X?}", a);
                     lapic_addr = a.addr;
                 }
-                rest => debug!("Ignoring {:X?}", rest),
+                rest => trace!("Ignoring {:X?}", rest),
             }
         }
 

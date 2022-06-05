@@ -20,11 +20,12 @@ impl Acpi {
         let mut tables = HashMap::new();
 
         for ent in rsdp.as_type().iter() {
-            if ent.validate() {
-                tables.try_insert(ent.signature(), ent).unwrap();
-            } else {
+            if !ent.validate() {
                 debug!("Invalid table: {:?}", ent);
+                continue;
             }
+
+            tables.try_insert(ent.signature(), ent).unwrap();
         }
 
         Self {

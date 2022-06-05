@@ -17,7 +17,10 @@ amd64 = { path = "../AMD64" }
 font8x8 = { version = "0.3.1", default-features = false }
 hashbrown = { version = "0.12.1", features = ["nightly"] }
 kaboom = { path = "../Kaboom" }
-log = { version = "0.4.17", default-features = false }
+log = { version = "0.4.17", default-features = false, features = [
+    "release_max_level_debug",
+    "max_level_trace",
+] }
 modular-bitfield = "0.11.2"
 num_enum = { version = "0.5.7", default-features = false, features = [
     "nightly",
