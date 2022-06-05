@@ -43,6 +43,8 @@ greeting   <= Very epic example command
 acpidump   <= Dump ACPI information
 pcidump    <= Dump PCI devices
 audiotest  <= Play test sound through AC97
+resume     <= Resume playback
+pause      <= Pause playback
 restart    <= Restart machine by resetting CPU
 help       <= Display this"#
                                         );
@@ -114,6 +116,22 @@ help       <= Display this"#
                                                     );
                                                 }
                                             }
+                                        } else {
+                                            error!("No sound device available!");
+                                        }
+                                    }
+                                    "resume" => {
+                                        if let Some(ac97) = &mut ac97 {
+                                            info!("Resuming audio playback");
+                                            ac97.start_playback();
+                                        } else {
+                                            error!("No sound device available!");
+                                        }
+                                    }
+                                    "pause" => {
+                                        if let Some(ac97) = &mut ac97 {
+                                            info!("Pausing audio playback");
+                                            ac97.stop_playback();
                                         } else {
                                             error!("No sound device available!");
                                         }

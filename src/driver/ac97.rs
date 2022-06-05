@@ -144,28 +144,31 @@ pub enum NabmRegs {
     // PcmOutNextProcessedEnt = 0x1A,
     PcmOutTransferControl = 0x1B,
     GlobalControl = 0x2C,
-    GlobalStatus = 0x30,
+    // GlobalStatus = 0x30,
 }
 
 pub struct Ac97 {
-    pub mixer_reset: Port<u16, u16>,
     pub mixer_master_vol: Port<u16, MasterOutputVolume>,
     pub mixer_pcm_vol: Port<u16, PcmOutputVolume>,
     pub mixer_sample_rate: Port<u16, u16>,
-    pub global_ctl: Port<u32, GlobalControl>,
-    pub global_sts: Port<u32, GlobalStatus>,
-    pub pcm_out_bdl_last_ent: Port<u8, u8>,
-    pub pcm_out_bdl_addr: Port<u32, u32>,
-    pub pcm_out_transf_ctl: Port<u8, RegBoxTransfer>,
+    pcm_out_bdl_last_ent: Port<u8, u8>,
+    pcm_out_bdl_addr: Port<u32, u32>,
+    pcm_out_transf_ctl: Port<u8, RegBoxTransfer>,
     pub pcm_out_transf_sts: Port<u16, RegBoxStatus>,
-    pub buf: VecDeque<u8>,
-    pub bdl: Vec<BufferDescriptor>,
+    buf: VecDeque<u8>,
+    bdl: Vec<BufferDescriptor>,
+    playing: bool,
 }
 
 pub static INSTANCE: SyncUnsafeCell<MaybeUninit<Ac97>> = SyncUnsafeCell::new(MaybeUninit::uninit());
 
 unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
     let this = (&mut *INSTANCE.get()).assume_init_mut();
+
+    if this.buf.is_empty() || !this.playing {
+        this.playing = false;
+        return;
+    }
 
     for _ in 0..(0xFFFE * 2) {
         this.buf.pop_front();
@@ -201,8 +204,8 @@ impl Ac97 {
         let audio_bus = unsafe {
             (dev.cfg_read(PciConfigOffset::BaseAddr1, PciIoAccessSize::DWord) as u16) & !1u16
         };
-        let global_ctl = Port::<_, GlobalControl>::new(audio_bus + NabmRegs::GlobalControl as u16);
-        let global_sts = Port::new(audio_bus + NabmRegs::GlobalStatus as u16);
+        let global_ctl =
+            Port::<u32, GlobalControl>::new(audio_bus + NabmRegs::GlobalControl as u16);
         let pcm_out_bdl_last_ent = Port::new(audio_bus + NabmRegs::PcmOutLastEnt as u16);
         let pcm_out_bdl_addr = Port::new(audio_bus + NabmRegs::PcmOutBdlAddr as u16);
         let pcm_out_transf_ctl =
@@ -211,7 +214,7 @@ impl Ac97 {
         let mixer = unsafe {
             (dev.cfg_read(PciConfigOffset::BaseAddr0, PciIoAccessSize::DWord) as u16) & !1u16
         };
-        let mixer_reset = Port::new(mixer + NamRegs::Reset as u16);
+        let mixer_reset = Port::<u16, u16>::new(mixer + NamRegs::Reset as u16);
         let mixer_master_vol = Port::new(mixer + NamRegs::MasterVolume as u16);
         let mixer_pcm_vol = Port::new(mixer + NamRegs::PcmOutVolume as u16);
         let mixer_sample_rate = Port::new(mixer + NamRegs::SampleRate as u16);
@@ -254,9 +257,6 @@ impl Ac97 {
         }];
 
         Self {
-            global_ctl,
-            global_sts,
-            mixer_reset,
             mixer_master_vol,
             mixer_pcm_vol,
             mixer_sample_rate,
@@ -266,6 +266,7 @@ impl Ac97 {
             pcm_out_transf_sts,
             buf,
             bdl,
+            playing: false,
         }
     }
 
@@ -296,15 +297,30 @@ impl Ac97 {
             .write(self.pcm_out_transf_ctl.read().with_transfer_data(true));
     }
 
+    pub fn start_playback(&mut self) {
+        if !self.playing && !self.buf.is_empty() {
+            self.playing = true;
+            self.buf.make_contiguous();
+
+            unsafe {
+                self.reset();
+                self.set_bdl();
+                self.begin_transfer();
+            }
+        }
+    }
+
+    pub fn stop_playback(&mut self) {
+        self.playing = false;
+        unsafe {
+            self.reset();
+        }
+    }
+
     pub fn play_audio(&mut self, data: &[u8]) {
         for a in data {
             self.buf.push_back(*a);
         }
-        self.buf.make_contiguous();
-        unsafe {
-            self.reset();
-            self.set_bdl();
-            self.begin_transfer();
-        }
+        self.start_playback()
     }
 }
