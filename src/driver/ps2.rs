@@ -55,7 +55,7 @@ pub struct PS2Ctl {
 pub static INSTANCE: SyncUnsafeCell<MaybeUninit<PS2Ctl>> =
     SyncUnsafeCell::new(MaybeUninit::uninit());
 
-pub(crate) unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
+unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
     let this = (*INSTANCE.get()).assume_init_mut();
     let key = this.data_port.read();
 
@@ -101,25 +101,23 @@ impl PS2Ctl {
         }
     }
 
-    pub fn init(&mut self) {
+    pub fn init(&self) {
         // Flush buffer before doing anything
         while self.output_full() {
             let _ = unsafe { self.data_port.read() };
         }
-        debug!("Flushed buffer");
-        // Disable interrupts for now
-        debug!("Reading controller config");
+
         self.send_cmd(PS2CtlCmd::ReadControllerCfg, false);
         while !self.output_full() {}
-        debug!("Enabling interrupts");
+
         let cfg = unsafe {
             Ps2Cfg::from(self.data_port.read())
                 .with_port1_intr(true)
                 .with_port2_intr(false)
         };
-        crate::driver::acpi::ioapic::wire_legacy_irq(1, false);
+        super::acpi::ioapic::wire_legacy_irq(1, false);
         crate::sys::idt::set_handler(0x21, handler, true, true);
-        debug!("Writing controller config");
+        debug!("Setting controller config to: {:#X?}", cfg);
         self.send_cmd(PS2CtlCmd::WriteControllerCfg, false);
         unsafe { self.data_port.write(cfg.into()) }
         while self.input_full() {}

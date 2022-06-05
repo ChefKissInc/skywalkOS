@@ -109,7 +109,7 @@ fn real_main(explosion: &'static kaboom::Explosion) -> ! {
         writeln!(terminal, "I am the Fuse debug terminal").unwrap();
         writeln!(terminal, "Type 'help' to see the available commands.").unwrap();
 
-        let mut ps2ctl = PS2Ctl::new();
+        let ps2ctl = PS2Ctl::new();
         ps2ctl.init();
         unsafe {
             (*driver::ps2::INSTANCE.get()).write(ps2ctl);
