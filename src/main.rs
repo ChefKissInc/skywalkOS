@@ -85,7 +85,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
             acpi.find("APIC").unwrap(),
         ));
         let addr = driver::acpi::apic::get_set_lapic_addr();
-        debug!("LAPIC address: {:?}", addr);
+        debug!("LAPIC address: {:#X?}", addr);
         state
             .lapic
             .write(LocalAPIC::new(

@@ -21,11 +21,11 @@ impl ACPIPlatform {
 
         for ent in rsdp.as_type().iter() {
             if !ent.validate() {
-                debug!("Invalid table: {:?}", ent);
+                debug!("Invalid table: {:X?}", ent);
                 continue;
             }
 
-            tables.try_insert(ent.signature(), ent).unwrap();
+            debug!("Table: {:#X?}", tables.try_insert(ent.signature(), ent).unwrap());
         }
 
         Self {
