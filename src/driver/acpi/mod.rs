@@ -25,7 +25,10 @@ impl ACPIPlatform {
                 continue;
             }
 
-            debug!("Table: {:#X?}", tables.try_insert(ent.signature(), ent).unwrap());
+            debug!(
+                "Table: {:#X?}",
+                tables.try_insert(ent.signature(), ent).unwrap()
+            );
         }
 
         Self {
