@@ -1,7 +1,7 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use acpi::tables::madt::ic::ioapic::{self, IoApicRedirect};
+use acpi::tables::madt::ic::ioapic::{self, IOAPICRedir};
 use amd64::spec::mps::{Polarity, TriggerMode};
 use log::debug;
 
@@ -13,7 +13,7 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
             debug!("Setting up legacy irq {} on I/O APIC {}", irq, ioapic.id);
             ioapic.write_redir(
                 irq as _,
-                IoApicRedirect::new()
+                IOAPICRedir::new()
                     .with_vector(irq + 0x20)
                     .with_masked(masked),
             );
@@ -27,7 +27,7 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
             );
             ioapic.write_redir(
                 v.gsi - ioapic.gsi_base,
-                IoApicRedirect::new()
+                IOAPICRedir::new()
                     .with_vector(irq + 0x20)
                     .with_active_high(v.flags.polarity() == Polarity::ActiveHigh)
                     .with_trigger_at_level(v.flags.trigger_mode() == TriggerMode::LevelTriggered)
@@ -37,7 +37,7 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
     )
 }
 
-pub fn find_for_gsi(gsi: u32) -> Option<&'static ioapic::IoApic> {
+pub fn find_for_gsi(gsi: u32) -> Option<&'static ioapic::IOAPIC> {
     unsafe { (*crate::sys::state::SYS_STATE.get()).madt.assume_init_mut() }
         .ioapics
         .iter()

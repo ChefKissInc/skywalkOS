@@ -4,10 +4,10 @@
 use alloc::boxed::Box;
 
 use amd64::{
-    paging::pml4::Pml4 as Pml4Trait,
+    paging::pml4::PML4 as PML4Trait,
     registers::msr::{
-        pat::{Pat, PatEntry},
-        Msr,
+        pat::{PATEntry, PageAttributeTable},
+        ModelSpecificReg,
     },
 };
 
@@ -24,11 +24,11 @@ impl Pml4 {
 
     pub unsafe fn init(&mut self) {
         // Fix performance by utilising the PAT mechanism
-        Pat::new()
-            .with_pat0(PatEntry::WriteBack)
-            .with_pat1(PatEntry::WriteThrough)
-            .with_pat2(PatEntry::WriteCombining)
-            .with_pat3(PatEntry::WriteProtected)
+        PageAttributeTable::new()
+            .with_pat0(PATEntry::WriteBack)
+            .with_pat1(PATEntry::WriteThrough)
+            .with_pat2(PATEntry::WriteCombining)
+            .with_pat3(PATEntry::WriteProtected)
             .write();
 
         self.map_higher_half();
@@ -36,7 +36,7 @@ impl Pml4 {
     }
 }
 
-impl Pml4Trait for Pml4 {
+impl PML4Trait for Pml4 {
     const VIRT_OFF: usize = amd64::paging::PHYS_VIRT_OFFSET;
 
     fn get_entry(&mut self, offset: usize) -> &mut amd64::paging::PageTableEntry {

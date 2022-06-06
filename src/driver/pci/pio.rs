@@ -25,23 +25,23 @@ impl PciPortIo {
     }
 }
 
-impl super::PciIo for PciPortIo {
+impl super::PCIControllerIO for PciPortIo {
     unsafe fn cfg_read(
         &self,
         addr: super::PciAddress,
         off: u8,
-        access_size: super::PciIoAccessSize,
+        access_size: super::PCIIOAccessSize,
     ) -> u32 {
         Self::send_addr(addr, off);
 
         match access_size {
-            super::PciIoAccessSize::Byte => {
+            super::PCIIOAccessSize::Byte => {
                 Port::<u8, u8>::new(0xCFC + (off as u16 & 3)).read().into()
             }
-            super::PciIoAccessSize::Word => Port::<u16, u16>::new(0xCFC + (off as u16 & 3))
+            super::PCIIOAccessSize::Word => Port::<u16, u16>::new(0xCFC + (off as u16 & 3))
                 .read()
                 .into(),
-            super::PciIoAccessSize::DWord => Port::<u32, u32>::new(0xCFC + (off as u16 & 3)).read(),
+            super::PCIIOAccessSize::DWord => Port::<u32, u32>::new(0xCFC + (off as u16 & 3)).read(),
         }
     }
 
@@ -50,18 +50,18 @@ impl super::PciIo for PciPortIo {
         addr: super::PciAddress,
         off: u8,
         value: u32,
-        access_size: super::PciIoAccessSize,
+        access_size: super::PCIIOAccessSize,
     ) {
         Self::send_addr(addr, off);
 
         match access_size {
-            super::PciIoAccessSize::Byte => {
+            super::PCIIOAccessSize::Byte => {
                 Port::<u8, u8>::new(0xCFC + (off as u16 & 3)).write(value.try_into().unwrap())
             }
-            super::PciIoAccessSize::Word => {
+            super::PCIIOAccessSize::Word => {
                 Port::<u16, u16>::new(0xCFC + (off as u16 & 3)).write(value.try_into().unwrap())
             }
-            super::PciIoAccessSize::DWord => {
+            super::PCIIOAccessSize::DWord => {
                 Port::<u32, u32>::new(0xCFC + (off as u16 & 3)).write(value)
             }
         }

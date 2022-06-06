@@ -8,7 +8,7 @@ use log::debug;
 
 use crate::{
     sys::{pmm::BitmapAllocator, terminal::Terminal},
-    Acpi,
+    ACPIPlatform,
 };
 
 pub fn parse(tags: &'static [kaboom::tags::TagType]) {
@@ -41,12 +41,12 @@ pub fn parse(tags: &'static [kaboom::tags::TagType]) {
                 terminal.clear();
                 state.terminal = Some(terminal);
             }
-            TagType::Acpi(rsdp) => {
+            TagType::RSDPPtr(rsdp) => {
                 debug!("Got ACPI RSDP: {:X?}", rsdp);
-                state.acpi.write(Acpi::new(*rsdp));
+                state.acpi.write(ACPIPlatform::new(*rsdp));
             }
             TagType::Module(module) => {
-                debug!("Got module '{}' of type {:#X?}", module.name, module.type_);
+                debug!("Got module: {:#X?}", module);
                 if state.modules.is_none() {
                     state.modules = Some(Vec::new());
                 }

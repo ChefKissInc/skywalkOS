@@ -7,7 +7,7 @@ use num_enum::IntoPrimitive;
 mod pio;
 
 #[allow(dead_code)]
-pub enum PciIoAccessSize {
+pub enum PCIIOAccessSize {
     Byte,
     Word,
     DWord,
@@ -43,7 +43,7 @@ pub struct PciCmd {
 #[allow(dead_code)]
 #[derive(IntoPrimitive)]
 #[repr(u8)]
-pub enum PciConfigOffset {
+pub enum PCICfgOffset {
     VendorId = 0x0,
     DeviceId = 0x2,
     Command = 0x4,
@@ -73,33 +73,33 @@ pub enum PciConfigOffset {
     MaximumLatency = 0x3F,
 }
 
-pub trait PciIo: Sized + Sync + Clone + Copy {
-    unsafe fn cfg_read(&self, addr: PciAddress, off: u8, access_size: PciIoAccessSize) -> u32;
-    unsafe fn cfg_write(&self, addr: PciAddress, off: u8, value: u32, access_size: PciIoAccessSize);
+pub trait PCIControllerIO: Sized + Sync + Clone + Copy {
+    unsafe fn cfg_read(&self, addr: PciAddress, off: u8, access_size: PCIIOAccessSize) -> u32;
+    unsafe fn cfg_write(&self, addr: PciAddress, off: u8, value: u32, access_size: PCIIOAccessSize);
 }
 
 #[derive(Clone, Copy)]
-pub struct PciDevice<T: PciIo>
+pub struct PCIDevice<T: PCIControllerIO>
 where
-    T: PciIo,
+    T: PCIControllerIO,
 {
     addr: PciAddress,
     io: T,
 }
 
-impl<T: PciIo> PciDevice<T> {
+impl<T: PCIControllerIO> PCIDevice<T> {
     pub fn new(addr: PciAddress, io: T) -> Self {
         Self { addr, io }
     }
 
-    pub unsafe fn cfg_read<A>(&self, off: A, access_size: PciIoAccessSize) -> u32
+    pub unsafe fn cfg_read<A>(&self, off: A, access_size: PCIIOAccessSize) -> u32
     where
         A: Into<u8>,
     {
         self.io.cfg_read(self.addr, off.into(), access_size)
     }
 
-    pub unsafe fn cfg_write<A>(&self, off: A, value: u32, access_size: PciIoAccessSize)
+    pub unsafe fn cfg_write<A>(&self, off: A, value: u32, access_size: PCIIOAccessSize)
     where
         A: Into<u8>,
     {
@@ -107,7 +107,7 @@ impl<T: PciIo> PciDevice<T> {
     }
 }
 
-pub struct Pci<T: PciIo> {
+pub struct Pci<T: PCIControllerIO> {
     pub io: T,
 }
 
@@ -119,12 +119,12 @@ impl Pci<pio::PciPortIo> {
     }
 }
 
-impl<T: PciIo> Pci<T> {
-    pub fn find(&self, predicate: fn(PciDevice<T>) -> bool) -> Option<PciDevice<T>> {
+impl<T: PCIControllerIO> Pci<T> {
+    pub fn find(&self, predicate: fn(PCIDevice<T>) -> bool) -> Option<PCIDevice<T>> {
         for bus in 0..=255 {
             for slot in 0..32 {
                 for func in 0..8 {
-                    let device = PciDevice::new(
+                    let device = PCIDevice::new(
                         PciAddress {
                             bus,
                             slot,

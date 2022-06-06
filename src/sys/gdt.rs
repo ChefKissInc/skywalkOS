@@ -1,7 +1,7 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use amd64::cpu::gdt::{DescriptorType, Gdtr, SegmentDescriptor};
+use amd64::cpu::gdt::{DescriptorType, GDTReg, SegmentDescriptor};
 
 pub static ENTRIES: [SegmentDescriptor; 5] = [
     SegmentDescriptor::default(),
@@ -11,7 +11,7 @@ pub static ENTRIES: [SegmentDescriptor; 5] = [
     SegmentDescriptor::default(),
 ];
 
-pub static GDTR: Gdtr = Gdtr {
+pub static GDTR: GDTReg = GDTReg {
     limit: (core::mem::size_of_val(&ENTRIES) - 1) as u16,
     addr: ENTRIES.as_ptr(),
 };

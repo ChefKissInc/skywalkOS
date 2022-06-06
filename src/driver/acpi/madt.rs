@@ -4,24 +4,24 @@
 use alloc::vec::Vec;
 
 use acpi::tables::madt::ic::{
-    ioapic::{IoApic, Iso},
-    proc_lapic::ProcessorLocalApic,
+    ioapic::{InterruptSourceOverride, IOAPIC},
+    proc_lapic::ProcessorLocalAPIC,
     InterruptController,
 };
 use log::trace;
 
-pub struct Madt {
-    pub proc_lapics: Vec<&'static ProcessorLocalApic>,
-    pub ioapics: Vec<&'static IoApic>,
-    pub isos: Vec<&'static Iso>,
+pub struct MADTData {
+    pub proc_lapics: Vec<&'static ProcessorLocalAPIC>,
+    pub ioapics: Vec<&'static IOAPIC>,
+    pub isos: Vec<&'static InterruptSourceOverride>,
     pub lapic_addr: u64,
 }
 
-impl Madt {
-    pub fn new(madt: &'static acpi::tables::madt::Madt) -> Self {
+impl MADTData {
+    pub fn new(madt: &'static acpi::tables::madt::MADT) -> Self {
         // Disable PIC
         if madt.flags.pcat_compat() {
-            amd64::intrs::pic::Pic::new().remap_and_disable();
+            amd64::intrs::pic::ProgrammableInterruptController::new().remap_and_disable();
         }
 
         let mut proc_lapics = Vec::new();
@@ -31,11 +31,11 @@ impl Madt {
 
         for ent in madt.into_iter() {
             match ent {
-                InterruptController::ProcessorLocalApic(lapic) => {
+                InterruptController::ProcessorLocalAPIC(lapic) => {
                     trace!("Found Local APIC: {:#X?}", lapic);
                     proc_lapics.push(lapic);
                 }
-                InterruptController::IoApic(ioapic) => {
+                InterruptController::InputOutputAPIC(ioapic) => {
                     trace!(
                         "Found I/O APIC with ver {:#X?}: {:#X?}",
                         ioapic.read_ver(),
@@ -43,11 +43,11 @@ impl Madt {
                     );
                     ioapics.push(ioapic);
                 }
-                InterruptController::Iso(iso) => {
+                InterruptController::InterruptSourceOverride(iso) => {
                     trace!("Found Interrupt Source Override: {:#X?}", iso);
                     isos.push(iso);
                 }
-                InterruptController::LocalApicAddrOverride(a) => {
+                InterruptController::LocalAPICAddrOverride(a) => {
                     trace!("Found Local APIC Address Override: {:#X?}", a);
                     lapic_addr = a.addr;
                 }

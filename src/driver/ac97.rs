@@ -8,7 +8,7 @@ use amd64::{cpu::RegisterState, io::port::Port};
 use log::debug;
 use modular_bitfield::prelude::*;
 
-use super::pci::{PciCmd, PciConfigOffset, PciDevice, PciIo, PciIoAccessSize};
+use super::pci::{PCICfgOffset, PCIControllerIO, PCIDevice, PCIIOAccessSize, PciCmd};
 
 #[bitfield(bits = 16)]
 #[derive(Default, Debug, Clone, Copy)]
@@ -127,19 +127,19 @@ pub struct BufferDescriptor {
 }
 
 #[repr(u16)]
-pub enum NamRegs {
+pub enum NAMReg {
     Reset = 0x0,
     MasterVolume = 0x2,
-    PcmOutVolume = 0x18,
+    PCMOutVolume = 0x18,
     SampleRate = 0x2C,
 }
 
 #[repr(u16)]
-pub enum NabmRegs {
-    PcmOutBdlAddr = 0x10,
+pub enum NABMReg {
+    PCMOutBdlAddr = 0x10,
     // PcmOutCurrentEnt = 0x14,
-    PcmOutLastEnt = 0x15,
-    PcmOutStatus = 0x16,
+    PCMOutLastEnt = 0x15,
+    PCMOutStatus = 0x16,
     // PcmOutTransferedSamples = 0x18,
     // PcmOutNextProcessedEnt = 0x1A,
     PcmOutTransferControl = 0x1B,
@@ -147,7 +147,7 @@ pub enum NabmRegs {
     // GlobalStatus = 0x30,
 }
 
-pub struct Ac97 {
+pub struct AC97 {
     pub mixer_master_vol: Port<u16, MasterOutputVolume>,
     pub mixer_pcm_vol: Port<u16, PcmOutputVolume>,
     pub mixer_sample_rate: Port<u16, u16>,
@@ -160,7 +160,7 @@ pub struct Ac97 {
     playing: bool,
 }
 
-pub static INSTANCE: SyncUnsafeCell<MaybeUninit<Ac97>> = SyncUnsafeCell::new(MaybeUninit::uninit());
+pub static INSTANCE: SyncUnsafeCell<MaybeUninit<AC97>> = SyncUnsafeCell::new(MaybeUninit::uninit());
 
 unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
     let this = (&mut *INSTANCE.get()).assume_init_mut();
@@ -180,44 +180,41 @@ unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
     this.begin_transfer();
 }
 
-impl Ac97 {
-    pub fn new<T: PciIo>(dev: PciDevice<T>) -> Self {
+impl AC97 {
+    pub fn new<T: PCIControllerIO>(dev: PCIDevice<T>) -> Self {
         unsafe {
             dev.cfg_write(
-                PciConfigOffset::Command,
+                PCICfgOffset::Command,
                 u16::from(
-                    PciCmd::from(
-                        dev.cfg_read(PciConfigOffset::Command, PciIoAccessSize::Word) as u16,
-                    )
-                    .with_pio(true)
-                    .with_bus_master(true)
-                    .with_disable_intrs(false),
+                    PciCmd::from(dev.cfg_read(PCICfgOffset::Command, PCIIOAccessSize::Word) as u16)
+                        .with_pio(true)
+                        .with_bus_master(true)
+                        .with_disable_intrs(false),
                 ) as _,
-                PciIoAccessSize::Word,
+                PCIIOAccessSize::Word,
             );
 
-            let irq = dev.cfg_read(PciConfigOffset::InterruptLine, PciIoAccessSize::Byte) as u8;
+            let irq = dev.cfg_read(PCICfgOffset::InterruptLine, PCIIOAccessSize::Byte) as u8;
             debug!("IRQ: {:#X?}", irq);
             crate::driver::acpi::ioapic::wire_legacy_irq(irq, false);
             crate::sys::idt::set_handler(0x20 + irq, handler, true, true);
         }
         let audio_bus = unsafe {
-            (dev.cfg_read(PciConfigOffset::BaseAddr1, PciIoAccessSize::DWord) as u16) & !1u16
+            (dev.cfg_read(PCICfgOffset::BaseAddr1, PCIIOAccessSize::DWord) as u16) & !1u16
         };
-        let global_ctl =
-            Port::<u32, GlobalControl>::new(audio_bus + NabmRegs::GlobalControl as u16);
-        let pcm_out_bdl_last_ent = Port::new(audio_bus + NabmRegs::PcmOutLastEnt as u16);
-        let pcm_out_bdl_addr = Port::new(audio_bus + NabmRegs::PcmOutBdlAddr as u16);
+        let global_ctl = Port::<u32, GlobalControl>::new(audio_bus + NABMReg::GlobalControl as u16);
+        let pcm_out_bdl_last_ent = Port::new(audio_bus + NABMReg::PCMOutLastEnt as u16);
+        let pcm_out_bdl_addr = Port::new(audio_bus + NABMReg::PCMOutBdlAddr as u16);
         let pcm_out_transf_ctl =
-            Port::<_, RegBoxTransfer>::new(audio_bus + NabmRegs::PcmOutTransferControl as u16);
-        let pcm_out_transf_sts = Port::new(audio_bus + NabmRegs::PcmOutStatus as u16);
+            Port::<_, RegBoxTransfer>::new(audio_bus + NABMReg::PcmOutTransferControl as u16);
+        let pcm_out_transf_sts = Port::new(audio_bus + NABMReg::PCMOutStatus as u16);
         let mixer = unsafe {
-            (dev.cfg_read(PciConfigOffset::BaseAddr0, PciIoAccessSize::DWord) as u16) & !1u16
+            (dev.cfg_read(PCICfgOffset::BaseAddr0, PCIIOAccessSize::DWord) as u16) & !1u16
         };
-        let mixer_reset = Port::<u16, u16>::new(mixer + NamRegs::Reset as u16);
-        let mixer_master_vol = Port::new(mixer + NamRegs::MasterVolume as u16);
-        let mixer_pcm_vol = Port::new(mixer + NamRegs::PcmOutVolume as u16);
-        let mixer_sample_rate = Port::new(mixer + NamRegs::SampleRate as u16);
+        let mixer_reset = Port::<u16, u16>::new(mixer + NAMReg::Reset as u16);
+        let mixer_master_vol = Port::new(mixer + NAMReg::MasterVolume as u16);
+        let mixer_pcm_vol = Port::new(mixer + NAMReg::PCMOutVolume as u16);
+        let mixer_sample_rate = Port::new(mixer + NAMReg::SampleRate as u16);
 
         unsafe {
             // Resume from cold reset

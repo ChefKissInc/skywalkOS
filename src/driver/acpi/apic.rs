@@ -2,8 +2,8 @@
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use amd64::{
-    intrs::apic::{LocalApic, SpuriousIntrVector},
-    registers::msr::{apic::ApicBase, Msr},
+    intrs::apic::{LocalAPIC, SpuriousIntrVector},
+    registers::msr::{apic::APICBase, ModelSpecificReg},
 };
 
 pub fn get_set_lapic_addr() -> u64 {
@@ -12,16 +12,16 @@ pub fn get_set_lapic_addr() -> u64 {
             .madt
             .assume_init_mut()
             .lapic_addr;
-        ApicBase::read().with_apic_base(addr).write();
+        APICBase::read().with_apic_base(addr).write();
         addr
     }
 }
 
-pub trait ApicHelper {
+pub trait APICHelper {
     fn enable(&self);
 }
 
-impl ApicHelper for LocalApic {
+impl APICHelper for LocalAPIC {
     fn enable(&self) {
         self.write_spurious_intr_vec(
             SpuriousIntrVector::new()

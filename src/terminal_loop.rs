@@ -4,23 +4,24 @@
 use alloc::string::String;
 use core::fmt::Write;
 
+use kaboom::tags::module::Module;
 use log::{error, info};
 
 use crate::{
     driver::{
-        ac97::Ac97,
-        acpi::Acpi,
-        pci::{Pci, PciAddress, PciConfigOffset, PciDevice, PciIo, PciIoAccessSize},
+        ac97::AC97,
+        acpi::ACPIPlatform,
+        pci::{PCICfgOffset, PCIControllerIO, PCIDevice, PCIIOAccessSize, Pci, PciAddress},
         ps2::Ps2Event,
     },
     sys::terminal::Terminal,
 };
 
-pub fn terminal_loop<T: PciIo>(
-    acpi: &Acpi,
+pub fn terminal_loop<T: PCIControllerIO>(
+    acpi: &ACPIPlatform,
     pci: &Pci<T>,
     terminal: &mut Terminal,
-    mut ac97: Option<&mut Ac97>,
+    mut ac97: Option<&mut AC97>,
 ) {
     let ps2ctl = unsafe { (&mut *crate::driver::ps2::INSTANCE.get()).assume_init_mut() };
     'menu: loop {
@@ -61,7 +62,7 @@ help       <= Display this"#
                                         for bus in 0..=255 {
                                             for slot in 0..32 {
                                                 for func in 0..8 {
-                                                    let device = PciDevice::new(
+                                                    let device = PCIDevice::new(
                                                         PciAddress {
                                                             bus,
                                                             slot,
@@ -72,8 +73,8 @@ help       <= Display this"#
                                                     );
                                                     unsafe {
                                                         let vendor_id = device.cfg_read(
-                                                            PciConfigOffset::VendorId,
-                                                            PciIoAccessSize::Word,
+                                                            PCICfgOffset::VendorId,
+                                                            PCIIOAccessSize::Word,
                                                         );
                                                         if vendor_id != 0xFFFF {
                                                             info!(
@@ -85,12 +86,12 @@ help       <= Display this"#
                                                                 func,
                                                                 vendor_id,
                                                                 device.cfg_read(
-                                                                    PciConfigOffset::DeviceId,
-                                                                    PciIoAccessSize::Word,
+                                                                    PCICfgOffset::DeviceId,
+                                                                    PCIIOAccessSize::Word,
                                                                 ),
                                                                 device.cfg_read(
-                                                                    PciConfigOffset::ClassCode,
-                                                                    PciIoAccessSize::Word,
+                                                                    PCICfgOffset::ClassCode,
+                                                                    PCIIOAccessSize::Word,
                                                                 ),
                                                             )
                                                         }
@@ -104,8 +105,14 @@ help       <= Display this"#
                                             if let Some(modules) = unsafe {
                                                 &mut (*crate::sys::state::SYS_STATE.get()).modules
                                             } {
-                                                if let Some(module) =
-                                                    modules.iter().find(|v| v.name == "testaudio")
+                                                if let Some(Module::Audio(module)) =
+                                                    modules.iter().find(|v| {
+                                                        if let Module::Audio(v) = v {
+                                                            v.name == "testaudio"
+                                                        } else {
+                                                            false
+                                                        }
+                                                    })
                                                 {
                                                     info!("Starting playback of test audio");
                                                     ac97.play_audio(module.data)

@@ -5,7 +5,7 @@ use core::cell::SyncUnsafeCell;
 
 use amd64::{
     cpu::{PrivilegeLevel, RegisterState, SegmentSelector},
-    intrs::idt::{Entry, EntryType, Idtr},
+    intrs::idt::{Entry, EntryType, IDTReg},
 };
 use log::{debug, error};
 
@@ -70,7 +70,7 @@ pub unsafe fn init() {
         entry.offset_high = (base >> 32) as u32;
     });
 
-    let idtr = Idtr {
+    let idtr = IDTReg {
         limit: (core::mem::size_of_val(&ENTRIES) - 1) as u16,
         base: (*ENTRIES.get()).as_ptr(),
     };
