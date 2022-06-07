@@ -81,6 +81,15 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
 
         debug!("ACPI version {}", acpi.version);
 
+        if let Some(hpet) = acpi.find::<acpi::tables::hpet::HPET>("HPET") {
+            hpet.set_config(
+                hpet.config()
+                    .with_legacy_replacement(true)
+                    .with_main_cnt_enable(true),
+            );
+            info!("HPET counter: {:#X?}", hpet.counter_value());
+        }
+
         state.madt.write(driver::acpi::madt::MADTData::new(
             acpi.find("APIC").unwrap(),
         ));
@@ -98,10 +107,11 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
         let pci = driver::pci::Pci::new();
         let ac97 = pci
             .find(move |dev| unsafe {
-                dev.cfg_read(driver::pci::PCICfgOffset::ClassCode, PCIIOAccessSize::Word) == 0x0401
+                dev.cfg_read::<_, u32>(driver::pci::PCICfgOffset::ClassCode, PCIIOAccessSize::Word)
+                    == 0x0401
             })
-            .map(driver::ac97::AC97::new)
-            .map(|v| unsafe { (*driver::ac97::INSTANCE.get()).write(v) });
+            .map(driver::audio::ac97::AC97::new)
+            .map(|v| unsafe { (*driver::audio::ac97::INSTANCE.get()).write(v) });
 
         if let Some(terminal) = &mut state.terminal {
             writeln!(terminal, "We welcome you to Firework").unwrap();

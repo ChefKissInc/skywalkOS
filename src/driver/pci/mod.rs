@@ -92,18 +92,22 @@ impl<T: PCIControllerIO> PCIDevice<T> {
         Self { addr, io }
     }
 
-    pub unsafe fn cfg_read<A>(&self, off: A, access_size: PCIIOAccessSize) -> u32
-    where
-        A: Into<u8>,
-    {
-        self.io.cfg_read(self.addr, off.into(), access_size)
+    pub unsafe fn cfg_read<A: Into<u8>, R: From<u32>>(
+        &self,
+        off: A,
+        access_size: PCIIOAccessSize,
+    ) -> R {
+        self.io.cfg_read(self.addr, off.into(), access_size).into()
     }
 
-    pub unsafe fn cfg_write<A>(&self, off: A, value: u32, access_size: PCIIOAccessSize)
-    where
-        A: Into<u8>,
-    {
-        self.io.cfg_write(self.addr, off.into(), value, access_size)
+    pub unsafe fn cfg_write<A: Into<u8>, R: Into<u32>>(
+        &self,
+        off: A,
+        value: R,
+        access_size: PCIIOAccessSize,
+    ) {
+        self.io
+            .cfg_write(self.addr, off.into(), value.into(), access_size)
     }
 }
 

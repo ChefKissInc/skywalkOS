@@ -9,8 +9,8 @@ use log::{error, info};
 
 use crate::{
     driver::{
-        ac97::AC97,
         acpi::ACPIPlatform,
+        audio::ac97::AC97,
         pci::{PCICfgOffset, PCIControllerIO, PCIDevice, PCIIOAccessSize, Pci, PciAddress},
         ps2::Ps2Event,
     },
@@ -72,7 +72,7 @@ help       <= Display this"#
                                                         pci.io,
                                                     );
                                                     unsafe {
-                                                        let vendor_id = device.cfg_read(
+                                                        let vendor_id: u32 = device.cfg_read(
                                                             PCICfgOffset::VendorId,
                                                             PCIIOAccessSize::Word,
                                                         );
@@ -85,11 +85,11 @@ help       <= Display this"#
                                                                 slot,
                                                                 func,
                                                                 vendor_id,
-                                                                device.cfg_read(
+                                                                device.cfg_read::<_, u32>(
                                                                     PCICfgOffset::DeviceId,
                                                                     PCIIOAccessSize::Word,
                                                                 ),
-                                                                device.cfg_read(
+                                                                device.cfg_read::<_, u32>(
                                                                     PCICfgOffset::ClassCode,
                                                                     PCIIOAccessSize::Word,
                                                                 ),
