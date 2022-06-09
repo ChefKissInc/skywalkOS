@@ -25,10 +25,7 @@ use log::{debug, info};
 
 use crate::{
     driver::{
-        acpi::{
-            apic::{APICHelper, LocalAPIC},
-            ACPIPlatform,
-        },
+        acpi::{apic::LocalAPIC, ACPIPlatform},
         pci::PCIIOAccessSize,
         ps2::PS2Ctl,
     },

@@ -182,6 +182,15 @@ impl LocalAPIC {
     pub fn write_spurious_intr_vec(&self, val: SpuriousIntrVector) {
         self.write_reg(LocalAPICReg::SpuriousInterruptVector, val)
     }
+
+    #[inline]
+    pub fn enable(&self) {
+        self.write_spurious_intr_vec(
+            SpuriousIntrVector::new()
+                .with_vector(0xFF)
+                .with_apic_soft_enable(true),
+        )
+    }
 }
 
 pub fn get_set_lapic_addr() -> u64 {
@@ -192,19 +201,5 @@ pub fn get_set_lapic_addr() -> u64 {
             .lapic_addr;
         APICBase::read().with_apic_base(addr).write();
         addr
-    }
-}
-
-pub trait APICHelper {
-    fn enable(&self);
-}
-
-impl APICHelper for LocalAPIC {
-    fn enable(&self) {
-        self.write_spurious_intr_vec(
-            SpuriousIntrVector::new()
-                .with_vector(0xFF)
-                .with_apic_soft_enable(true),
-        )
     }
 }
