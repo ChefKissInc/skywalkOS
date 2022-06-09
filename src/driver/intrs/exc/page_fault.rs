@@ -3,7 +3,7 @@
 
 use core::arch::asm;
 
-pub(crate) unsafe extern "sysv64" fn handler(regs: &mut amd64::cpu::RegisterState) {
+pub(crate) unsafe extern "sysv64" fn handler(regs: &mut crate::sys::RegisterState) {
     super::exc_msg!("page fault", regs);
 
     let mut cr2: u64;

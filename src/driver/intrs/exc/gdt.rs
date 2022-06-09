@@ -1,7 +1,7 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use amd64::cpu::RegisterState;
+use crate::sys::RegisterState;
 
 pub(crate) unsafe extern "sysv64" fn invalid_tss_handler(regs: &mut RegisterState) {
     super::exc_msg!("invalid TSS", regs);

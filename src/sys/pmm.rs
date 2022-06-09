@@ -112,7 +112,7 @@ impl BitmapAllocator {
                         crate::utils::bitmap::bit_set(self.bitmap, i);
                     }
 
-                    return Some(core::mem::transmute(page * 0x1000));
+                    return Some((page * 0x1000) as *mut _);
                 }
             } else {
                 p = 0;

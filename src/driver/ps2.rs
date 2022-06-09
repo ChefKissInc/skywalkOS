@@ -4,10 +4,12 @@
 use alloc::collections::VecDeque;
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
-use amd64::{cpu::RegisterState, io::port::Port};
+use amd64::io::port::Port;
 use log::debug;
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
+
+use crate::sys::RegisterState;
 
 #[derive(IntoPrimitive)]
 #[repr(u8)]
@@ -116,7 +118,7 @@ impl PS2Ctl {
                 .with_port2_intr(false)
         };
         super::acpi::ioapic::wire_legacy_irq(1, false);
-        crate::sys::idt::set_handler(0x21, handler, true, true);
+        crate::driver::intrs::idt::set_handler(0x21, handler, true, true);
         debug!("Setting controller config to: {:#X?}", cfg);
         self.send_cmd(PS2CtlCmd::WriteControllerCfg, false);
         unsafe { self.data_port.write(cfg.into()) }

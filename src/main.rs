@@ -21,16 +21,18 @@ extern crate alloc;
 use alloc::boxed::Box;
 use core::{arch::asm, fmt::Write};
 
-use amd64::{
-    cpu::{PrivilegeLevel, SegmentSelector},
-    intrs::apic::LocalAPIC,
-};
 use log::{debug, info};
 
-use crate::driver::{
-    acpi::{apic::APICHelper, ACPIPlatform},
-    pci::PCIIOAccessSize,
-    ps2::PS2Ctl,
+use crate::{
+    driver::{
+        acpi::{
+            apic::{APICHelper, LocalAPIC},
+            ACPIPlatform,
+        },
+        pci::PCIIOAccessSize,
+        ps2::PS2Ctl,
+    },
+    sys::gdt::{PrivilegeLevel, SegmentSelector},
 };
 
 mod driver;
@@ -57,9 +59,9 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
                 SegmentSelector::new(2, PrivilegeLevel::Hypervisor),
             );
             debug!("Initialising the IDT.");
-            sys::idt::init();
+            driver::intrs::idt::IDTR.load();
             debug!("Initialising the exception handlers.");
-            sys::exc::init();
+            driver::intrs::exc::init();
         }
 
         utils::tags::parse(boot_info.tags);

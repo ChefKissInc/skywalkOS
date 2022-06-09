@@ -4,11 +4,10 @@
 use alloc::vec::Vec;
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
-use amd64::intrs::apic::LocalAPIC;
 use kaboom::tags::{module::Module, SpecialisedSettings};
 
 use super::{pmm::BitmapAllocator, terminal::Terminal, vmm::Pml4};
-use crate::driver::acpi::{madt::MADTData, ACPIPlatform};
+use crate::driver::acpi::{apic::LocalAPIC, madt::MADTData, ACPIPlatform};
 
 pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemState::new());
 

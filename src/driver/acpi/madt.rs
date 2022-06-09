@@ -21,7 +21,7 @@ impl MADTData {
     pub fn new(madt: &'static acpi::tables::madt::MADT) -> Self {
         // Disable PIC
         if madt.flags.pcat_compat() {
-            amd64::intrs::pic::ProgrammableInterruptController::new().remap_and_disable();
+            crate::driver::intrs::pic::ProgrammableInterruptController::new().remap_and_disable();
         }
 
         let mut proc_lapics = Vec::new();

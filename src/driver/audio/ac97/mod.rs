@@ -4,10 +4,13 @@
 use alloc::{collections::VecDeque, vec, vec::Vec};
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
-use amd64::{cpu::RegisterState, io::port::Port};
+use amd64::io::port::Port;
 use log::debug;
 
-use crate::driver::pci::{PCICfgOffset, PCIControllerIO, PCIDevice, PCIIOAccessSize, PciCmd};
+use crate::{
+    driver::pci::{PCICfgOffset, PCIControllerIO, PCIDevice, PCIIOAccessSize, PciCmd},
+    sys::RegisterState,
+};
 
 mod regs;
 
@@ -61,7 +64,7 @@ impl AC97 {
                 dev.cfg_read::<_, u32>(PCICfgOffset::InterruptLine, PCIIOAccessSize::Byte) as u8;
             debug!("IRQ: {:#X?}", irq);
             crate::driver::acpi::ioapic::wire_legacy_irq(irq, false);
-            crate::sys::idt::set_handler(0x20 + irq, handler, true, true);
+            crate::driver::intrs::idt::set_handler(0x20 + irq, handler, true, true);
         }
         let audio_bus = unsafe {
             (dev.cfg_read::<_, u32>(PCICfgOffset::BaseAddr1, PCIIOAccessSize::DWord) as u16) & !1u16

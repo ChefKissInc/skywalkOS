@@ -1,8 +1,6 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-pub mod acpi;
-pub mod audio;
-pub mod intrs;
-pub mod pci;
-pub mod ps2;
+pub mod exc;
+pub mod idt;
+pub mod pic;

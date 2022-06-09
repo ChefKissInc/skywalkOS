@@ -2,9 +2,9 @@
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 #[global_allocator]
-pub static GLOBAL_ALLOCATOR: KernAllocator = KernAllocator;
+static GLOBAL_ALLOCATOR: KernAllocator = KernAllocator;
 
-pub struct KernAllocator;
+struct KernAllocator;
 
 unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
