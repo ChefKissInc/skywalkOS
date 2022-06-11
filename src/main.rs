@@ -26,8 +26,8 @@ use log::{debug, info};
 use crate::{
     driver::{
         acpi::{apic::LocalAPIC, ACPIPlatform},
+        keyboard::ps2::PS2Ctl,
         pci::PCIIOAccessSize,
-        ps2::PS2Ctl,
     },
     sys::gdt::{PrivilegeLevel, SegmentSelector},
 };
@@ -120,7 +120,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
             let ps2ctl = PS2Ctl::new();
             ps2ctl.init();
             unsafe {
-                (*driver::ps2::INSTANCE.get()).write(ps2ctl);
+                (*driver::keyboard::ps2::INSTANCE.get()).write(ps2ctl);
             }
 
             terminal_loop::terminal_loop(acpi, &pci, terminal, ac97);

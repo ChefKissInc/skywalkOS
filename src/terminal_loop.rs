@@ -11,8 +11,8 @@ use crate::{
     driver::{
         acpi::ACPIPlatform,
         audio::ac97::AC97,
+        keyboard::ps2::Ps2Event,
         pci::{PCICfgOffset, PCIControllerIO, PCIDevice, PCIIOAccessSize, Pci, PciAddress},
-        ps2::Ps2Event,
     },
     sys::terminal::Terminal,
 };
@@ -23,7 +23,7 @@ pub fn terminal_loop<T: PCIControllerIO>(
     terminal: &mut Terminal,
     mut ac97: Option<&mut AC97>,
 ) {
-    let ps2ctl = unsafe { (&mut *crate::driver::ps2::INSTANCE.get()).assume_init_mut() };
+    let ps2ctl = unsafe { (&mut *crate::driver::keyboard::ps2::INSTANCE.get()).assume_init_mut() };
     'menu: loop {
         write!(terminal, "\nFirework# ").unwrap();
         let mut cmd = String::new();

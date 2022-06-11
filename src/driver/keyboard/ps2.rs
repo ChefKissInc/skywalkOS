@@ -117,7 +117,7 @@ impl PS2Ctl {
                 .with_port1_intr(true)
                 .with_port2_intr(false)
         };
-        super::acpi::ioapic::wire_legacy_irq(1, false);
+        crate::driver::acpi::ioapic::wire_legacy_irq(1, false);
         crate::driver::intrs::idt::set_handler(0x21, handler, true, true);
         debug!("Setting controller config to: {:#X?}", cfg);
         self.send_cmd(PS2CtlCmd::WriteControllerCfg, false);
