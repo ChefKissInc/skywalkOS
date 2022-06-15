@@ -19,7 +19,7 @@
 extern crate alloc;
 
 use alloc::boxed::Box;
-use core::{arch::asm, fmt::Write};
+use core::arch::asm;
 
 use log::{debug, info};
 
@@ -27,7 +27,6 @@ use crate::{
     driver::{
         acpi::{apic::LocalAPIC, ACPIPlatform},
         keyboard::ps2::PS2Ctl,
-        pci::PCIIOAccessSize,
     },
     sys::gdt::{PrivilegeLevel, SegmentSelector},
 };
@@ -67,7 +66,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
 
         let state = unsafe { &mut *sys::state::SYS_STATE.get() };
 
-        let pml4 = Box::leak(Box::new(sys::vmm::Pml4::new()));
+        let pml4 = Box::leak(Box::new(sys::vmm::PageTableLvl4::new()));
         unsafe { pml4.init() }
         state.pml4.write(pml4);
 
@@ -80,14 +79,10 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
 
         debug!("ACPI version {}", acpi.version);
 
-        if let Some(hpet) = acpi.find::<acpi::tables::hpet::HPET>("HPET") {
-            hpet.set_config(
-                hpet.config()
-                    .with_legacy_replacement(true)
-                    .with_main_cnt_enable(true),
-            );
-            info!("HPET counter: {:#X?}", hpet.counter_value());
-        }
+        let hpet = acpi
+            .find("HPET")
+            .map(driver::timer::hpet::HighPrecisionEventTimer::new)
+            .unwrap();
 
         state.madt.write(driver::acpi::madt::MADTData::new(
             acpi.find("APIC").unwrap(),
@@ -103,28 +98,10 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
 
         unsafe { asm!("sti") }
 
-        let pci = driver::pci::Pci::new();
-        let ac97 = pci
-            .find(move |dev| unsafe {
-                dev.cfg_read::<_, u32>(driver::pci::PCICfgOffset::ClassCode, PCIIOAccessSize::Word)
-                    == 0x0401
-            })
-            .map(driver::audio::ac97::AC97::new)
-            .map(|v| unsafe { (*driver::audio::ac97::INSTANCE.get()).write(v) });
-
-        if let Some(terminal) = &mut state.terminal {
-            writeln!(terminal, "We welcome you to Firework").unwrap();
-            writeln!(terminal, "I am the Fuse debug terminal").unwrap();
-            writeln!(terminal, "Type 'help' to see the available commands.").unwrap();
-
-            let ps2ctl = PS2Ctl::new();
-            ps2ctl.init();
-            unsafe {
-                (*driver::keyboard::ps2::INSTANCE.get()).write(ps2ctl);
-            }
-
-            terminal_loop::terminal_loop(acpi, &pci, terminal, ac97);
-        }
+        state
+            .scheduler
+            .write(spin::Mutex::new(sys::proc::sched::Scheduler::new(&hpet)));
+        sys::proc::sched::Scheduler::start();
 
         loop {
             unsafe { asm!("hlt") }

@@ -6,11 +6,13 @@ pub mod gdt;
 pub mod io;
 mod panic;
 pub mod pmm;
+pub mod proc;
 pub mod state;
 pub mod terminal;
+pub mod tss;
 pub mod vmm;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 #[repr(C)]
 pub struct RegisterState {
     pub r15: u64,

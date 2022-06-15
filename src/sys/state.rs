@@ -6,7 +6,7 @@ use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
 use kaboom::tags::{module::Module, SpecialisedSettings};
 
-use super::{pmm::BitmapAllocator, terminal::Terminal, vmm::Pml4};
+use super::{pmm::BitmapAllocator, proc::sched::Scheduler, terminal::Terminal, vmm::PageTableLvl4};
 use crate::driver::acpi::{apic::LocalAPIC, madt::MADTData, ACPIPlatform};
 
 pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemState::new());
@@ -15,11 +15,12 @@ pub struct SystemState {
     pub modules: Option<Vec<Module>>,
     pub boot_settings: SpecialisedSettings,
     pub pmm: MaybeUninit<BitmapAllocator>,
-    pub pml4: MaybeUninit<&'static mut Pml4>,
+    pub pml4: MaybeUninit<&'static mut PageTableLvl4>,
     pub terminal: Option<Terminal>,
     pub acpi: MaybeUninit<ACPIPlatform>,
     pub madt: MaybeUninit<MADTData>,
     pub lapic: MaybeUninit<LocalAPIC>,
+    pub scheduler: MaybeUninit<spin::Mutex<Scheduler>>,
 }
 
 impl SystemState {
@@ -33,6 +34,7 @@ impl SystemState {
             acpi: MaybeUninit::uninit(),
             madt: MaybeUninit::uninit(),
             lapic: MaybeUninit::uninit(),
+            scheduler: MaybeUninit::uninit(),
         }
     }
 }

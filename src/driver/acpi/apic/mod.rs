@@ -5,7 +5,7 @@ use amd64::registers::msr::{apic::APICBase, ModelSpecificReg};
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 
-mod lvt;
+pub mod lvt;
 
 pub struct LocalAPIC {
     addr: u64,
@@ -123,12 +123,14 @@ impl LocalAPIC {
         Self { addr: addr as _ }
     }
 
+    #[inline]
     pub fn write_reg<T: Into<u64>, V: Into<u32>>(&self, reg: T, value: V) {
         unsafe {
             ((self.addr + reg.into()) as *mut u32).write_volatile(value.into());
         }
     }
 
+    #[inline]
     pub fn read_reg<T: Into<u64>, R: From<u32>>(&self, reg: T) -> R {
         unsafe { ((self.addr + reg.into()) as *const u32).read_volatile() }.into()
     }
@@ -136,6 +138,21 @@ impl LocalAPIC {
     #[inline]
     pub fn send_eoi(&self) {
         self.write_reg(LocalAPICReg::EndOfInterrupt, 0u32);
+    }
+
+    #[inline]
+    pub fn set_timer_divide(&self, value: u32) {
+        self.write_reg(LocalAPICReg::TimerDivideConfiguration, value);
+    }
+
+    #[inline]
+    pub fn set_timer_init_count(&self, value: u32) {
+        self.write_reg(LocalAPICReg::TimerInitialCount, value);
+    }
+
+    #[inline]
+    pub fn read_timer_counter(&self) -> u32 {
+        self.read_reg(LocalAPICReg::TimerCurrentCount)
     }
 
     #[inline]
@@ -191,8 +208,29 @@ impl LocalAPIC {
                 .with_apic_soft_enable(true),
         )
     }
+
+    #[inline]
+    pub fn setup_timer(&self, timer: &impl crate::driver::timer::Timer) {
+        self.set_timer_divide(0x3);
+        self.set_timer_init_count(0xFFFFFFFF);
+
+        self.write_timer(self.read_timer().with_mask(false));
+        timer.sleep(10);
+        self.write_timer(self.read_timer().with_mask(true));
+
+        let ticks_per_ms = (0xFFFFFFFF - self.read_timer_counter()) / 10;
+        self.write_timer(
+            lvt::TimerLVT::new()
+                .with_vector(128)
+                .with_mask(true)
+                .with_mode(lvt::TimerMode::Periodic),
+        );
+        self.set_timer_divide(0x3);
+        self.set_timer_init_count(ticks_per_ms);
+    }
 }
 
+#[inline]
 pub fn get_set_lapic_addr() -> u64 {
     unsafe {
         let addr = (*crate::sys::state::SYS_STATE.get())
