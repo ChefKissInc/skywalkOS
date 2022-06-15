@@ -4,7 +4,7 @@ use core::{cell::SyncUnsafeCell, fmt::Write, mem::MaybeUninit};
 use amd64::paging::pml4::PML4;
 
 use crate::{
-    driver::timer::Timer,
+    driver::{pci::PCIController, timer::Timer},
     sys::{tss::TaskSegmentSelector, RegisterState},
 };
 
@@ -67,18 +67,22 @@ fn test_thread1() {
 }
 
 fn test_thread2() {
-    let pci = crate::driver::pci::Pci::new();
+    let state = unsafe { &mut *crate::sys::state::SYS_STATE.get() };
+    let acpi = unsafe { state.acpi.assume_init_mut() };
+
+    let pci = PCIController::new(acpi.find("MCFG"));
     let ac97 = pci
-        .find(move |dev| unsafe {
-            dev.cfg_read::<_, u32>(
-                crate::driver::pci::PCICfgOffset::ClassCode,
-                crate::driver::pci::PCIIOAccessSize::Word,
-            ) == 0x0401
-        })
+        .find(
+            |addr| pci.get_io(addr),
+            move |dev| unsafe {
+                dev.cfg_read::<_, u32>(
+                    crate::driver::pci::PCICfgOffset::ClassCode,
+                    crate::driver::pci::PCIIOAccessSize::Word,
+                ) == 0x0401
+            },
+        )
         .map(crate::driver::audio::ac97::AC97::new)
         .map(|v| unsafe { (*crate::driver::audio::ac97::INSTANCE.get()).write(v) });
-
-    let state = unsafe { &mut *crate::sys::state::SYS_STATE.get() };
 
     if let Some(terminal) = &mut state.terminal {
         let ps2ctl = crate::PS2Ctl::new();
@@ -86,8 +90,6 @@ fn test_thread2() {
         unsafe {
             (*crate::driver::keyboard::ps2::INSTANCE.get()).write(ps2ctl);
         }
-
-        let acpi = unsafe { state.acpi.assume_init_mut() };
 
         crate::terminal_loop::terminal_loop(acpi, &pci, terminal, ac97);
     }

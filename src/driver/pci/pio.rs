@@ -3,16 +3,16 @@
 
 use amd64::io::port::Port;
 
-#[derive(Clone, Copy)]
-pub struct PciPortIo;
+#[derive(Clone)]
+pub struct PCIPortIO;
 
-impl PciPortIo {
+impl PCIPortIO {
     pub const fn new() -> Self {
         Self
     }
 
     #[inline]
-    unsafe fn send_addr(addr: super::PciAddress, off: u8) {
+    unsafe fn send_addr(addr: super::PCIAddress, off: u8) {
         assert_eq!(addr.segment, 0, "Using segments on PCI non-express");
 
         Port::<u32, u32>::new(0xCF8).write(
@@ -25,10 +25,10 @@ impl PciPortIo {
     }
 }
 
-impl super::PCIControllerIO for PciPortIo {
+impl super::PCIControllerIO for PCIPortIO {
     unsafe fn cfg_read(
         &self,
-        addr: super::PciAddress,
+        addr: super::PCIAddress,
         off: u8,
         access_size: super::PCIIOAccessSize,
     ) -> u32 {
@@ -47,7 +47,7 @@ impl super::PCIControllerIO for PciPortIo {
 
     unsafe fn cfg_write(
         &self,
-        addr: super::PciAddress,
+        addr: super::PCIAddress,
         off: u8,
         value: u32,
         access_size: super::PCIIOAccessSize,

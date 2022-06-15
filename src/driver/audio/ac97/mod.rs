@@ -8,7 +8,7 @@ use amd64::io::port::Port;
 use log::debug;
 
 use crate::{
-    driver::pci::{PCICfgOffset, PCIControllerIO, PCIDevice, PCIIOAccessSize, PciCmd},
+    driver::pci::{PCICfgOffset, PCICommand, PCIControllerIO, PCIDevice, PCIIOAccessSize},
     sys::RegisterState,
 };
 
@@ -46,11 +46,11 @@ unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
 }
 
 impl AC97 {
-    pub fn new<T: PCIControllerIO>(dev: PCIDevice<T>) -> Self {
+    pub fn new<T: PCIControllerIO + ?Sized>(dev: PCIDevice<T>) -> Self {
         unsafe {
             dev.cfg_write::<_, u16>(
                 PCICfgOffset::Command,
-                PciCmd::from(
+                PCICommand::from(
                     dev.cfg_read::<_, u32>(PCICfgOffset::Command, PCIIOAccessSize::Word) as u16,
                 )
                 .with_pio(true)

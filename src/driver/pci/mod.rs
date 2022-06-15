@@ -1,9 +1,13 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
+use alloc::{boxed::Box, vec::Vec};
+
+use acpi::tables::mcfg::{MCFGEntry, MCFG};
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 
+mod mmio;
 mod pio;
 
 #[allow(dead_code)]
@@ -14,7 +18,7 @@ pub enum PCIIOAccessSize {
 }
 
 #[derive(Debug, Default, Clone, Copy)]
-pub struct PciAddress {
+pub struct PCIAddress {
     pub segment: u16,
     pub bus: u8,
     pub slot: u8,
@@ -24,7 +28,7 @@ pub struct PciAddress {
 #[bitfield(bits = 16)]
 #[derive(Debug)]
 #[repr(u16)]
-pub struct PciCmd {
+pub struct PCICommand {
     pub pio: bool,
     pub mmio: bool,
     pub bus_master: bool,
@@ -73,22 +77,19 @@ pub enum PCICfgOffset {
     MaximumLatency = 0x3F,
 }
 
-pub trait PCIControllerIO: Sized + Sync + Clone + Copy {
-    unsafe fn cfg_read(&self, addr: PciAddress, off: u8, access_size: PCIIOAccessSize) -> u32;
-    unsafe fn cfg_write(&self, addr: PciAddress, off: u8, value: u32, access_size: PCIIOAccessSize);
+pub trait PCIControllerIO: Sync {
+    unsafe fn cfg_read(&self, addr: PCIAddress, off: u8, access_size: PCIIOAccessSize) -> u32;
+    unsafe fn cfg_write(&self, addr: PCIAddress, off: u8, value: u32, access_size: PCIIOAccessSize);
 }
 
-#[derive(Clone, Copy)]
-pub struct PCIDevice<T: PCIControllerIO>
-where
-    T: PCIControllerIO,
-{
-    addr: PciAddress,
-    io: T,
+#[derive(Clone)]
+pub struct PCIDevice<T: PCIControllerIO + ?Sized> {
+    addr: PCIAddress,
+    io: Box<T>,
 }
 
-impl<T: PCIControllerIO> PCIDevice<T> {
-    pub fn new(addr: PciAddress, io: T) -> Self {
+impl<T: PCIControllerIO + ?Sized> PCIDevice<T> {
+    pub fn new(addr: PCIAddress, io: Box<T>) -> Self {
         Self { addr, io }
     }
 
@@ -111,34 +112,73 @@ impl<T: PCIControllerIO> PCIDevice<T> {
     }
 }
 
-pub struct Pci<T: PCIControllerIO> {
-    pub io: T,
+pub struct PCIController {
+    entries: Option<Vec<MCFGEntry>>,
 }
 
-impl Pci<pio::PciPortIo> {
-    pub fn new() -> Self {
-        Pci {
-            io: pio::PciPortIo::new(),
+impl PCIController {
+    pub fn new(mcfg: Option<&'static MCFG>) -> Self {
+        PCIController {
+            entries: mcfg.map(|mcfg| mcfg.entries().to_vec()),
+        }
+    }
+
+    pub fn find_ent(&self, addr: PCIAddress) -> &MCFGEntry {
+        self.entries
+            .as_ref()
+            .unwrap()
+            .iter()
+            .find(|v| v.segment == addr.segment && addr.bus >= v.bus_start && addr.bus <= v.bus_end)
+            .unwrap()
+    }
+
+    pub fn segment_count(&self) -> u16 {
+        if let Some(entries) = &self.entries {
+            entries
+                .iter()
+                .map(|v| v.segment)
+                .max()
+                .map_or_else(|| 1, |v| v + 1)
+        } else {
+            1
+        }
+    }
+
+    pub fn get_io(&self, addr: PCIAddress) -> Box<dyn PCIControllerIO> {
+        if self.entries.is_none() {
+            Box::new(pio::PCIPortIO::new())
+        } else {
+            let entry = self.find_ent(addr);
+            Box::new(mmio::PCIMemoryIO::new(*entry))
         }
     }
 }
 
-impl<T: PCIControllerIO> Pci<T> {
-    pub fn find(&self, predicate: fn(PCIDevice<T>) -> bool) -> Option<PCIDevice<T>> {
-        for bus in 0..=255 {
-            for slot in 0..32 {
-                for func in 0..8 {
-                    let device = PCIDevice::new(
-                        PciAddress {
+impl PCIController {
+    pub fn find<
+        T: PCIControllerIO + ?Sized,
+        IO: FnMut(PCIAddress) -> Box<T>,
+        P: FnMut(&PCIDevice<T>) -> bool,
+    >(
+        &self,
+        mut io: IO,
+        mut pred: P,
+    ) -> Option<PCIDevice<T>> {
+        for segment in 0..self.segment_count() {
+            for bus in 0..=255 {
+                for slot in 0..32 {
+                    for func in 0..8 {
+                        let addr = PCIAddress {
+                            segment,
                             bus,
                             slot,
                             func,
-                            ..Default::default()
-                        },
-                        self.io,
-                    );
-                    if predicate(device) {
-                        return Some(device);
+                        };
+                        let device = PCIDevice::new(addr, io(addr));
+
+                        if pred(&device) {
+                            return Some(device);
+                        }
                     }
                 }
             }

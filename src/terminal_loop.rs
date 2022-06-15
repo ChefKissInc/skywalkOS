@@ -12,14 +12,14 @@ use crate::{
         acpi::ACPIPlatform,
         audio::ac97::AC97,
         keyboard::ps2::Ps2Event,
-        pci::{PCICfgOffset, PCIControllerIO, PCIDevice, PCIIOAccessSize, Pci, PciAddress},
+        pci::{PCIAddress, PCICfgOffset, PCIController, PCIDevice, PCIIOAccessSize},
     },
     sys::terminal::Terminal,
 };
 
-pub fn terminal_loop<T: PCIControllerIO>(
+pub fn terminal_loop(
     acpi: &ACPIPlatform,
-    pci: &Pci<T>,
+    pci: &PCIController,
     terminal: &mut Terminal,
     mut ac97: Option<&mut AC97>,
 ) {
@@ -59,41 +59,44 @@ help       <= Display this"#
                                         }
                                     }
                                     "pcidump" => {
-                                        for bus in 0..=255 {
-                                            for slot in 0..32 {
-                                                for func in 0..8 {
-                                                    let device = PCIDevice::new(
-                                                        PciAddress {
+                                        for segment in 0..pci.segment_count() {
+                                            for bus in 0..=255 {
+                                                for slot in 0..32 {
+                                                    for func in 0..8 {
+                                                        let addr = PCIAddress {
+                                                            segment,
                                                             bus,
                                                             slot,
                                                             func,
-                                                            ..Default::default()
-                                                        },
-                                                        pci.io,
-                                                    );
-                                                    unsafe {
-                                                        let vendor_id: u32 = device.cfg_read(
-                                                            PCICfgOffset::VendorId,
-                                                            PCIIOAccessSize::Word,
-                                                        );
-                                                        if vendor_id != 0xFFFF {
-                                                            info!(
-                                                                "PCI Device at {}:{}:{} has \
-                                                                 vendor ID {:#06X} and device ID \
-                                                                 {:#06X}, class code {:#06X}",
-                                                                bus,
-                                                                slot,
-                                                                func,
-                                                                vendor_id,
-                                                                device.cfg_read::<_, u32>(
-                                                                    PCICfgOffset::DeviceId,
-                                                                    PCIIOAccessSize::Word,
-                                                                ),
-                                                                device.cfg_read::<_, u32>(
-                                                                    PCICfgOffset::ClassCode,
-                                                                    PCIIOAccessSize::Word,
-                                                                ),
-                                                            )
+                                                        };
+                                                        let device =
+                                                            PCIDevice::new(addr, pci.get_io(addr));
+
+                                                        unsafe {
+                                                            let vendor_id: u32 = device.cfg_read(
+                                                                PCICfgOffset::VendorId,
+                                                                PCIIOAccessSize::Word,
+                                                            );
+                                                            if vendor_id != 0xFFFF {
+                                                                info!(
+                                                                    "PCI Device at {}:{}:{} has \
+                                                                     vendor ID {:#06X} and device \
+                                                                     ID {:#06X}, class code \
+                                                                     {:#06X}",
+                                                                    bus,
+                                                                    slot,
+                                                                    func,
+                                                                    vendor_id,
+                                                                    device.cfg_read::<_, u32>(
+                                                                        PCICfgOffset::DeviceId,
+                                                                        PCIIOAccessSize::Word,
+                                                                    ),
+                                                                    device.cfg_read::<_, u32>(
+                                                                        PCICfgOffset::ClassCode,
+                                                                        PCIIOAccessSize::Word,
+                                                                    ),
+                                                                )
+                                                            }
                                                         }
                                                     }
                                                 }
