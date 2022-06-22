@@ -68,7 +68,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
 
         let pml4 = Box::leak(Box::new(sys::vmm::PageTableLvl4::new()));
         unsafe { pml4.init() }
-        state.pml4.write(pml4);
+        let pml4 = state.pml4.write(pml4);
 
         if let Some(terminal) = &mut state.terminal {
             terminal.map_fb();
@@ -81,20 +81,37 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
 
         let hpet = acpi
             .find("HPET")
-            .map(driver::timer::hpet::HighPrecisionEventTimer::new)
+            .map(|v| unsafe {
+                let addr = v as *const _ as usize;
+                pml4.map_mmio(
+                    addr,
+                    addr - amd64::paging::PHYS_VIRT_OFFSET,
+                    1,
+                    amd64::paging::PageTableEntry::new()
+                        .with_present(true)
+                        .with_writable(true),
+                );
+                driver::timer::hpet::HighPrecisionEventTimer::new(v)
+            })
             .unwrap();
 
         state.madt.write(driver::acpi::madt::MADTData::new(
             acpi.find("APIC").unwrap(),
         ));
         let addr = driver::acpi::apic::get_set_lapic_addr();
+        let virt_addr = addr as usize + amd64::paging::PHYS_VIRT_OFFSET;
+        unsafe {
+            pml4.map_mmio(
+                virt_addr,
+                addr as usize,
+                1,
+                amd64::paging::PageTableEntry::new()
+                    .with_present(true)
+                    .with_writable(true),
+            );
+        }
         debug!("LAPIC address: {:#X?}", addr);
-        state
-            .lapic
-            .write(LocalAPIC::new(
-                addr as usize + amd64::paging::PHYS_VIRT_OFFSET,
-            ))
-            .enable();
+        state.lapic.write(LocalAPIC::new(virt_addr)).enable();
 
         unsafe { asm!("sti") }
 

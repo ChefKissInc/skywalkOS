@@ -4,7 +4,7 @@
 use alloc::boxed::Box;
 
 use amd64::{
-    paging::pml4::PML4 as PML4Trait,
+    paging::{pml4::PML4 as PML4Trait, PageTableEntry},
     registers::msr::{
         pat::{PATEntry, PageAttributeTable},
         ModelSpecificReg,
@@ -32,6 +32,13 @@ impl PageTableLvl4 {
 
         self.map_higher_half();
         self.set();
+    }
+
+    #[inline]
+    pub unsafe fn map_mmio(&mut self, virt: usize, phys: usize, count: usize, flags: PageTableEntry) {
+        debug_assert!(!flags.pwt());
+        debug_assert!(!flags.pcd());
+        self.map_pages(virt, phys, count, flags.with_huge_or_pat(true))
     }
 }
 
