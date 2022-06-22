@@ -35,7 +35,13 @@ impl PageTableLvl4 {
     }
 
     #[inline]
-    pub unsafe fn map_mmio(&mut self, virt: usize, phys: usize, count: usize, flags: PageTableEntry) {
+    pub unsafe fn map_mmio(
+        &mut self,
+        virt: usize,
+        phys: usize,
+        count: usize,
+        flags: PageTableEntry,
+    ) {
         debug_assert!(!flags.pwt());
         debug_assert!(!flags.pcd());
         self.map_pages(virt, phys, count, flags.with_huge_or_pat(true))
