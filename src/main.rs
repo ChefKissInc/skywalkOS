@@ -112,6 +112,12 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
         }
         debug!("LAPIC address: {:#X?}", addr);
         state.lapic.write(LocalAPIC::new(virt_addr)).enable();
+        let pmm = unsafe { state.pmm.assume_init_ref() };
+        info!(
+            "Used memory: {}MB out of {}MB",
+            (pmm.total_pages - pmm.free_pages) * 4096 / 1000 / 1000,
+            pmm.total_pages * 4096 / 1000 / 1000
+        );
 
         unsafe { asm!("sti") }
 

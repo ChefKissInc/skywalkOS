@@ -11,7 +11,9 @@ extern "C" {
 #[derive(Debug)]
 pub struct BitmapAllocator {
     bitmap: &'static mut [u64],
-    highest_page: usize,
+    highest_addr: usize,
+    pub free_pages: usize,
+    pub total_pages: usize,
     last_index: usize,
 }
 
@@ -21,7 +23,8 @@ impl BitmapAllocator {
             unsafe { &__kernel_top } as *const _ as usize - amd64::paging::KERNEL_VIRT_OFFSET;
         trace!("alloc_base: {:#X?}", alloc_base);
 
-        let mut highest_page = 0usize;
+        let mut highest_addr = 0usize;
+
         // Find the highest available address
         for mmap_ent in mmap {
             match mmap_ent {
@@ -29,18 +32,18 @@ impl BitmapAllocator {
                     let top = v.base + v.length;
                     trace!("{:X?}, top: {:#X?}", mmap_ent, top);
 
-                    if top > highest_page {
-                        highest_page = top;
+                    if top > highest_addr {
+                        highest_addr = top;
                     }
                 }
                 _ => {}
             }
         }
 
-        let bitmap_sz = (highest_page / 0x1000) / 8;
+        let bitmap_sz = (highest_addr / 0x1000) / 8;
         trace!(
             "highest_page: {:#X?}, bitmap_sz: {:#X?}",
-            highest_page,
+            highest_addr,
             bitmap_sz
         );
 
@@ -63,6 +66,8 @@ impl BitmapAllocator {
             }
         }
 
+        let mut free_pages = 0usize;
+
         // Populate the bitmap
         for mmap_ent in mmap {
             if let MemoryEntry::Usable(v) = mmap_ent {
@@ -77,6 +82,10 @@ impl BitmapAllocator {
                     *v
                 };
 
+                if (v.base / 0x1000) > 512 {
+                    free_pages += v.length / 0x1000;
+                }
+
                 for i in 0..(v.length / 0x1000) {
                     crate::utils::bitmap::bit_reset(bitmap, (v.base + (i * 0x1000)) / 0x1000);
                 }
@@ -88,9 +97,12 @@ impl BitmapAllocator {
             crate::utils::bitmap::bit_set(bitmap, i);
         }
 
+        let total_pages = highest_addr / 0x1000;
         Self {
             bitmap,
-            highest_page,
+            highest_addr,
+            total_pages,
+            free_pages,
             last_index: 0,
         }
     }
@@ -112,6 +124,8 @@ impl BitmapAllocator {
                         crate::utils::bitmap::bit_set(self.bitmap, i);
                     }
 
+                    self.free_pages -= count;
+
                     return Some((page * 0x1000) as *mut _);
                 }
             } else {
@@ -125,7 +139,7 @@ impl BitmapAllocator {
     pub unsafe fn alloc(&mut self, count: usize) -> Option<*mut u8> {
         let l = self.last_index;
 
-        self.internal_alloc(count, self.highest_page / 0x1000).or({
+        self.internal_alloc(count, self.highest_addr / 0x1000).or({
             self.last_index = 0;
             self.internal_alloc(count, l)
         })
@@ -138,5 +152,7 @@ impl BitmapAllocator {
         for i in idx..(idx + count) {
             crate::utils::bitmap::bit_reset(self.bitmap, i);
         }
+
+        self.free_pages += count;
     }
 }

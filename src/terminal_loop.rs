@@ -24,6 +24,7 @@ pub fn terminal_loop(
     mut ac97: Option<&mut AC97>,
 ) {
     let ps2ctl = unsafe { (&mut *crate::driver::keyboard::ps2::INSTANCE.get()).assume_init_mut() };
+    let state = unsafe { &mut (*crate::sys::state::SYS_STATE.get()) };
     'menu: loop {
         write!(terminal, "\nFirework# ").unwrap();
         let mut cmd = String::new();
@@ -38,16 +39,17 @@ pub fn terminal_loop(
                                     "help" => {
                                         info!(
                                             r#"Fuse debug terminal
-Available commands:
-clear      <= Clear terminal
-greeting   <= Very epic example command
-acpidump   <= Dump ACPI information
-pcidump    <= Dump PCI devices
-audiotest  <= Play test sound through AC97
-resume     <= Resume playback
-pause      <= Pause playback
-restart    <= Restart machine by resetting CPU
-help       <= Display this"#
+ Commands  |          Description
+clear      |  Clear terminal
+greeting   |  Very epic example command
+acpidump   |  Dump ACPI information
+pcidump    |  Dump PCI devices
+audiotest  |  Play test sound through AC97
+resume     |  Resume playback
+pause      |  Pause playback
+restart    |  Restart machine by resetting CPU
+help       |  Display this
+memusage   |  View memory usage"#
                                         );
                                     }
                                     "clear" => terminal.clear(),
@@ -104,10 +106,8 @@ help       <= Display this"#
                                         }
                                     }
                                     "audiotest" => {
-                                        if let Some(ac97) = &mut ac97 {
-                                            if let Some(modules) = unsafe {
-                                                &mut (*crate::sys::state::SYS_STATE.get()).modules
-                                            } {
+                                        if let Some(ref mut ac97) = ac97 {
+                                            if let Some(ref modules) = state.modules {
                                                 if let Some(Module::Audio(module)) =
                                                     modules.iter().find(|v| {
                                                         if let Module::Audio(v) = v {
@@ -147,6 +147,14 @@ help       <= Display this"#
                                         }
                                     }
                                     "restart" => ps2ctl.reset_cpu(),
+                                    "memusage" => {
+                                        let pmm = unsafe { state.pmm.assume_init_ref() };
+                                        info!(
+                                            "Used memory: {}MB out of {}MB",
+                                            (pmm.total_pages - pmm.free_pages) * 4096 / 1000 / 1000,
+                                            pmm.total_pages * 4096 / 1000 / 1000
+                                        );
+                                    }
                                     _ => writeln!(terminal, "Unknown command").unwrap(),
                                 }
 
