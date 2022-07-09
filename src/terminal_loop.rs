@@ -23,7 +23,7 @@ pub fn terminal_loop(
     terminal: &mut Terminal,
     mut ac97: Option<&mut AC97>,
 ) {
-    let ps2ctl = unsafe { (&mut *crate::driver::keyboard::ps2::INSTANCE.get()).assume_init_mut() };
+    let ps2ctl = unsafe { (*crate::driver::keyboard::ps2::INSTANCE.get()).assume_init_mut() };
     let state = unsafe { &mut (*crate::sys::state::SYS_STATE.get()) };
     'menu: loop {
         write!(terminal, "\nFirework# ").unwrap();

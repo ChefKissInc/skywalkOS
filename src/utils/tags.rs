@@ -43,7 +43,7 @@ pub fn parse(tags: &'static [kaboom::tags::TagType]) {
             }
             TagType::RSDPPtr(rsdp) => {
                 debug!("Got ACPI RSDP: {:X?}", rsdp);
-                state.acpi.write(ACPIPlatform::new(*rsdp));
+                state.acpi.write(ACPIPlatform::new(rsdp));
             }
             TagType::Module(module) => {
                 debug!("Got module: {:#X?}", module);

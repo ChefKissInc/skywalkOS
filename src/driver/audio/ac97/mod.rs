@@ -28,7 +28,7 @@ pub struct AC97 {
 pub static INSTANCE: SyncUnsafeCell<MaybeUninit<AC97>> = SyncUnsafeCell::new(MaybeUninit::uninit());
 
 unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
-    let this = (&mut *INSTANCE.get()).assume_init_mut();
+    let this = (*INSTANCE.get()).assume_init_mut();
 
     if this.buf.is_empty() || !this.playing {
         this.playing = false;
