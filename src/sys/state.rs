@@ -1,10 +1,10 @@
-//! Copyright (c) VisualDevelopment 2021-2022.
+//! Copyright (c) ChefKiss Inc 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use alloc::vec::Vec;
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
-use kaboom::tags::{module::Module, SpecialisedSettings};
+use sulfur_dioxide::tags::{module::Module, SpecialisedSettings};
 
 use super::{pmm::BitmapAllocator, proc::sched::Scheduler, terminal::Terminal, vmm::PageTableLvl4};
 use crate::driver::acpi::{apic::LocalAPIC, madt::MADTData, ACPIPlatform};

@@ -1,10 +1,9 @@
 [package]
-name = "fuse"
-description = "Firework kernel"
-repository = "https://github.com/Firework-OS/Fuse"
+name = "cardboard"
+description = "The BoxOS kernel"
 publish = false
 version = "0.1.0"
-authors = ["VisualDevelopment"]
+authors = ["ChefKiss Inc"]
 edition = "2021"
 license-file = "LICENSE"
 
@@ -12,11 +11,11 @@ license-file = "LICENSE"
 lto = true
 
 [dependencies]
-acpi = { path = "../ACPI" }
-amd64 = { path = "../AMD64" }
+acpi = { path = "../ACPILib" }
+amd64 = { path = "../AMD64Lib" }
 font8x8 = { version = "0.3.1", default-features = false }
 hashbrown = { version = "0.12.1", features = ["nightly"] }
-kaboom = { path = "../Kaboom" }
+sulfur_dioxide = { path = "../SulfurDioxide" }
 log = { version = "0.4.17", default-features = false, features = [
     "release_max_level_debug",
     "max_level_trace",
@@ -42,4 +41,4 @@ unwinding = { version = "0.1.4", default-features = false, features = [
     "panic",
     "hide-trace",
 ] }
-vesa = { path = "../VESA" }
+paper_fb = { path = "../PaperFramebuffer" }

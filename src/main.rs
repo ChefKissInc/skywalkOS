@@ -1,4 +1,4 @@
-//! Copyright (c) VisualDevelopment 2021-2022.
+//! Copyright (c) ChefKiss Inc 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 #![no_std]
@@ -37,7 +37,7 @@ mod terminal_loop;
 mod utils;
 
 #[no_mangle]
-extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
+extern "sysv64" fn kernel_main(boot_info: &'static sulfur_dioxide::BootInfo) -> ! {
     unwinding::panic::catch_unwind(move || {
         sys::io::serial::SERIAL.lock().init();
 
@@ -45,8 +45,8 @@ extern "sysv64" fn kernel_main(boot_info: &'static kaboom::BootInfo) -> ! {
             .map(|()| log::set_max_level(log::LevelFilter::Trace))
             .unwrap();
 
-        assert_eq!(boot_info.revision, kaboom::CURRENT_REVISION);
-        info!("Copyright VisualDevelopment 2021.");
+        assert_eq!(boot_info.revision, sulfur_dioxide::CURRENT_REVISION);
+        info!("Copyright ChefKiss Inc 2021.");
 
         unsafe {
             debug!("Initialising the GDT.");

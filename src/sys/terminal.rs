@@ -1,10 +1,10 @@
-//! Copyright (c) VisualDevelopment 2021-2022.
+//! Copyright (c) ChefKiss Inc 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use core::fmt::Write;
 
 use amd64::paging::pml4::PML4;
-use vesa::{framebuffer::Framebuffer, pixel::Colour};
+use paper_fb::{framebuffer::Framebuffer, pixel::Colour};
 
 pub struct Terminal {
     x: usize,

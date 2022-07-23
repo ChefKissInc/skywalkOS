@@ -1,11 +1,11 @@
-//! Copyright (c) VisualDevelopment 2021-2022.
+//! Copyright (c) ChefKiss Inc 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use alloc::string::String;
 use core::fmt::Write;
 
-use kaboom::tags::module::Module;
 use log::{error, info};
+use sulfur_dioxide::tags::module::Module;
 
 use crate::{
     driver::{

@@ -1,17 +1,17 @@
-//! Copyright (c) VisualDevelopment 2021-2022.
+//! Copyright (c) ChefKiss Inc 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use alloc::vec::Vec;
 
-use kaboom::tags::TagType;
 use log::debug;
+use sulfur_dioxide::tags::TagType;
 
 use crate::{
     sys::{pmm::BitmapAllocator, terminal::Terminal},
     ACPIPlatform,
 };
 
-pub fn parse(tags: &'static [kaboom::tags::TagType]) {
+pub fn parse(tags: &'static [sulfur_dioxide::tags::TagType]) {
     let state = unsafe { &mut *crate::sys::state::SYS_STATE.get() };
 
     for tag in tags {
@@ -26,11 +26,11 @@ pub fn parse(tags: &'static [kaboom::tags::TagType]) {
             }
             TagType::FrameBuffer(fb_info) => {
                 debug!("Got boot display: {:X?}", *fb_info);
-                let mut terminal = Terminal::new(vesa::framebuffer::Framebuffer::new(
+                let mut terminal = Terminal::new(paper_fb::framebuffer::Framebuffer::new(
                     fb_info.base,
                     fb_info.resolution.width as usize,
                     fb_info.resolution.height as usize,
-                    vesa::pixel::Bitmask {
+                    paper_fb::pixel::Bitmask {
                         r: fb_info.pixel_bitmask.red,
                         g: fb_info.pixel_bitmask.green,
                         b: fb_info.pixel_bitmask.blue,

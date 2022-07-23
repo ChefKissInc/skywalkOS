@@ -1,8 +1,8 @@
-//! Copyright (c) VisualDevelopment 2021-2022.
+//! Copyright (c) ChefKiss Inc 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use kaboom::tags::memory_map::MemoryEntry;
 use log::trace;
+use sulfur_dioxide::tags::memory_map::MemoryEntry;
 
 extern "C" {
     static __kernel_top: u64;

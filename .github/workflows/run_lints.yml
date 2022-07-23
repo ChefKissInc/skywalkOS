@@ -21,20 +21,20 @@ jobs:
       - run: ln -s .. _work
       - uses: actions/checkout@v2
         with:
-          repository: "Firework-OS/AMD64"
-          path: "_work/AMD64"
+          repository: "BoxOperatingSystem/AMD64Lib"
+          path: "_work/AMD64Lib"
       - uses: actions/checkout@v2
         with:
-          repository: "Firework-OS/ACPI"
-          path: "_work/ACPI"
+          repository: "BoxOperatingSystem/ACPILib"
+          path: "_work/ACPILib"
       - uses: actions/checkout@v2
         with:
-          repository: "Firework-OS/Kaboom"
-          path: "_work/Kaboom"
+          repository: "BoxOperatingSystem/SulfurDioxide"
+          path: "_work/SulfurDioxide"
       - uses: actions/checkout@v2
         with:
-          repository: "Firework-OS/VESA"
-          path: "_work/VESA"
+          repository: "BoxOperatingSystem/PaperFramebuffer"
+          path: "_work/PaperFramebuffer"
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
@@ -58,20 +58,20 @@ jobs:
       - run: ln -s .. _work
       - uses: actions/checkout@v2
         with:
-          repository: "Firework-OS/AMD64"
-          path: "_work/AMD64"
+          repository: "BoxOperatingSystem/AMD64Lib"
+          path: "_work/AMD64Lib"
       - uses: actions/checkout@v2
         with:
-          repository: "Firework-OS/ACPI"
-          path: "_work/ACPI"
+          repository: "BoxOperatingSystem/ACPILib"
+          path: "_work/ACPILib"
       - uses: actions/checkout@v2
         with:
-          repository: "Firework-OS/Kaboom"
-          path: "_work/Kaboom"
+          repository: "BoxOperatingSystem/SulfurDioxide"
+          path: "_work/SulfurDioxide"
       - uses: actions/checkout@v2
         with:
-          repository: "Firework-OS/VESA"
-          path: "_work/VESA"
+          repository: "BoxOperatingSystem/PaperFramebuffer"
+          path: "_work/PaperFramebuffer"
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
