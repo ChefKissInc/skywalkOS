@@ -1,5 +1,5 @@
 //! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
+//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use acpi::tables::madt::ic::ioapic::{self, IOAPICRedir};
 use amd64::spec::mps::{Polarity, TriggerMode};
