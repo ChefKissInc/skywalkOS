@@ -1,10 +1,17 @@
 use alloc::collections::VecDeque;
-use core::{cell::SyncUnsafeCell, fmt::Write, mem::MaybeUninit};
+use core::{
+    cell::SyncUnsafeCell,
+    /* fmt::Write, */ mem::{size_of, MaybeUninit},
+};
 
-use amd64::paging::pml4::PML4;
+use amd64::paging::{pml4::PML4, PageTableEntry};
+use log::info;
 
 use crate::{
-    driver::{pci::PCIController, timer::Timer},
+    driver::{
+        pci::{PCICfgOffset, PCICommand, PCIController, PCIIOAccessSize},
+        timer::Timer,
+    },
     sys::{tss::TaskSegmentSelector, RegisterState},
 };
 
@@ -42,11 +49,11 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
 fn test_thread() {
     unsafe {
         loop {
-            writeln!(
-                &mut crate::sys::io::serial::SERIAL.lock(),
-                "hi from thread 0"
-            )
-            .unwrap();
+            // writeln!(
+            //     &mut crate::sys::io::serial::SERIAL.lock(),
+            //     "hi from thread 0"
+            // )
+            // .unwrap();
 
             core::arch::asm!("hlt");
         }
@@ -56,11 +63,11 @@ fn test_thread() {
 fn test_thread1() {
     unsafe {
         loop {
-            writeln!(
-                &mut crate::sys::io::serial::SERIAL.lock(),
-                "hi from thread 1"
-            )
-            .unwrap();
+            // writeln!(
+            //     &mut crate::sys::io::serial::SERIAL.lock(),
+            //     "hi from thread 1"
+            // )
+            // .unwrap();
             core::arch::asm!("hlt");
         }
     }
@@ -75,14 +82,58 @@ fn test_thread2() {
         .find(
             |addr| pci.get_io(addr),
             move |dev| unsafe {
-                dev.cfg_read::<_, u32>(
-                    crate::driver::pci::PCICfgOffset::ClassCode,
-                    crate::driver::pci::PCIIOAccessSize::Word,
-                ) == 0x0401
+                dev.cfg_read::<_, u32>(PCICfgOffset::ClassCode, PCIIOAccessSize::Word) == 0x0401
             },
         )
         .map(crate::driver::audio::ac97::AC97::new)
         .map(|v| unsafe { (*crate::driver::audio::ac97::INSTANCE.get()).write(v) });
+
+    let sata_device = pci
+        .find(
+            |v| pci.get_io(v),
+            move |dev| unsafe {
+                dev.cfg_read::<_, u32>(PCICfgOffset::ClassCode, PCIIOAccessSize::Word) == 0x0106
+            },
+        )
+        .unwrap();
+
+    unsafe {
+        sata_device.cfg_write::<_, u16>(
+            PCICfgOffset::Command,
+            PCICommand::from(
+                sata_device.cfg_read::<_, u32>(PCICfgOffset::Command, PCIIOAccessSize::Word) as u16,
+            )
+            .with_pio(false)
+            .with_bus_master(true)
+            .with_disable_intrs(true)
+            .into(),
+            PCIIOAccessSize::Word,
+        );
+
+        let addr: u32 =
+            sata_device.cfg_read::<_, u32>(PCICfgOffset::BaseAddr5, PCIIOAccessSize::DWord) & !0xF;
+        let addr_virt = addr as usize + amd64::paging::PHYS_VIRT_OFFSET;
+        let hba_mem = &mut *(addr_virt as *mut crate::driver::storage::ahci::hba::HBAMemory);
+        state.pml4.assume_init_mut().map_mmio(
+            addr_virt,
+            addr as usize,
+            (size_of::<crate::driver::storage::ahci::hba::HBAMemory>() + 0xFFF) / 0x1000,
+            PageTableEntry::new().with_present(true).with_writable(true),
+        );
+
+        hba_mem.set_global_host_control(hba_mem.global_host_control().with_ahci_enable(true));
+
+        info!("{:#X?}", hba_mem);
+        if hba_mem.cap_ext().bios_handoff() {
+            info!("Doing BIOS/OS Handoff");
+        }
+
+        for i in 0..32 {
+            if let Some(port) = hba_mem.get_port_ref(i) {
+                info!("Port {}: {:#X?}", i, port);
+            }
+        }
+    }
 
     if let Some(terminal) = &mut state.terminal {
         let ps2ctl = crate::PS2Ctl::new();
