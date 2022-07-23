@@ -3,9 +3,9 @@
 
 use core::fmt::Write;
 
-pub struct FuseLogger;
+pub struct CardboardLogger;
 
-impl log::Log for FuseLogger {
+impl log::Log for CardboardLogger {
     fn enabled(&self, _: &log::Metadata) -> bool {
         true
     }
@@ -42,4 +42,4 @@ impl log::Log for FuseLogger {
     fn flush(&self) {}
 }
 
-pub static LOGGER: FuseLogger = FuseLogger;
+pub static LOGGER: CardboardLogger = CardboardLogger;

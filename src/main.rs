@@ -73,7 +73,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulfur_dioxide::BootInfo) -> 
         if let Some(terminal) = &mut state.terminal {
             terminal.map_fb();
         }
-        info!("Fuse has been ignited!");
+        info!("Cardboard has been synthesised!");
 
         let acpi = unsafe { state.acpi.assume_init_mut() };
 
