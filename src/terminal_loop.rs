@@ -1,5 +1,5 @@
 //! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
+//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use alloc::string::String;
 use core::fmt::Write;
@@ -26,7 +26,7 @@ pub fn terminal_loop(
     let ps2ctl = unsafe { (*crate::driver::keyboard::ps2::INSTANCE.get()).assume_init_mut() };
     let state = unsafe { &mut (*crate::sys::state::SYS_STATE.get()) };
     'menu: loop {
-        write!(terminal, "\nFirework# ").unwrap();
+        write!(terminal, "\nBoxOS# ").unwrap();
         let mut cmd = String::new();
         loop {
             if let Some(key) = ps2ctl.queue.pop_front() {
@@ -38,7 +38,7 @@ pub fn terminal_loop(
                                 match cmd.as_str() {
                                     "help" => {
                                         info!(
-                                            r#"Fuse debug terminal
+                                            r#"Cardboard debug terminal
  Commands  |          Description
 clear      |  Clear terminal
 greeting   |  Very epic example command

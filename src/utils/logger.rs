@@ -1,11 +1,11 @@
 //! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
+//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use core::fmt::Write;
 
-pub struct FuseLogger;
+pub struct CardboardLogger;
 
-impl log::Log for FuseLogger {
+impl log::Log for CardboardLogger {
     fn enabled(&self, _: &log::Metadata) -> bool {
         true
     }
@@ -42,4 +42,4 @@ impl log::Log for FuseLogger {
     fn flush(&self) {}
 }
 
-pub static LOGGER: FuseLogger = FuseLogger;
+pub static LOGGER: CardboardLogger = CardboardLogger;
