@@ -1,4 +1,4 @@
-# Cardboard [![Run lints](https://github.com/BoxOS/Cardboard/actions/workflows/run_lints.yml/badge.svg)](https://github.com/BoxOS/Cardboard/actions/workflows/run_lints.yml)
+# Cardboard [![Run lints](https://github.com/BoxOperatingSystem/Cardboard/actions/workflows/run_lints.yml/badge.svg)](https://github.com/BoxOperatingSystem/Cardboard/actions/workflows/run_lints.yml)
 
 The BoxOS kernel.
 
