@@ -9,6 +9,7 @@ use log::info;
 
 use crate::{
     driver::{
+        keyboard::ps2::PS2Ctl,
         pci::{PCICfgOffset, PCICommand, PCIController, PCIIOAccessSize},
         timer::Timer,
     },
@@ -46,7 +47,7 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
     this.processes[0].cr3.set();
 }
 
-fn test_thread() {
+fn test_thread1() -> ! {
     unsafe {
         loop {
             // writeln!(
@@ -60,20 +61,7 @@ fn test_thread() {
     }
 }
 
-fn test_thread1() {
-    unsafe {
-        loop {
-            // writeln!(
-            //     &mut crate::sys::io::serial::SERIAL.lock(),
-            //     "hi from thread 1"
-            // )
-            // .unwrap();
-            core::arch::asm!("hlt");
-        }
-    }
-}
-
-fn test_thread2() {
+fn test_thread2() -> ! {
     let state = unsafe { &mut *crate::sys::state::SYS_STATE.get() };
     let acpi = unsafe { state.acpi.assume_init_mut() };
 
@@ -136,13 +124,17 @@ fn test_thread2() {
     }
 
     if let Some(terminal) = &mut state.terminal {
-        let ps2ctl = crate::PS2Ctl::new();
+        let ps2ctl = PS2Ctl::new();
         ps2ctl.init();
         unsafe {
             (*crate::driver::keyboard::ps2::INSTANCE.get()).write(ps2ctl);
         }
 
         crate::terminal_loop::terminal_loop(acpi, &pci, terminal, ac97);
+    } else {
+        loop {
+            unsafe { core::arch::asm!("hlt") }
+        }
     }
 }
 
@@ -150,7 +142,7 @@ impl Scheduler {
     pub fn new(timer: &impl Timer) -> Self {
         let mut processes = VecDeque::new();
         let mut kern_proc = super::Process::new(0, "", "");
-        let kern_thread = super::Thread::new(0, test_thread as usize);
+        let kern_thread = super::Thread::new(0, test_thread1 as usize);
         unsafe {
             *(*TSS.get()).assume_init_mut() = TaskSegmentSelector::new(
                 kern_thread.kern_rsp.as_ptr() as usize + kern_thread.kern_rsp.len(),
@@ -169,8 +161,7 @@ impl Scheduler {
             );
         }
         kern_proc.threads.push_back(kern_thread);
-        let kern_thread = super::Thread::new(1, test_thread1 as usize);
-        kern_proc.threads.push_back(kern_thread);
+
         let kern_thread = super::Thread::new(2, test_thread2 as usize);
         kern_proc.threads.push_back(kern_thread);
         processes.push_back(kern_proc);

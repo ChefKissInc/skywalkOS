@@ -14,7 +14,7 @@ pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemSt
 pub struct SystemState {
     pub modules: Option<Vec<Module>>,
     pub boot_settings: SpecialisedSettings,
-    pub pmm: MaybeUninit<BitmapAllocator>,
+    pub pmm: MaybeUninit<spin::Mutex<BitmapAllocator>>,
     pub pml4: MaybeUninit<&'static mut PageTableLvl4>,
     pub terminal: Option<Terminal>,
     pub acpi: MaybeUninit<ACPIPlatform>,

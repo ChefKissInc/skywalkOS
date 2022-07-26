@@ -36,9 +36,9 @@ pub struct Thread {
 impl Thread {
     pub fn new(id: usize, rip: usize) -> Self {
         let mut rsp = Vec::new();
-        rsp.resize(0x2000, 0);
+        rsp.resize(0x14000, 0);
         let mut kern_rsp = Vec::new();
-        kern_rsp.resize(0x2000, 0);
+        kern_rsp.resize(0x14000, 0);
         Self {
             state: ThreadState::Inactive,
             id,
