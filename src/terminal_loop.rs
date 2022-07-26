@@ -22,7 +22,7 @@ pub fn terminal_loop(
     pci: &PCIController,
     terminal: &mut Terminal,
     mut ac97: Option<&mut AC97>,
-) {
+) -> ! {
     let ps2ctl = unsafe { (*crate::driver::keyboard::ps2::INSTANCE.get()).assume_init_mut() };
     let state = unsafe { &mut (*crate::sys::state::SYS_STATE.get()) };
     'menu: loop {
@@ -149,11 +149,12 @@ memusage   |  View memory usage"#
                                     "restart" => ps2ctl.reset_cpu(),
                                     "memusage" => {
                                         let pmm = unsafe { state.pmm.assume_init_ref() };
-                                        info!(
-                                            "Used memory: {}MB out of {}MB",
-                                            (pmm.total_pages - pmm.free_pages) * 4096 / 1000 / 1000,
-                                            pmm.total_pages * 4096 / 1000 / 1000
-                                        );
+                                        let used = {
+                                            let pmm = pmm.lock();
+                                            (pmm.total_pages - pmm.free_pages) * 4096 / 1024 / 1024
+                                        };
+                                        let total = pmm.lock().total_pages * 4096 / 1024 / 1024;
+                                        info!("Used memory: {}MiB out of {}MiB", used, total);
                                     }
                                     _ => writeln!(terminal, "Unknown command").unwrap(),
                                 }

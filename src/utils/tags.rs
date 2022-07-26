@@ -22,7 +22,9 @@ pub fn parse(tags: &'static [sulfur_dioxide::tags::TagType]) {
             }
             TagType::MemoryMap(mmap) => {
                 debug!("Got memory map: {:X?}", *mmap);
-                state.pmm.write(BitmapAllocator::new(mmap));
+                state
+                    .pmm
+                    .write(spin::Mutex::new(BitmapAllocator::new(mmap)));
             }
             TagType::FrameBuffer(fb_info) => {
                 debug!("Got boot display: {:X?}", *fb_info);

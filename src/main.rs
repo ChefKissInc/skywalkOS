@@ -24,10 +24,7 @@ use core::arch::asm;
 use log::{debug, info};
 
 use crate::{
-    driver::{
-        acpi::{apic::LocalAPIC, ACPIPlatform},
-        keyboard::ps2::PS2Ctl,
-    },
+    driver::acpi::{apic::LocalAPIC, ACPIPlatform},
     sys::gdt::{PrivilegeLevel, SegmentSelector},
 };
 
@@ -113,11 +110,12 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulfur_dioxide::BootInfo) -> 
         debug!("LAPIC address: {:#X?}", addr);
         state.lapic.write(LocalAPIC::new(virt_addr)).enable();
         let pmm = unsafe { state.pmm.assume_init_ref() };
-        info!(
-            "Used memory: {}MB out of {}MB",
-            (pmm.total_pages - pmm.free_pages) * 4096 / 1000 / 1000,
-            pmm.total_pages * 4096 / 1000 / 1000
-        );
+        let used = {
+            let pmm = pmm.lock();
+            (pmm.total_pages - pmm.free_pages) * 4096 / 1024 / 1024
+        };
+        let total = pmm.lock().total_pages * 4096 / 1024 / 1024;
+        info!("Used memory: {}MiB out of {}MiB", used, total);
 
         unsafe { asm!("sti") }
 
