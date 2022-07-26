@@ -64,7 +64,7 @@ fn test_thread2() -> ! {
     let pci = PCIController::new(acpi.find("MCFG"));
     let ac97 = pci
         .find(
-            |addr| pci.get_io(addr),
+            |v| pci.get_io(v),
             move |dev| unsafe {
                 dev.cfg_read::<_, u32>(PCICfgOffset::ClassCode, PCIIOAccessSize::Word) == 0x0401
             },

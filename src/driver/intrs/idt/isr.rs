@@ -3,8 +3,6 @@
 
 use core::arch::asm;
 
-use log::trace;
-
 macro_rules! isr_stub {
     ($err:expr, $i:expr) => {
         asm!(
@@ -59,7 +57,6 @@ macro_rules! isr_stub {
 unsafe extern "C" fn isr_handler(regs: &mut crate::sys::RegisterState) {
     let n = (regs.int_num & 0xFF) as u8;
     let handler = &super::HANDLERS.get().as_mut().unwrap()[n as usize];
-    trace!("Handler for ISR {:#X?}: {:#X?}", n, handler);
     (handler.func)(regs);
     if handler.is_irq {
         (*crate::sys::state::SYS_STATE.get())
