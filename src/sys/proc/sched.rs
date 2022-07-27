@@ -6,7 +6,7 @@ use amd64::paging::pml4::PML4;
 use crate::{
     driver::{
         keyboard::ps2::PS2Ctl,
-        pci::{PCICfgOffset, PCICommand, PCIController, PCIIOAccessSize},
+        pci::{PCICfgOffset, PCIController, PCIIOAccessSize},
         timer::Timer,
     },
     sys::{tss::TaskSegmentSelector, RegisterState},
