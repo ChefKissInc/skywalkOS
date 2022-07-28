@@ -10,7 +10,7 @@ use log::info;
 use crate::{
     driver::{
         keyboard::ps2::PS2Ctl,
-        pci::{PCICfgOffset, PCIController, PCIIOAccessSize},
+        pci::{PCICfgOffset, PCICommand, PCIController, PCIIOAccessSize},
         timer::Timer,
     },
     sys::{tss::TaskSegmentSelector, RegisterState},
