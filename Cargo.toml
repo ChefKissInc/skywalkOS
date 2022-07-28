@@ -18,7 +18,7 @@ acpi = { path = "../ACPILib" }
 amd64 = { path = "../AMD64Lib" }
 font8x8 = { version = "0.3.1", default-features = false }
 hashbrown = { version = "0.12.1", features = ["nightly"] }
-sulfur_dioxide = { path = "../SulfurDioxide" }
+sulphur_dioxide = { path = "../SulphurDioxide" }
 log = { version = "0.4.17", default-features = false, features = [
     "release_max_level_debug",
     "max_level_trace",
