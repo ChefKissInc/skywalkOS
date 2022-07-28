@@ -4,7 +4,7 @@
 use alloc::vec::Vec;
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
-use sulfur_dioxide::tags::{module::Module, SpecialisedSettings};
+use sulfur_dioxide::{module::Module, settings::BootSettings};
 
 use super::{pmm::BitmapAllocator, proc::sched::Scheduler, terminal::Terminal, vmm::PageTableLvl4};
 use crate::driver::acpi::{apic::LocalAPIC, madt::MADTData, ACPIPlatform};
@@ -12,10 +12,11 @@ use crate::driver::acpi::{apic::LocalAPIC, madt::MADTData, ACPIPlatform};
 pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemState::new());
 
 pub struct SystemState {
-    pub modules: Option<Vec<Module>>,
-    pub boot_settings: SpecialisedSettings,
+    pub kern_symbols: MaybeUninit<&'static [sulfur_dioxide::symbol::KernSymbol]>,
+    pub boot_settings: BootSettings,
     pub pmm: MaybeUninit<spin::Mutex<BitmapAllocator>>,
     pub pml4: MaybeUninit<&'static mut PageTableLvl4>,
+    pub modules: Option<Vec<Module>>,
     pub terminal: Option<Terminal>,
     pub acpi: MaybeUninit<ACPIPlatform>,
     pub madt: MaybeUninit<MADTData>,
@@ -26,10 +27,11 @@ pub struct SystemState {
 impl SystemState {
     pub const fn new() -> Self {
         Self {
-            modules: None,
-            boot_settings: SpecialisedSettings { verbose: false },
+            kern_symbols: MaybeUninit::uninit(),
+            boot_settings: BootSettings { verbose: false },
             pmm: MaybeUninit::uninit(),
             pml4: MaybeUninit::uninit(),
+            modules: None,
             terminal: None,
             acpi: MaybeUninit::uninit(),
             madt: MaybeUninit::uninit(),

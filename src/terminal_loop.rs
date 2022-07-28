@@ -5,7 +5,7 @@ use alloc::string::String;
 use core::fmt::Write;
 
 use log::{error, info};
-use sulfur_dioxide::tags::module::Module;
+use sulfur_dioxide::module::Module;
 
 use crate::{
     driver::{
