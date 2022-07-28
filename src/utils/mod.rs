@@ -3,4 +3,3 @@
 
 pub mod bitmap;
 pub mod logger;
-pub mod tags;

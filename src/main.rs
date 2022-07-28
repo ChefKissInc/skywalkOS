@@ -18,14 +18,18 @@
 
 extern crate alloc;
 
-use alloc::boxed::Box;
+use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 use core::arch::asm;
 
 use log::{debug, info};
 
 use crate::{
     driver::acpi::{apic::LocalAPIC, ACPIPlatform},
-    sys::gdt::{PrivilegeLevel, SegmentSelector},
+    sys::{
+        gdt::{PrivilegeLevel, SegmentSelector},
+        pmm::BitmapAllocator,
+        terminal::Terminal,
+    },
 };
 
 mod driver;
@@ -42,8 +46,15 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulfur_dioxide::BootInfo) -> 
             .map(|()| log::set_max_level(log::LevelFilter::Trace))
             .unwrap();
 
+        let state = unsafe { &mut *sys::state::SYS_STATE.get() };
+
+        state.kern_symbols.write(boot_info.kern_symbols);
+
         assert_eq!(boot_info.revision, sulfur_dioxide::CURRENT_REVISION);
         info!("Copyright ChefKiss Inc 2021.");
+
+        state.boot_settings = boot_info.settings;
+        debug!("Got boot settings: {:X?}", state.boot_settings);
 
         unsafe {
             debug!("Initialising the GDT.");
@@ -57,11 +68,49 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulfur_dioxide::BootInfo) -> 
             driver::intrs::exc::init();
         }
 
-        utils::tags::parse(boot_info.tags);
+        debug!("Got memory map: {:X?}", boot_info.memory_map);
+        state
+            .pmm
+            .write(spin::Mutex::new(BitmapAllocator::new(boot_info.memory_map)));
 
-        debug!("Initializing paging");
+        debug!("Got ACPI RSDP: {:X?}", boot_info.acpi_rsdp);
+        state.acpi.write(ACPIPlatform::new(boot_info.acpi_rsdp));
 
-        let state = unsafe { &mut *sys::state::SYS_STATE.get() };
+        debug!("Got modules: {:#X?}", boot_info.modules);
+        state.modules = Some(boot_info.modules.to_vec());
+
+        if let Some(fb_info) = boot_info.frame_buffer {
+            debug!("Got boot display: {:X?}", *fb_info);
+            let mut terminal = Terminal::new(paper_fb::framebuffer::Framebuffer::new(
+                fb_info.base,
+                fb_info.resolution.width as usize,
+                fb_info.resolution.height as usize,
+                paper_fb::pixel::Bitmask {
+                    r: fb_info.pixel_bitmask.red,
+                    g: fb_info.pixel_bitmask.green,
+                    b: fb_info.pixel_bitmask.blue,
+                    a: fb_info.pixel_bitmask.alpha,
+                },
+                fb_info.pitch,
+            ));
+            terminal.clear();
+            state.terminal = Some(terminal);
+        }
+
+        // Switch ownership of symbol data to kernel
+        state.kern_symbols.write(
+            boot_info
+                .kern_symbols
+                .iter()
+                .map(|v| sulfur_dioxide::symbol::KernSymbol {
+                    name: Box::leak(v.name.to_owned().into_boxed_str()),
+                    ..*v
+                })
+                .collect::<Vec<_>>()
+                .leak(),
+        );
+
+        debug!("Initialising paging");
 
         let pml4 = Box::leak(Box::new(sys::vmm::PageTableLvl4::new()));
         unsafe { pml4.init() }
