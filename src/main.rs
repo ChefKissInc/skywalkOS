@@ -38,7 +38,7 @@ mod terminal_loop;
 mod utils;
 
 #[no_mangle]
-extern "sysv64" fn kernel_main(boot_info: &'static sulfur_dioxide::BootInfo) -> ! {
+extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     unwinding::panic::catch_unwind(move || {
         sys::io::serial::SERIAL.lock().init();
 
@@ -50,7 +50,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulfur_dioxide::BootInfo) -> 
 
         state.kern_symbols.write(boot_info.kern_symbols);
 
-        assert_eq!(boot_info.revision, sulfur_dioxide::CURRENT_REVISION);
+        assert_eq!(boot_info.revision, sulphur_dioxide::CURRENT_REVISION);
         info!("Copyright ChefKiss Inc 2021.");
 
         state.boot_settings = boot_info.settings;
@@ -102,7 +102,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulfur_dioxide::BootInfo) -> 
             boot_info
                 .kern_symbols
                 .iter()
-                .map(|v| sulfur_dioxide::symbol::KernSymbol {
+                .map(|v| sulphur_dioxide::symbol::KernSymbol {
                     name: Box::leak(v.name.to_owned().into_boxed_str()),
                     ..*v
                 })

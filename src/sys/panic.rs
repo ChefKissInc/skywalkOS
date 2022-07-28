@@ -8,7 +8,7 @@ use unwinding::abi::{UnwindContext, UnwindReasonCode, _Unwind_Backtrace, _Unwind
 
 struct CallbackData<'a> {
     counter: usize,
-    kern_symbols: &'a [sulfur_dioxide::symbol::KernSymbol],
+    kern_symbols: &'a [sulphur_dioxide::symbol::KernSymbol],
 }
 
 extern "C" fn callback(

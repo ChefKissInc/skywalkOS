@@ -2,7 +2,7 @@
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use log::trace;
-use sulfur_dioxide::memory_map::MemoryEntry;
+use sulphur_dioxide::memory_map::MemoryEntry;
 
 extern "C" {
     static __kernel_top: u64;
