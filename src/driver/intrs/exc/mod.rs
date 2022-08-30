@@ -3,14 +3,12 @@
 
 macro_rules! exc_msg {
     ($name:expr, $regs:expr) => {
-        use log::error;
-
         while crate::sys::io::serial::SERIAL.is_locked() {
             crate::sys::io::serial::SERIAL.force_unlock()
         }
 
-        error!("Received {} exception!", $name);
-        error!("CPU registers: {:#X?}", $regs);
+        ::log::error!("Received {} exception!", $name);
+        ::log::error!("CPU registers: {:#X?}", $regs);
     };
 }
 

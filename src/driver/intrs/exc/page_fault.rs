@@ -9,7 +9,7 @@ pub unsafe extern "sysv64" fn handler(regs: &mut crate::sys::RegisterState) {
     let mut cr2: u64;
     asm!("mov {}, cr2", out(reg) cr2, options(nomem, nostack, preserves_flags));
 
-    error!(
+    log::error!(
         "There was {} while {} a {} at {:#X?}{}{}{}{}",
         if (regs.err_code & (1 << 0)) == 0 {
             "a Non-present page access"

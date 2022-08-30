@@ -111,7 +111,7 @@ impl Scheduler {
         }
         kern_proc.threads.push_back(kern_thread);
 
-        let kern_thread = super::Thread::new(2, test_thread2 as usize);
+        let kern_thread = super::Thread::new(1, test_thread2 as usize);
         kern_proc.threads.push_back(kern_thread);
         processes.push_back(kern_proc);
 
@@ -124,7 +124,7 @@ impl Scheduler {
         lapic.setup_timer(timer);
 
         crate::driver::intrs::idt::set_handler(128, schedule, true, true);
-        crate::driver::acpi::ioapic::wire_legacy_irq(128 - 0x20, false);
+        crate::driver::acpi::ioapic::wire_legacy_irq(96, false);
 
         Self {
             processes,
@@ -147,8 +147,8 @@ impl Scheduler {
 
     pub fn find_next_thread(&mut self) -> &mut super::Thread {
         let proc = &mut self.processes[0];
-        let t = proc.threads.pop_front().unwrap();
-        proc.threads.push_back(t);
+        let old = proc.threads.pop_front().unwrap();
+        proc.threads.push_back(old);
         proc.threads.front_mut().unwrap()
     }
 }

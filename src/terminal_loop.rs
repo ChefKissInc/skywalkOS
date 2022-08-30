@@ -27,7 +27,7 @@ pub fn terminal_loop(
     let ps2ctl = unsafe { (*crate::driver::keyboard::ps2::INSTANCE.get()).assume_init_mut() };
     let state = unsafe { &mut (*crate::sys::state::SYS_STATE.get()) };
     'menu: loop {
-        write!(terminal, "\nBoxOS# ").unwrap();
+        write!(terminal, "\nFallback > ").unwrap();
         let mut cmd = String::new();
         loop {
             if let Some(key) = ps2ctl.queue.pop_front() {
@@ -171,7 +171,7 @@ memusage   |  View memory usage"#
                             terminal.backspace();
                         }
                     }
-                    _ => (),
+                    _ => {}
                 }
             }
         }
