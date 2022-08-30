@@ -12,7 +12,10 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
             .pmm
             .assume_init_mut()
             .lock()
-            .alloc(((layout.size() + 0xFFF) / 0x1000).try_into().unwrap()).map_or(core::ptr::null_mut(), |ptr| ptr.add(amd64::paging::PHYS_VIRT_OFFSET.try_into().unwrap()))
+            .alloc(((layout.size() + 0xFFF) / 0x1000).try_into().unwrap())
+            .map_or(core::ptr::null_mut(), |ptr| {
+                ptr.add(amd64::paging::PHYS_VIRT_OFFSET.try_into().unwrap())
+            })
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
