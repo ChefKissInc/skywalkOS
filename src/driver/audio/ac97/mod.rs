@@ -8,7 +8,7 @@ use amd64::io::port::Port;
 use log::debug;
 
 use crate::{
-    driver::pci::{PCICfgOffset, PCICommand, PCIControllerIO, PCIDevice},
+    driver::pci::{PCICfgOffset, PCICommand, PCIDevice},
     sys::RegisterState,
 };
 
@@ -46,7 +46,7 @@ unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
 }
 
 impl AC97 {
-    pub fn new<T: PCIControllerIO + ?Sized>(dev: &PCIDevice<T>) -> Self {
+    pub fn new(dev: &PCIDevice) -> Self {
         unsafe {
             dev.cfg_write16(
                 PCICfgOffset::Command,
@@ -72,7 +72,6 @@ impl AC97 {
         let mixer = Port::new(unsafe { dev.cfg_read16::<_, u16>(PCICfgOffset::BaseAddr0) & !1u16 });
 
         unsafe {
-            // Resume from cold reset
             audio_bus.write_off(
                 audio_bus
                     .read_off::<_, regs::GlobalControl>(regs::AudioBusReg::GlobalControl)
@@ -82,7 +81,6 @@ impl AC97 {
             );
             mixer.write_off(!0u16, regs::MixerReg::Reset);
 
-            // Set volume and sample rate
             mixer.write_off(
                 regs::MasterOutputVolume::new()
                     .with_right(0x3F)
@@ -101,7 +99,7 @@ impl AC97 {
                 "Sample rate: {:#?}",
                 mixer.read_off::<_, u16>(regs::MixerReg::SampleRate)
             );
-            // NOTE: QEMU has a bug and 48KHz audio doesn't work
+            // BUG: QEMU has a bug and 48KHz audio doesn't work
             mixer.write_off(44100u16, regs::MixerReg::SampleRate);
         }
 

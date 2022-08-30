@@ -61,10 +61,7 @@ fn test_thread2() -> ! {
 
     let pci = PCIController::new(acpi.find("MCFG"));
     let ac97 = pci
-        .find(
-            |v| pci.get_io(v),
-            move |dev| unsafe { dev.cfg_read16::<_, u16>(PCICfgOffset::ClassCode) == 0x0401 },
-        )
+        .find(move |dev| unsafe { dev.cfg_read16::<_, u16>(PCICfgOffset::ClassCode) == 0x0401 })
         .map(|v| unsafe {
             (*crate::driver::audio::ac97::INSTANCE.get())
                 .write(crate::driver::audio::ac97::AC97::new(&v))

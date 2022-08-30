@@ -84,8 +84,7 @@ memusage   |  View memory usage"#
                                                             slot,
                                                             func,
                                                         };
-                                                        let device =
-                                                            PCIDevice::new(addr, pci.get_io(addr));
+                                                        let device = PCIDevice::new(addr, pci);
 
                                                         unsafe {
                                                             let vendor_id: u16 = device

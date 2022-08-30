@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-use alloc::{boxed::Box, vec::Vec};
+use alloc::vec::Vec;
 
 use acpi::tables::mcfg::{MCFGEntry, MCFG};
 use modular_bitfield::prelude::*;
@@ -79,40 +79,43 @@ pub trait PCIControllerIO: Sync {
     unsafe fn cfg_write32(&self, addr: PCIAddress, off: u8, value: u32);
 }
 
-#[derive(Clone)]
-pub struct PCIDevice<T: PCIControllerIO + ?Sized> {
+pub struct PCIDevice<'a> {
     addr: PCIAddress,
-    io: Box<T>,
+    controller: &'a PCIController,
 }
 
 #[allow(dead_code)]
-impl<T: PCIControllerIO + ?Sized> PCIDevice<T> {
-    pub fn new(addr: PCIAddress, io: Box<T>) -> Self {
-        Self { addr, io }
+impl<'a> PCIDevice<'a> {
+    #[must_use]
+    pub const fn new(addr: PCIAddress, controller: &'a PCIController) -> Self {
+        Self { addr, controller }
     }
 
     pub unsafe fn cfg_read8<A: Into<u8>, R: From<u8>>(&self, off: A) -> R {
-        self.io.cfg_read8(self.addr, off.into()).into()
+        self.controller.cfg_read8(self.addr, off.into()).into()
     }
 
     pub unsafe fn cfg_read16<A: Into<u8>, R: From<u16>>(&self, off: A) -> R {
-        self.io.cfg_read16(self.addr, off.into()).into()
+        self.controller.cfg_read16(self.addr, off.into()).into()
     }
 
     pub unsafe fn cfg_read32<A: Into<u8>, R: From<u32>>(&self, off: A) -> R {
-        self.io.cfg_read32(self.addr, off.into()).into()
+        self.controller.cfg_read32(self.addr, off.into()).into()
     }
 
     pub unsafe fn cfg_write8<A: Into<u8>, R: Into<u8>>(&self, off: A, value: R) {
-        self.io.cfg_write8(self.addr, off.into(), value.into());
+        self.controller
+            .cfg_write8(self.addr, off.into(), value.into());
     }
 
     pub unsafe fn cfg_write16<A: Into<u8>, R: Into<u16>>(&self, off: A, value: R) {
-        self.io.cfg_write16(self.addr, off.into(), value.into());
+        self.controller
+            .cfg_write16(self.addr, off.into(), value.into());
     }
 
     pub unsafe fn cfg_write32<A: Into<u8>, R: Into<u32>>(&self, off: A, value: R) {
-        self.io.cfg_write32(self.addr, off.into(), value.into());
+        self.controller
+            .cfg_write32(self.addr, off.into(), value.into());
     }
 }
 
@@ -147,26 +150,55 @@ impl PCIController {
         })
     }
 
-    pub fn get_io(&self, addr: PCIAddress) -> Box<dyn PCIControllerIO> {
+    unsafe fn cfg_read8(&self, addr: PCIAddress, off: u8) -> u8 {
         if self.entries.is_none() {
-            Box::new(pio::PCIPortIO::new())
+            pio::PCIPortIO::new().cfg_read8(addr, off)
         } else {
-            let entry = self.find_ent(addr);
-            Box::new(mmio::PCIMemoryIO::new(*entry))
+            mmio::PCIMemoryIO::new(*self.find_ent(addr)).cfg_read8(addr, off)
         }
     }
-}
 
-impl PCIController {
-    pub fn find<
-        T: PCIControllerIO + ?Sized,
-        IO: FnMut(PCIAddress) -> Box<T>,
-        P: FnMut(&PCIDevice<T>) -> bool,
-    >(
-        &self,
-        mut io: IO,
-        mut pred: P,
-    ) -> Option<PCIDevice<T>> {
+    unsafe fn cfg_read16(&self, addr: PCIAddress, off: u8) -> u16 {
+        if self.entries.is_none() {
+            pio::PCIPortIO::new().cfg_read16(addr, off)
+        } else {
+            mmio::PCIMemoryIO::new(*self.find_ent(addr)).cfg_read16(addr, off)
+        }
+    }
+
+    unsafe fn cfg_read32(&self, addr: PCIAddress, off: u8) -> u32 {
+        if self.entries.is_none() {
+            pio::PCIPortIO::new().cfg_read32(addr, off)
+        } else {
+            mmio::PCIMemoryIO::new(*self.find_ent(addr)).cfg_read32(addr, off)
+        }
+    }
+
+    unsafe fn cfg_write8(&self, addr: PCIAddress, off: u8, value: u8) {
+        if self.entries.is_none() {
+            pio::PCIPortIO::new().cfg_write8(addr, off, value);
+        } else {
+            mmio::PCIMemoryIO::new(*self.find_ent(addr)).cfg_write8(addr, off, value);
+        }
+    }
+
+    unsafe fn cfg_write16(&self, addr: PCIAddress, off: u8, value: u16) {
+        if self.entries.is_none() {
+            pio::PCIPortIO::new().cfg_write16(addr, off, value);
+        } else {
+            mmio::PCIMemoryIO::new(*self.find_ent(addr)).cfg_write16(addr, off, value);
+        }
+    }
+
+    unsafe fn cfg_write32(&self, addr: PCIAddress, off: u8, value: u32) {
+        if self.entries.is_none() {
+            pio::PCIPortIO::new().cfg_write32(addr, off, value);
+        } else {
+            mmio::PCIMemoryIO::new(*self.find_ent(addr)).cfg_write32(addr, off, value);
+        }
+    }
+
+    pub fn find<P: FnMut(&PCIDevice) -> bool>(&self, mut pred: P) -> Option<PCIDevice> {
         for segment in 0..self.segment_count() {
             for bus in 0..=255 {
                 for slot in 0..32 {
@@ -177,7 +209,7 @@ impl PCIController {
                             slot,
                             func,
                         };
-                        let device = PCIDevice::new(addr, io(addr));
+                        let device = PCIDevice::new(addr, self);
 
                         if pred(&device) {
                             return Some(device);
