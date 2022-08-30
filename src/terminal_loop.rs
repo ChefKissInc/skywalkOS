@@ -24,10 +24,22 @@ pub fn terminal_loop(
     terminal: &mut Terminal,
     mut ac97: Option<&mut AC97>,
 ) -> ! {
-    let ps2ctl = unsafe { (*crate::driver::keyboard::ps2::INSTANCE.get()).assume_init_mut() };
-    let state = unsafe { &mut (*crate::sys::state::SYS_STATE.get()) };
+    let ps2ctl = unsafe {
+        crate::driver::keyboard::ps2::INSTANCE
+            .get()
+            .as_mut()
+            .unwrap()
+            .assume_init_mut()
+    };
+    let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+
     'menu: loop {
-        write!(terminal, "\nFallback > ").unwrap();
+        writeln!(terminal).unwrap();
+        for c in "BridgeCore".chars() {
+            terminal.draw_char(c, paper_fb::pixel::Colour::new(0x0C, 0x96, 0xB5, 0xFF));
+            terminal.x += 1;
+        }
+        write!(terminal, " fallback > ").unwrap();
         let mut cmd = String::new();
         loop {
             if let Some(key) = ps2ctl.queue.pop_front() {

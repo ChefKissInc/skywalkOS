@@ -7,9 +7,9 @@ use amd64::paging::pml4::PML4;
 use paper_fb::{framebuffer::Framebuffer, pixel::Colour};
 
 pub struct Terminal {
-    x: usize,
-    y: usize,
-    fb: Framebuffer,
+    pub x: usize,
+    pub y: usize,
+    pub fb: Framebuffer,
     pub width: usize,
     pub height: usize,
 }
