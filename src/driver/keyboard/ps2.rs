@@ -60,7 +60,7 @@ pub static INSTANCE: SyncUnsafeCell<MaybeUninit<PS2Ctl>> =
 unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
     let this = (*INSTANCE.get()).assume_init_mut();
     let key = this.data_port.read();
-
+    debug!("\n!! PS2: {:#X?} !!\n", key);
     this.queue.push_back(match key {
         0xE => Ps2Event::BackSpace,
         0x2..=0xA => Ps2Event::Pressed("123456789".chars().nth(key as usize - 0x2).unwrap()),
@@ -116,6 +116,7 @@ impl PS2Ctl {
             Ps2Cfg::from(self.data_port.read())
                 .with_port1_intr(true)
                 .with_port2_intr(false)
+                .with_port1_translation(true)
         };
         crate::driver::acpi::ioapic::wire_legacy_irq(1, false);
         crate::driver::intrs::idt::set_handler(0x21, handler, true, true);

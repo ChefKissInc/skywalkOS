@@ -12,7 +12,7 @@ use crate::{
         acpi::ACPIPlatform,
         audio::ac97::AC97,
         keyboard::ps2::Ps2Event,
-        pci::{PCIAddress, PCICfgOffset, PCIController, PCIDevice, PCIIOAccessSize},
+        pci::{PCIAddress, PCICfgOffset, PCIController, PCIDevice},
     },
     sys::terminal::Terminal,
 };
@@ -76,10 +76,14 @@ memusage   |  View memory usage"#
                                                             PCIDevice::new(addr, pci.get_io(addr));
 
                                                         unsafe {
-                                                            let vendor_id: u32 = device.cfg_read(
-                                                                PCICfgOffset::VendorId,
-                                                                PCIIOAccessSize::Word,
-                                                            );
+                                                            let vendor_id: u16 = device
+                                                                .cfg_read16(PCICfgOffset::VendorId);
+                                                            let device_id: u16 = device
+                                                                .cfg_read16(PCICfgOffset::DeviceId);
+                                                            let class_code: u16 = device
+                                                                .cfg_read16(
+                                                                    PCICfgOffset::ClassCode,
+                                                                );
                                                             if vendor_id != 0xFFFF {
                                                                 info!(
                                                                     "PCI Device at {}:{}:{} has \
@@ -90,14 +94,8 @@ memusage   |  View memory usage"#
                                                                     slot,
                                                                     func,
                                                                     vendor_id,
-                                                                    device.cfg_read::<_, u32>(
-                                                                        PCICfgOffset::DeviceId,
-                                                                        PCIIOAccessSize::Word,
-                                                                    ),
-                                                                    device.cfg_read::<_, u32>(
-                                                                        PCICfgOffset::ClassCode,
-                                                                        PCIIOAccessSize::Word,
-                                                                    ),
+                                                                    device_id,
+                                                                    class_code,
                                                                 );
                                                             }
                                                         }

@@ -10,13 +10,6 @@ use num_enum::IntoPrimitive;
 mod mmio;
 mod pio;
 
-#[allow(dead_code)]
-pub enum PCIIOAccessSize {
-    Byte,
-    Word,
-    DWord,
-}
-
 #[derive(Debug, Default, Clone, Copy)]
 pub struct PCIAddress {
     pub segment: u16,
@@ -78,8 +71,12 @@ pub enum PCICfgOffset {
 }
 
 pub trait PCIControllerIO: Sync {
-    unsafe fn cfg_read(&self, addr: PCIAddress, off: u8, access_size: PCIIOAccessSize) -> u32;
-    unsafe fn cfg_write(&self, addr: PCIAddress, off: u8, value: u32, access_size: PCIIOAccessSize);
+    unsafe fn cfg_read8(&self, addr: PCIAddress, off: u8) -> u8;
+    unsafe fn cfg_read16(&self, addr: PCIAddress, off: u8) -> u16;
+    unsafe fn cfg_read32(&self, addr: PCIAddress, off: u8) -> u32;
+    unsafe fn cfg_write8(&self, addr: PCIAddress, off: u8, value: u8);
+    unsafe fn cfg_write16(&self, addr: PCIAddress, off: u8, value: u16);
+    unsafe fn cfg_write32(&self, addr: PCIAddress, off: u8, value: u32);
 }
 
 #[derive(Clone)]
@@ -88,27 +85,34 @@ pub struct PCIDevice<T: PCIControllerIO + ?Sized> {
     io: Box<T>,
 }
 
+#[allow(dead_code)]
 impl<T: PCIControllerIO + ?Sized> PCIDevice<T> {
     pub fn new(addr: PCIAddress, io: Box<T>) -> Self {
         Self { addr, io }
     }
 
-    pub unsafe fn cfg_read<A: Into<u8>, R: From<u32>>(
-        &self,
-        off: A,
-        access_size: PCIIOAccessSize,
-    ) -> R {
-        self.io.cfg_read(self.addr, off.into(), access_size).into()
+    pub unsafe fn cfg_read8<A: Into<u8>, R: From<u8>>(&self, off: A) -> R {
+        self.io.cfg_read8(self.addr, off.into()).into()
     }
 
-    pub unsafe fn cfg_write<A: Into<u8>, R: Into<u32>>(
-        &self,
-        off: A,
-        value: R,
-        access_size: PCIIOAccessSize,
-    ) {
-        self.io
-            .cfg_write(self.addr, off.into(), value.into(), access_size);
+    pub unsafe fn cfg_read16<A: Into<u8>, R: From<u16>>(&self, off: A) -> R {
+        self.io.cfg_read16(self.addr, off.into()).into()
+    }
+
+    pub unsafe fn cfg_read32<A: Into<u8>, R: From<u32>>(&self, off: A) -> R {
+        self.io.cfg_read32(self.addr, off.into()).into()
+    }
+
+    pub unsafe fn cfg_write8<A: Into<u8>, R: Into<u8>>(&self, off: A, value: R) {
+        self.io.cfg_write8(self.addr, off.into(), value.into());
+    }
+
+    pub unsafe fn cfg_write16<A: Into<u8>, R: Into<u16>>(&self, off: A, value: R) {
+        self.io.cfg_write16(self.addr, off.into(), value.into());
+    }
+
+    pub unsafe fn cfg_write32<A: Into<u8>, R: Into<u32>>(&self, off: A, value: R) {
+        self.io.cfg_write32(self.addr, off.into(), value.into());
     }
 }
 

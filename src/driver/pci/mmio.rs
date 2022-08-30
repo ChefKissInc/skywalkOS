@@ -40,38 +40,27 @@ impl PCIMemoryIO {
 }
 
 impl super::PCIControllerIO for PCIMemoryIO {
-    unsafe fn cfg_read(
-        &self,
-        addr: super::PCIAddress,
-        off: u8,
-        access_size: super::PCIIOAccessSize,
-    ) -> u32 {
-        let addr = self.get_addr(addr, off);
-
-        match access_size {
-            super::PCIIOAccessSize::Byte => (addr as *const u8).read_volatile().into(),
-            super::PCIIOAccessSize::Word => (addr as *const u16).read_volatile().into(),
-            super::PCIIOAccessSize::DWord => (addr as *const u32).read_volatile(),
-        }
+    unsafe fn cfg_read8(&self, addr: super::PCIAddress, off: u8) -> u8 {
+        (self.get_addr(addr, off) as *const u8).read_volatile()
     }
 
-    unsafe fn cfg_write(
-        &self,
-        addr: super::PCIAddress,
-        off: u8,
-        value: u32,
-        access_size: super::PCIIOAccessSize,
-    ) {
-        let addr = self.get_addr(addr, off);
+    unsafe fn cfg_read16(&self, addr: super::PCIAddress, off: u8) -> u16 {
+        (self.get_addr(addr, off) as *const u16).read_volatile()
+    }
 
-        match access_size {
-            super::PCIIOAccessSize::Byte => {
-                (addr as *mut u8).write_volatile(value.try_into().unwrap());
-            }
-            super::PCIIOAccessSize::Word => {
-                (addr as *mut u16).write_volatile(value.try_into().unwrap());
-            }
-            super::PCIIOAccessSize::DWord => (addr as *mut u32).write_volatile(value),
-        }
+    unsafe fn cfg_read32(&self, addr: super::PCIAddress, off: u8) -> u32 {
+        (self.get_addr(addr, off) as *const u32).read_volatile()
+    }
+
+    unsafe fn cfg_write8(&self, addr: super::PCIAddress, off: u8, value: u8) {
+        (self.get_addr(addr, off) as *mut u8).write_volatile(value);
+    }
+
+    unsafe fn cfg_write16(&self, addr: super::PCIAddress, off: u8, value: u16) {
+        (self.get_addr(addr, off) as *mut u16).write_volatile(value);
+    }
+
+    unsafe fn cfg_write32(&self, addr: super::PCIAddress, off: u8, value: u32) {
+        (self.get_addr(addr, off) as *mut u32).write_volatile(value);
     }
 }

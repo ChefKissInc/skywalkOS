@@ -6,7 +6,7 @@ use amd64::paging::pml4::PML4;
 use crate::{
     driver::{
         keyboard::ps2::PS2Ctl,
-        pci::{PCICfgOffset, PCIController, PCIIOAccessSize},
+        pci::{PCICfgOffset, PCIController},
         timer::Timer,
     },
     sys::{tss::TaskSegmentSelector, RegisterState},
@@ -65,9 +65,7 @@ fn test_thread2() -> ! {
     let ac97 = pci
         .find(
             |v| pci.get_io(v),
-            move |dev| unsafe {
-                dev.cfg_read::<_, u32>(PCICfgOffset::ClassCode, PCIIOAccessSize::Word) == 0x0401
-            },
+            move |dev| unsafe { dev.cfg_read16::<_, u16>(PCICfgOffset::ClassCode) == 0x0401 },
         )
         .map(|v| unsafe {
             (*crate::driver::audio::ac97::INSTANCE.get())

@@ -8,7 +8,7 @@ use amd64::io::port::Port;
 use log::debug;
 
 use crate::{
-    driver::pci::{PCICfgOffset, PCICommand, PCIControllerIO, PCIDevice, PCIIOAccessSize},
+    driver::pci::{PCICfgOffset, PCICommand, PCIControllerIO, PCIDevice},
     sys::RegisterState,
 };
 
@@ -48,30 +48,21 @@ unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
 impl AC97 {
     pub fn new<T: PCIControllerIO + ?Sized>(dev: &PCIDevice<T>) -> Self {
         unsafe {
-            dev.cfg_write::<_, u16>(
+            dev.cfg_write16::<_, u16>(
                 PCICfgOffset::Command,
-                PCICommand::from(
-                    (dev.cfg_read::<_, u32>(PCICfgOffset::Command, PCIIOAccessSize::Word) & 0xFFFF)
-                        as u16,
-                )
-                .with_pio(true)
-                .with_bus_master(true)
-                .with_disable_intrs(false)
-                .into(),
-                PCIIOAccessSize::Word,
+                PCICommand::from(dev.cfg_read16::<_, u16>(PCICfgOffset::Command))
+                    .with_pio(true)
+                    .with_bus_master(true)
+                    .with_disable_intrs(false)
+                    .into(),
             );
 
-            let irq = (dev.cfg_read::<_, u32>(PCICfgOffset::InterruptLine, PCIIOAccessSize::Byte)
-                & 0xFF) as u8;
+            let irq = dev.cfg_read8::<_, u8>(PCICfgOffset::InterruptLine);
             debug!("IRQ: {:#X?}", irq);
             crate::driver::acpi::ioapic::wire_legacy_irq(irq, false);
             crate::driver::intrs::idt::set_handler(0x20 + irq, handler, true, true);
         }
-        let audio_bus = unsafe {
-            ((dev.cfg_read::<_, u32>(PCICfgOffset::BaseAddr1, PCIIOAccessSize::DWord) & 0xFFFF)
-                as u16)
-                & !1u16
-        };
+        let audio_bus = unsafe { dev.cfg_read16::<_, u16>(PCICfgOffset::BaseAddr1) & !1u16 };
         let pcm_out_bdl_last_ent = Port::new(audio_bus + regs::AudioBusReg::PCMOutLastEnt as u16);
         let pcm_out_bdl_addr = Port::new(audio_bus + regs::AudioBusReg::PCMOutBDLAddr as u16);
         let pcm_out_transf_ctl = Port::<_, regs::RegBoxTransfer>::new(
@@ -79,11 +70,7 @@ impl AC97 {
         );
 
         let audio_bus = Port::new(audio_bus);
-        let mixer = Port::new(unsafe {
-            ((dev.cfg_read::<_, u32>(PCICfgOffset::BaseAddr0, PCIIOAccessSize::DWord) & 0xFFFF)
-                as u16)
-                & !1u16
-        });
+        let mixer = Port::new(unsafe { dev.cfg_read16::<_, u16>(PCICfgOffset::BaseAddr0) & !1u16 });
 
         unsafe {
             // Resume from cold reset
