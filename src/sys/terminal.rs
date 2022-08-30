@@ -93,6 +93,7 @@ impl Terminal {
             self.fb
                 .base
                 .copy_within(self.fb.stride * 8..self.fb.stride * self.fb.height, 0);
+            self.fb.base[self.fb.stride * (self.fb.height - 8)..].fill(0);
             self.y -= 1;
             self.x = 0;
         }
