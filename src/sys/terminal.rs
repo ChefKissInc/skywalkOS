@@ -92,9 +92,9 @@ impl Terminal {
         if self.y >= self.height {
             self.fb
                 .base
-                .copy_within(self.fb.stride * 8..self.fb.stride * self.fb.stride, 0);
-
+                .copy_within(self.fb.stride * 8..self.fb.stride * self.fb.height, 0);
             self.y -= 1;
+            self.x = 0;
         }
     }
 }
