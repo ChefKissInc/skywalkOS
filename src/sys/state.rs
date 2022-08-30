@@ -4,7 +4,7 @@
 use alloc::vec::Vec;
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
-use sulphur_dioxide::{module::Module, settings::BootSettings};
+use sulphur_dioxide::{boot_attrs::BootSettings, module::Module};
 
 use super::{pmm::BitmapAllocator, proc::sched::Scheduler, terminal::Terminal, vmm::PageTableLvl4};
 use crate::driver::acpi::{apic::LocalAPIC, madt::MADTData, ACPIPlatform};
@@ -12,7 +12,7 @@ use crate::driver::acpi::{apic::LocalAPIC, madt::MADTData, ACPIPlatform};
 pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemState::new());
 
 pub struct SystemState {
-    pub kern_symbols: MaybeUninit<&'static [sulphur_dioxide::symbol::KernSymbol]>,
+    pub kern_symbols: MaybeUninit<&'static [sulphur_dioxide::kern_sym::KernSymbol]>,
     pub boot_settings: BootSettings,
     pub pmm: MaybeUninit<spin::Mutex<BitmapAllocator>>,
     pub pml4: MaybeUninit<&'static mut PageTableLvl4>,

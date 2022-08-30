@@ -12,7 +12,7 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
             let ioapic = find_for_gsi(0).unwrap();
             debug!("Setting up legacy irq {} on I/O APIC {}", irq, ioapic.id);
             ioapic.write_redir(
-                irq as _,
+                u32::from(irq),
                 IOAPICRedir::new()
                     .with_vector(irq + 0x20)
                     .with_masked(masked),
@@ -34,7 +34,7 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
                     .with_masked(masked),
             );
         },
-    )
+    );
 }
 
 pub fn find_for_gsi(gsi: u32) -> Option<&'static ioapic::IOAPIC> {
@@ -42,7 +42,8 @@ pub fn find_for_gsi(gsi: u32) -> Option<&'static ioapic::IOAPIC> {
         .ioapics
         .iter()
         .find(|ioapic| {
-            gsi >= ioapic.gsi_base && gsi < (ioapic.gsi_base + ioapic.read_ver().max_redir() as u32)
+            gsi >= ioapic.gsi_base
+                && gsi < (ioapic.gsi_base + u32::from(ioapic.read_ver().max_redir()))
         })
         .copied()
 }

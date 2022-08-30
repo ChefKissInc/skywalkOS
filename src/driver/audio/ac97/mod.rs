@@ -46,12 +46,13 @@ unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
 }
 
 impl AC97 {
-    pub fn new<T: PCIControllerIO + ?Sized>(dev: PCIDevice<T>) -> Self {
+    pub fn new<T: PCIControllerIO + ?Sized>(dev: &PCIDevice<T>) -> Self {
         unsafe {
             dev.cfg_write::<_, u16>(
                 PCICfgOffset::Command,
                 PCICommand::from(
-                    dev.cfg_read::<_, u32>(PCICfgOffset::Command, PCIIOAccessSize::Word) as u16,
+                    (dev.cfg_read::<_, u32>(PCICfgOffset::Command, PCIIOAccessSize::Word) & 0xFFFF)
+                        as u16,
                 )
                 .with_pio(true)
                 .with_bus_master(true)
@@ -60,14 +61,16 @@ impl AC97 {
                 PCIIOAccessSize::Word,
             );
 
-            let irq =
-                dev.cfg_read::<_, u32>(PCICfgOffset::InterruptLine, PCIIOAccessSize::Byte) as u8;
+            let irq = (dev.cfg_read::<_, u32>(PCICfgOffset::InterruptLine, PCIIOAccessSize::Byte)
+                & 0xFF) as u8;
             debug!("IRQ: {:#X?}", irq);
             crate::driver::acpi::ioapic::wire_legacy_irq(irq, false);
             crate::driver::intrs::idt::set_handler(0x20 + irq, handler, true, true);
         }
         let audio_bus = unsafe {
-            (dev.cfg_read::<_, u32>(PCICfgOffset::BaseAddr1, PCIIOAccessSize::DWord) as u16) & !1u16
+            ((dev.cfg_read::<_, u32>(PCICfgOffset::BaseAddr1, PCIIOAccessSize::DWord) & 0xFFFF)
+                as u16)
+                & !1u16
         };
         let pcm_out_bdl_last_ent = Port::new(audio_bus + regs::AudioBusReg::PCMOutLastEnt as u16);
         let pcm_out_bdl_addr = Port::new(audio_bus + regs::AudioBusReg::PCMOutBDLAddr as u16);
@@ -77,7 +80,9 @@ impl AC97 {
 
         let audio_bus = Port::new(audio_bus);
         let mixer = Port::new(unsafe {
-            (dev.cfg_read::<_, u32>(PCICfgOffset::BaseAddr0, PCIIOAccessSize::DWord) as u16) & !1u16
+            ((dev.cfg_read::<_, u32>(PCICfgOffset::BaseAddr0, PCIIOAccessSize::DWord) & 0xFFFF)
+                as u16)
+                & !1u16
         });
 
         unsafe {
@@ -146,14 +151,16 @@ impl AC97 {
                 .read()
                 .with_last_ent_fire_intr(true)
                 .with_ioc_intr(true),
-        )
+        );
     }
 
     pub unsafe fn set_bdl(&mut self) {
-        self.bdl[0].addr =
-            (self.buf.as_slices().0.as_ptr() as usize - amd64::paging::PHYS_VIRT_OFFSET) as u32;
-        self.pcm_out_bdl_addr
-            .write((self.bdl.as_ptr() as usize - amd64::paging::PHYS_VIRT_OFFSET) as _);
+        self.bdl[0].addr = ((self.buf.as_slices().0.as_ptr() as u64
+            - amd64::paging::PHYS_VIRT_OFFSET)
+            & 0xFFFF_FFFF) as u32;
+        self.pcm_out_bdl_addr.write(
+            ((self.bdl.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET) & 0xFFFF_FFFF) as _,
+        );
         self.pcm_out_bdl_last_ent.write(0);
     }
 
@@ -186,6 +193,6 @@ impl AC97 {
         for a in data {
             self.buf.push_back(*a);
         }
-        self.start_playback()
+        self.start_playback();
     }
 }

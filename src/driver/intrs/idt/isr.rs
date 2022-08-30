@@ -66,7 +66,7 @@ unsafe extern "C" fn isr_handler(regs: &mut crate::sys::RegisterState) {
     }
     if !handler.should_iret && !handler.is_irq {
         loop {
-            asm!("hlt")
+            asm!("hlt");
         }
     }
 }

@@ -108,7 +108,7 @@ impl<T: PCIControllerIO + ?Sized> PCIDevice<T> {
         access_size: PCIIOAccessSize,
     ) {
         self.io
-            .cfg_write(self.addr, off.into(), value.into(), access_size)
+            .cfg_write(self.addr, off.into(), value.into(), access_size);
     }
 }
 
@@ -117,8 +117,9 @@ pub struct PCIController {
 }
 
 impl PCIController {
+    #[must_use]
     pub fn new(mcfg: Option<&'static MCFG>) -> Self {
-        PCIController {
+        Self {
             entries: mcfg.map(|mcfg| mcfg.entries().to_vec()),
         }
     }
@@ -128,20 +129,18 @@ impl PCIController {
             .as_ref()
             .unwrap()
             .iter()
-            .find(|v| v.segment == addr.segment && addr.bus >= v.bus_start && addr.bus <= v.bus_end)
+            .find(|v| addr.segment == v.segment && (v.bus_start..=v.bus_end).contains(&addr.bus))
             .unwrap()
     }
 
     pub fn segment_count(&self) -> u16 {
-        if let Some(entries) = &self.entries {
+        self.entries.as_ref().map_or(1, |entries| {
             entries
                 .iter()
                 .map(|v| v.segment)
                 .max()
                 .map_or_else(|| 1, |v| v + 1)
-        } else {
-            1
-        }
+        })
     }
 
     pub fn get_io(&self, addr: PCIAddress) -> Box<dyn PCIControllerIO> {

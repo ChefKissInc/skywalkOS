@@ -41,6 +41,6 @@ impl ACPIPlatform {
         self.tables
             .iter()
             .find(|(&a, _)| a == signature)
-            .map(|(_, &v)| unsafe { (v as *const _ as *const T).as_ref().unwrap() })
+            .map(|(_, &v)| unsafe { (v as *const SDTHeader).cast::<T>().as_ref().unwrap() })
     }
 }

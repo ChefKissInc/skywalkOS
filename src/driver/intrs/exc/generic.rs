@@ -14,7 +14,7 @@ super::generic_exception!(
     "coprocessor segment overrun"
 );
 
-pub(crate) unsafe extern "sysv64" fn reserved_handler(regs: &mut crate::sys::RegisterState) {
+pub unsafe extern "sysv64" fn reserved_handler(regs: &mut crate::sys::RegisterState) {
     exc_msg!("reserved", regs);
     error!("This should NEVER happen! Make an issue and attach the serial output.");
 }
@@ -27,11 +27,11 @@ super::generic_exception!(hv_injection_handler, "hypervisor injection");
 super::generic_exception!(vmm_com_handler, "VMM communication");
 super::generic_exception!(security_handler, "security");
 
-pub(crate) unsafe extern "sysv64" fn spurious(_regs: &mut crate::sys::RegisterState) {
+pub unsafe extern "sysv64" fn spurious(_regs: &mut crate::sys::RegisterState) {
     use log::warn;
 
     while crate::sys::io::serial::SERIAL.is_locked() {
-        crate::sys::io::serial::SERIAL.force_unlock()
+        crate::sys::io::serial::SERIAL.force_unlock();
     }
 
     warn!("Received spurious interrupt.");

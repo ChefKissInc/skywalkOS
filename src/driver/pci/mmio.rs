@@ -10,20 +10,21 @@ pub struct PCIMemoryIO {
 }
 
 impl PCIMemoryIO {
-    pub fn new(entry: MCFGEntry) -> Self {
+    #[must_use]
+    pub const fn new(entry: MCFGEntry) -> Self {
         Self { entry }
     }
 
     #[inline]
-    unsafe fn get_addr(&self, addr: super::PCIAddress, off: u8) -> usize {
+    unsafe fn get_addr(&self, addr: super::PCIAddress, off: u8) -> u64 {
         let segment = self.entry.segment;
         assert_eq!(addr.segment, segment, "PCI Express segment mismatch");
 
-        let phys = (self.entry.base as usize
-            + (((addr.bus as usize - self.entry.bus_start as usize) << 20)
-                | ((addr.slot as usize) << 15)
-                | ((addr.func as usize) << 12)))
-            | (off as usize);
+        let phys = (self.entry.base
+            + (((u64::from(addr.bus) - u64::from(self.entry.bus_start)) << 20)
+                | (u64::from(addr.slot) << 15)
+                | (u64::from(addr.func) << 12)))
+            | u64::from(off);
         let virt = phys + amd64::paging::PHYS_VIRT_OFFSET;
         (*crate::sys::state::SYS_STATE.get())
             .pml4
@@ -64,8 +65,12 @@ impl super::PCIControllerIO for PCIMemoryIO {
         let addr = self.get_addr(addr, off);
 
         match access_size {
-            super::PCIIOAccessSize::Byte => (addr as *mut u8).write_volatile(value as _),
-            super::PCIIOAccessSize::Word => (addr as *mut u16).write_volatile(value as _),
+            super::PCIIOAccessSize::Byte => {
+                (addr as *mut u8).write_volatile(value.try_into().unwrap());
+            }
+            super::PCIIOAccessSize::Word => {
+                (addr as *mut u16).write_volatile(value.try_into().unwrap());
+            }
             super::PCIIOAccessSize::DWord => (addr as *mut u32).write_volatile(value),
         }
     }

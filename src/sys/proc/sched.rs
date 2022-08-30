@@ -26,12 +26,12 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
         .assume_init_mut()
         .lock();
 
-    if !this.first_launch {
+    if this.first_launch {
+        this.first_launch = false;
+    } else {
         let old_thread = this.current_thread();
         old_thread.regs = *state;
         old_thread.state = super::ThreadState::Inactive;
-    } else {
-        this.first_launch = false;
     }
 
     let thread = this.find_next_thread();
@@ -69,8 +69,10 @@ fn test_thread2() -> ! {
                 dev.cfg_read::<_, u32>(PCICfgOffset::ClassCode, PCIIOAccessSize::Word) == 0x0401
             },
         )
-        .map(crate::driver::audio::ac97::AC97::new)
-        .map(|v| unsafe { (*crate::driver::audio::ac97::INSTANCE.get()).write(v) });
+        .map(|v| unsafe {
+            (*crate::driver::audio::ac97::INSTANCE.get())
+                .write(crate::driver::audio::ac97::AC97::new(&v))
+        });
 
     if let Some(terminal) = &mut state.terminal {
         let ps2ctl = PS2Ctl::new();
@@ -97,11 +99,11 @@ impl Scheduler {
                 kern_thread.kern_rsp.as_ptr() as usize + kern_thread.kern_rsp.len(),
             );
             let entries = &mut *crate::sys::gdt::ENTRIES.get();
-            let tss = (*TSS.get()).as_ptr() as usize;
-            entries[entries.len() - 2].set_base(tss as u32);
+            let tss = (*TSS.get()).as_ptr() as u64;
+            entries[entries.len() - 2].set_base((tss & 0xFFFF_FFFF) as u32);
             entries[entries.len() - 2].attrs.set_present(true);
 
-            entries.last_mut().unwrap().limit_low = (tss >> 32) as u16;
+            entries.last_mut().unwrap().limit_low = ((tss >> 32) & 0xFFFF) as u16;
             entries.last_mut().unwrap().base_low = (tss >> 48) as u16;
 
             core::arch::asm!(

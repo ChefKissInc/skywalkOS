@@ -72,18 +72,18 @@ impl ProgrammableIntervalTimer {
         self
     }
 
-    pub fn read_counter(&self) -> u16 {
+    pub fn read_counter(self) -> u16 {
         unsafe {
             self.mode_cmd.write(ModeCommand::new());
-            let lo = self.channel0.read() as u16;
-            let hi = self.channel0.read() as u16;
+            let lo = u16::from(self.channel0.read());
+            let hi = u16::from(self.channel0.read());
 
             lo | (hi << 8)
         }
     }
 
-    pub fn set_reload(&self, val: u16) {
-        let lo = val as u8;
+    pub fn set_reload(self, val: u16) {
+        let lo = (val & 0xFF) as u8;
         let hi = (val >> 8) as u8;
 
         unsafe {

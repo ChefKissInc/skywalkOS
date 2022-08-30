@@ -3,7 +3,7 @@
 
 use core::arch::asm;
 
-pub(crate) unsafe extern "sysv64" fn handler(regs: &mut crate::sys::RegisterState) {
+pub unsafe extern "sysv64" fn handler(regs: &mut crate::sys::RegisterState) {
     super::exc_msg!("page fault", regs);
 
     let mut cr2: u64;
@@ -27,25 +27,25 @@ pub(crate) unsafe extern "sysv64" fn handler(regs: &mut crate::sys::RegisterStat
             "user page"
         },
         cr2,
-        if (regs.err_code & (1 << 3)) != 0 {
+        if (regs.err_code & (1 << 3)) == 0 {
+            ""
+        } else {
             "\nThe page was reserved"
-        } else {
-            ""
         },
-        if (regs.err_code & (1 << 4)) != 0 {
+        if (regs.err_code & (1 << 4)) == 0 {
+            ""
+        } else {
             "\nAnd failed while doing an instruction fetch"
-        } else {
-            ""
         },
-        if (regs.err_code & (1 << 5)) != 0 {
+        if (regs.err_code & (1 << 5)) == 0 {
+            ""
+        } else {
             "\nThe protection key was violated"
-        } else {
-            ""
         },
-        if (regs.err_code & (1 << 15)) != 0 {
-            "\nSGX was violated"
-        } else {
+        if (regs.err_code & (1 << 15)) == 0 {
             ""
+        } else {
+            "\nSGX was violated"
         },
     );
 }

@@ -17,6 +17,7 @@ use crate::{
     sys::terminal::Terminal,
 };
 
+#[allow(clippy::cognitive_complexity, clippy::too_many_lines)]
 pub fn terminal_loop(
     acpi: &ACPIPlatform,
     pci: &PCIController,
@@ -97,7 +98,7 @@ memusage   |  View memory usage"#
                                                                         PCICfgOffset::ClassCode,
                                                                         PCIIOAccessSize::Word,
                                                                     ),
-                                                                )
+                                                                );
                                                             }
                                                         }
                                                     }
@@ -118,7 +119,7 @@ memusage   |  View memory usage"#
                                                     })
                                                 {
                                                     info!("Starting playback of test audio");
-                                                    ac97.play_audio(module.data)
+                                                    ac97.play_audio(module.data);
                                                 } else {
                                                     error!(
                                                         "Failure to find 'testaudio' boot loader \
@@ -130,22 +131,24 @@ memusage   |  View memory usage"#
                                             error!("No sound device available!");
                                         }
                                     }
-                                    "resume" => {
-                                        if let Some(ac97) = &mut ac97 {
+                                    "resume" => ac97.as_mut().map_or_else(
+                                        || {
+                                            error!("No sound device available!");
+                                        },
+                                        |ac97| {
                                             info!("Resuming audio playback");
                                             ac97.start_playback();
-                                        } else {
+                                        },
+                                    ),
+                                    "pause" => ac97.as_mut().map_or_else(
+                                        || {
                                             error!("No sound device available!");
-                                        }
-                                    }
-                                    "pause" => {
-                                        if let Some(ac97) = &mut ac97 {
+                                        },
+                                        |ac97| {
                                             info!("Pausing audio playback");
                                             ac97.stop_playback();
-                                        } else {
-                                            error!("No sound device available!");
-                                        }
-                                    }
+                                        },
+                                    ),
                                     "restart" => ps2ctl.reset_cpu(),
                                     "memusage" => {
                                         let pmm = unsafe { state.pmm.assume_init_ref() };
@@ -167,7 +170,7 @@ memusage   |  View memory usage"#
                     Ps2Event::BackSpace => {
                         if !cmd.is_empty() {
                             cmd.pop();
-                            terminal.backspace()
+                            terminal.backspace();
                         }
                     }
                     _ => (),

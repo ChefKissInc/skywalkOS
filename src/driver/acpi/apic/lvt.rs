@@ -47,6 +47,7 @@ pub enum TimerMode {
     TscDeadline = 0b10,
 }
 
+// #[allow(clippy::cast_possible_truncation)]
 #[bitfield(bits = 32)]
 #[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]

@@ -19,24 +19,29 @@ unsafe impl Sync for Terminal {}
 
 impl Terminal {
     pub const fn new(fb: Framebuffer) -> Self {
+        let width = fb.width / 8;
+        let height = fb.height / 8;
         Self {
             x: 0,
             y: 0,
             fb,
-            width: fb.width / 8,
-            height: fb.height / 8,
+            width,
+            height,
         }
     }
 
     pub fn map_fb(&self) {
         unsafe {
+            let base = self.fb.base.as_ptr() as u64;
             (*super::state::SYS_STATE.get())
                 .pml4
                 .assume_init_mut()
                 .map_huge_pages(
-                    self.fb.base as usize,
-                    self.fb.base as usize - amd64::paging::PHYS_VIRT_OFFSET,
-                    (self.fb.height * self.fb.pitch + 0x20_0000 - 1) / 0x20_0000,
+                    base,
+                    base - amd64::paging::PHYS_VIRT_OFFSET,
+                    ((self.fb.height * self.fb.stride + 0x20_0000 - 1) / 0x20_0000)
+                        .try_into()
+                        .unwrap(),
                     amd64::paging::PageTableEntry::new()
                         .with_writable(true)
                         .with_present(true)
@@ -46,7 +51,7 @@ impl Terminal {
     }
 
     pub fn clear(&mut self) {
-        self.fb.clear(0).unwrap();
+        self.fb.clear(0);
         self.x = 0;
         self.y = 0;
     }
@@ -85,12 +90,10 @@ impl Terminal {
 
     pub fn handle_scrollback(&mut self) {
         if self.y >= self.height {
-            let off = self.fb.pitch * 8;
-            let off_clr = (self.fb.height - 8) * self.fb.pitch;
-            unsafe {
-                self.fb.base.add(off).copy_to(self.fb.base, off_clr);
-                self.fb.base.add(off_clr).write_bytes(0, off)
-            }
+            self.fb
+                .base
+                .copy_within(self.fb.stride * 8..self.fb.stride * self.fb.stride, 0);
+
             self.y -= 1;
         }
     }
@@ -99,20 +102,17 @@ impl Terminal {
 impl Write for Terminal {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         for c in s.chars() {
-            match c {
-                '\n' => {
+            if c == '\n' {
+                self.y += 1;
+                self.x = 0;
+                self.handle_scrollback();
+            } else {
+                self.draw_char(c, Colour::new(0xFF, 0xFF, 0xFF, 0xFF));
+                self.x += 1;
+                if self.x >= self.width {
                     self.y += 1;
                     self.x = 0;
                     self.handle_scrollback();
-                }
-                _ => {
-                    self.draw_char(c, Colour::new(0xFF, 0xFF, 0xFF, 0xFF));
-                    self.x += 1;
-                    if self.x >= self.width {
-                        self.y += 1;
-                        self.x = 0;
-                        self.handle_scrollback();
-                    }
                 }
             }
         }

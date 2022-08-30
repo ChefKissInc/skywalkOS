@@ -35,30 +35,25 @@ impl PageTableLvl4 {
     }
 
     #[inline]
-    pub unsafe fn map_mmio(
-        &mut self,
-        virt: usize,
-        phys: usize,
-        count: usize,
-        flags: PageTableEntry,
-    ) {
+    pub unsafe fn map_mmio(&mut self, virt: u64, phys: u64, count: u64, flags: PageTableEntry) {
         debug_assert!(!flags.pwt());
         debug_assert!(!flags.pcd());
-        self.map_pages(virt, phys, count, flags.with_huge_or_pat(true))
+        self.map_pages(virt, phys, count, flags.with_huge_or_pat(true));
     }
 }
 
 impl PML4Trait for PageTableLvl4 {
-    const VIRT_OFF: usize = amd64::paging::PHYS_VIRT_OFFSET;
+    const VIRT_OFF: u64 = amd64::paging::PHYS_VIRT_OFFSET;
 
     #[inline]
-    fn get_entry(&mut self, offset: usize) -> &mut amd64::paging::PageTableEntry {
+    fn get_entry(&mut self, offset: u64) -> &mut amd64::paging::PageTableEntry {
+        let offset: usize = offset.try_into().unwrap();
         &mut self.0.entries[offset]
     }
 
     #[inline]
-    fn alloc_entry() -> usize {
-        Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as usize
+    fn alloc_entry() -> u64 {
+        Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
             - amd64::paging::PHYS_VIRT_OFFSET
     }
 }

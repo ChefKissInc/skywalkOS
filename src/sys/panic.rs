@@ -8,17 +8,17 @@ use unwinding::abi::{UnwindContext, UnwindReasonCode, _Unwind_Backtrace, _Unwind
 
 struct CallbackData<'a> {
     counter: usize,
-    kern_symbols: &'a [sulphur_dioxide::symbol::KernSymbol],
+    kern_symbols: &'a [sulphur_dioxide::kern_sym::KernSymbol],
 }
 
 extern "C" fn callback(
     unwind_ctx: &mut UnwindContext<'_>,
     arg: *mut core::ffi::c_void,
 ) -> UnwindReasonCode {
-    let data = unsafe { &mut *(arg as *mut CallbackData) };
+    let data = unsafe { &mut *arg.cast::<CallbackData>() };
     data.counter += 1;
 
-    let ip = _Unwind_GetIP(unwind_ctx);
+    let ip = _Unwind_GetIP(unwind_ctx) as u64;
     if let Some(symbol) = data
         .kern_symbols
         .iter()
@@ -53,33 +53,39 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
     unsafe {
         asm!("cli");
         while super::io::serial::SERIAL.is_locked() {
-            super::io::serial::SERIAL.force_unlock()
+            super::io::serial::SERIAL.force_unlock();
         }
     }
 
-    if let Some(loc) = info.location() {
-        error!(
-            "Oops. Thoust system hast craseth... Panic hast occurred in thine file {} at {}:{}.",
-            loc.file(),
-            loc.line(),
-            loc.column()
-        );
-    } else {
-        error!("Oops. Thoust system hast craseth... Panic hast occurred at unknown location.");
-    }
+    info.location().map_or_else(
+        || {
+            error!("Oops. Your system crashed... A panic has occurred at an unknown location.");
+        },
+        |loc| {
+            error!(
+                "Oops. Your system crashed... A panic has occurred at {}@{}:{}.",
+                loc.file(),
+                loc.line(),
+                loc.column()
+            );
+        },
+    );
 
-    if let Some(args) = info.message() {
-        if let Some(s) = args.as_str() {
-            error!("Thine messageth arst: {}.", s);
-        } else {
-            error!("Thine argumenst arst: {:#X?}", args);
-        }
-    } else {
-        error!(
-            "Noneth messageth hast been provideth. Payload: {:#X?}",
-            info.payload()
-        );
-    }
+    info.message().map_or_else(
+        || {
+            error!("No message provided. Payload: {:#X?}", info.payload());
+        },
+        |args| {
+            args.as_str().map_or_else(
+                || {
+                    error!("The arguments are: {:#X?}", args);
+                },
+                |s| {
+                    error!("The message is: {}.", s);
+                },
+            );
+        },
+    );
 
     error!("Backtrace:");
 
@@ -91,7 +97,7 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
                 .assume_init_mut()
         },
     };
-    _Unwind_Backtrace(callback, &mut data as *mut _ as _);
+    _Unwind_Backtrace(callback, core::ptr::addr_of_mut!(data).cast());
 
     loop {
         unsafe { asm!("hlt") };
