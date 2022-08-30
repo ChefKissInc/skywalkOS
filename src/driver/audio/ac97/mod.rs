@@ -48,16 +48,15 @@ unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
 impl AC97 {
     pub fn new<T: PCIControllerIO + ?Sized>(dev: &PCIDevice<T>) -> Self {
         unsafe {
-            dev.cfg_write16::<_, u16>(
+            dev.cfg_write16(
                 PCICfgOffset::Command,
-                PCICommand::from(dev.cfg_read16::<_, u16>(PCICfgOffset::Command))
+                dev.cfg_read16::<_, PCICommand>(PCICfgOffset::Command)
                     .with_pio(true)
                     .with_bus_master(true)
-                    .with_disable_intrs(false)
-                    .into(),
+                    .with_disable_intrs(false),
             );
 
-            let irq = dev.cfg_read8::<_, u8>(PCICfgOffset::InterruptLine);
+            let irq: u8 = dev.cfg_read8(PCICfgOffset::InterruptLine);
             debug!("IRQ: {:#X?}", irq);
             crate::driver::acpi::ioapic::wire_legacy_irq(irq, false);
             crate::driver::intrs::idt::set_handler(0x20 + irq, handler, true, true);
