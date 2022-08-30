@@ -14,10 +14,10 @@ pub struct TaskSegmentSelector {
 }
 
 impl TaskSegmentSelector {
-    pub const fn new(kern_rsp: usize) -> Self {
+    pub const fn new(kern_rsp: u64) -> Self {
         Self {
             __: 0,
-            rsp: [kern_rsp as u64, 0, 0, 0],
+            rsp: [kern_rsp, 0, 0, 0],
             ___: 0,
             ist: [0; 7],
             ____: 0,

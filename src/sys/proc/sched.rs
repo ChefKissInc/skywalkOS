@@ -21,10 +21,8 @@ pub struct Scheduler {
 }
 
 unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
-    let mut this = (*crate::sys::state::SYS_STATE.get())
-        .scheduler
-        .assume_init_mut()
-        .lock();
+    let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
+    let mut this = sys_state.scheduler.assume_init_mut().lock();
 
     if this.first_launch {
         this.first_launch = false;
@@ -38,7 +36,7 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
     *state = thread.regs;
     thread.state = super::ThreadState::Active;
     *(*TSS.get()).assume_init_mut() =
-        TaskSegmentSelector::new(thread.kern_rsp.as_ptr() as usize + thread.kern_rsp.len());
+        TaskSegmentSelector::new(thread.kern_rsp.as_ptr() as u64 + thread.kern_rsp.len() as u64);
 
     this.processes[0].cr3.set();
 }
@@ -94,7 +92,7 @@ impl Scheduler {
         let kern_thread = super::Thread::new(0, test_thread1 as usize);
         unsafe {
             *(*TSS.get()).assume_init_mut() = TaskSegmentSelector::new(
-                kern_thread.kern_rsp.as_ptr() as usize + kern_thread.kern_rsp.len(),
+                kern_thread.kern_rsp.as_ptr() as u64 + kern_thread.kern_rsp.len() as u64,
             );
             let entries = &mut *crate::sys::gdt::ENTRIES.get();
             let tss = (*TSS.get()).as_ptr() as u64;
