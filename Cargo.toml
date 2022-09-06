@@ -8,16 +8,12 @@ edition = "2021"
 license-file = "LICENSE"
 
 [profile.dev]
-opt-level = 3
-
-[profile.dev.package."unwinding"]
-debug = 0
+lto = "thin"
 
 [profile.release]
+opt-level = 3
 lto = true
-
-[profile.release.package."unwinding"]
-debug = 0
+strip = true
 
 [dependencies]
 acpi = { path = "../ACPILib" }
