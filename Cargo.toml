@@ -7,9 +7,6 @@ authors = ["ChefKiss Inc"]
 edition = "2021"
 license-file = "LICENSE"
 
-[profile.dev]
-lto = "thin"
-
 [profile.release]
 opt-level = 3
 lto = true
@@ -19,13 +16,13 @@ strip = true
 acpi = { path = "../ACPILib" }
 amd64 = { path = "../AMD64Lib" }
 font8x8 = { version = "0.3.1", default-features = false }
-hashbrown = { version = "0.12.1", features = ["nightly"] }
+hashbrown = { version = "0.12.3", features = ["nightly"] }
 sulphur_dioxide = { path = "../SulphurDioxide" }
 log = { version = "0.4.17", default-features = false, features = [
     "release_max_level_debug",
     "max_level_trace",
 ] }
-goblin = { version = "0.5.2", default-features = false, features = [
+goblin = { version = "0.5.4", default-features = false, features = [
     "elf32",
     "elf64",
     "endian_fd",
@@ -35,8 +32,8 @@ modular-bitfield = { version = "0.11.2", git = "https://github.com/ChefKissInc/m
 num_enum = { version = "0.5.7", default-features = false, features = [
     "nightly",
 ] }
-seq-macro = "0.3.0"
-spin = { version = "0.9.3", default-features = false, features = [
+seq-macro = "0.3.1"
+spin = { version = "0.9.4", default-features = false, features = [
     "lock_api",
     "mutex",
     "ticket_mutex",
@@ -45,7 +42,7 @@ spin = { version = "0.9.3", default-features = false, features = [
     "once",
     "barrier",
 ] }
-unwinding = { version = "0.1.4", default-features = false, features = [
+unwinding = { version = "0.1.5", default-features = false, features = [
     "unwinder",
     "fde-static",
     "personality",
