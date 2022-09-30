@@ -1,5 +1,5 @@
-//! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use acpi::tables::mcfg::MCFGEntry;
 use amd64::paging::{pml4::PML4, PageTableEntry};
@@ -10,20 +10,21 @@ pub struct PCIMemoryIO {
 }
 
 impl PCIMemoryIO {
-    pub fn new(entry: MCFGEntry) -> Self {
+    #[must_use]
+    pub const fn new(entry: MCFGEntry) -> Self {
         Self { entry }
     }
 
     #[inline]
-    unsafe fn get_addr(&self, addr: super::PCIAddress, off: u8) -> usize {
+    unsafe fn get_addr(&self, addr: super::PCIAddress, off: u8) -> u64 {
         let segment = self.entry.segment;
         assert_eq!(addr.segment, segment, "PCI Express segment mismatch");
 
-        let phys = (self.entry.base as usize
-            + (((addr.bus as usize - self.entry.bus_start as usize) << 20)
-                | ((addr.slot as usize) << 15)
-                | ((addr.func as usize) << 12)))
-            | (off as usize);
+        let phys = (self.entry.base
+            + (((u64::from(addr.bus) - u64::from(self.entry.bus_start)) << 20)
+                | (u64::from(addr.slot) << 15)
+                | (u64::from(addr.func) << 12)))
+            | u64::from(off);
         let virt = phys + amd64::paging::PHYS_VIRT_OFFSET;
         (*crate::sys::state::SYS_STATE.get())
             .pml4
@@ -39,34 +40,27 @@ impl PCIMemoryIO {
 }
 
 impl super::PCIControllerIO for PCIMemoryIO {
-    unsafe fn cfg_read(
-        &self,
-        addr: super::PCIAddress,
-        off: u8,
-        access_size: super::PCIIOAccessSize,
-    ) -> u32 {
-        let addr = self.get_addr(addr, off);
-
-        match access_size {
-            super::PCIIOAccessSize::Byte => (addr as *const u8).read_volatile().into(),
-            super::PCIIOAccessSize::Word => (addr as *const u16).read_volatile().into(),
-            super::PCIIOAccessSize::DWord => (addr as *const u32).read_volatile(),
-        }
+    unsafe fn cfg_read8(&self, addr: super::PCIAddress, off: u8) -> u8 {
+        (self.get_addr(addr, off) as *const u8).read_volatile()
     }
 
-    unsafe fn cfg_write(
-        &self,
-        addr: super::PCIAddress,
-        off: u8,
-        value: u32,
-        access_size: super::PCIIOAccessSize,
-    ) {
-        let addr = self.get_addr(addr, off);
+    unsafe fn cfg_read16(&self, addr: super::PCIAddress, off: u8) -> u16 {
+        (self.get_addr(addr, off) as *const u16).read_volatile()
+    }
 
-        match access_size {
-            super::PCIIOAccessSize::Byte => (addr as *mut u8).write_volatile(value as _),
-            super::PCIIOAccessSize::Word => (addr as *mut u16).write_volatile(value as _),
-            super::PCIIOAccessSize::DWord => (addr as *mut u32).write_volatile(value),
-        }
+    unsafe fn cfg_read32(&self, addr: super::PCIAddress, off: u8) -> u32 {
+        (self.get_addr(addr, off) as *const u32).read_volatile()
+    }
+
+    unsafe fn cfg_write8(&self, addr: super::PCIAddress, off: u8, value: u8) {
+        (self.get_addr(addr, off) as *mut u8).write_volatile(value);
+    }
+
+    unsafe fn cfg_write16(&self, addr: super::PCIAddress, off: u8, value: u16) {
+        (self.get_addr(addr, off) as *mut u16).write_volatile(value);
+    }
+
+    unsafe fn cfg_write32(&self, addr: super::PCIAddress, off: u8, value: u32) {
+        (self.get_addr(addr, off) as *mut u32).write_volatile(value);
     }
 }

@@ -1,5 +1,5 @@
-//! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 #[repr(C, packed)]
 pub struct TaskSegmentSelector {
@@ -14,10 +14,10 @@ pub struct TaskSegmentSelector {
 }
 
 impl TaskSegmentSelector {
-    pub const fn new(kern_rsp: usize) -> Self {
+    pub const fn new(kern_rsp: u64) -> Self {
         Self {
             __: 0,
-            rsp: [kern_rsp as u64, 0, 0, 0],
+            rsp: [kern_rsp, 0, 0, 0],
             ___: 0,
             ist: [0; 7],
             ____: 0,

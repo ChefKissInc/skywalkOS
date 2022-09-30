@@ -1,5 +1,5 @@
-//! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use modular_bitfield::prelude::*;
 
@@ -47,6 +47,7 @@ pub enum TimerMode {
     TscDeadline = 0b10,
 }
 
+// #[allow(clippy::cast_possible_truncation)]
 #[bitfield(bits = 32)]
 #[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]

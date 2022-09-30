@@ -1,5 +1,5 @@
-//! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use alloc::string::String;
 use core::fmt::Write;
@@ -12,21 +12,34 @@ use crate::{
         acpi::ACPIPlatform,
         audio::ac97::AC97,
         keyboard::ps2::Ps2Event,
-        pci::{PCIAddress, PCICfgOffset, PCIController, PCIDevice, PCIIOAccessSize},
+        pci::{PCIAddress, PCICfgOffset, PCIController, PCIDevice},
     },
     sys::terminal::Terminal,
 };
 
+#[allow(clippy::cognitive_complexity, clippy::too_many_lines)]
 pub fn terminal_loop(
     acpi: &ACPIPlatform,
     pci: &PCIController,
     terminal: &mut Terminal,
     mut ac97: Option<&mut AC97>,
 ) -> ! {
-    let ps2ctl = unsafe { (*crate::driver::keyboard::ps2::INSTANCE.get()).assume_init_mut() };
-    let state = unsafe { &mut (*crate::sys::state::SYS_STATE.get()) };
+    let ps2ctl = unsafe {
+        crate::driver::keyboard::ps2::INSTANCE
+            .get()
+            .as_mut()
+            .unwrap()
+            .assume_init_mut()
+    };
+    let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+
     'menu: loop {
-        write!(terminal, "\nBoxOS# ").unwrap();
+        writeln!(terminal).unwrap();
+        for c in "BridgeCore".chars() {
+            terminal.draw_char(c, paper_fb::pixel::Colour::new(0x0C, 0x96, 0xB5, 0xFF));
+            terminal.x += 1;
+        }
+        write!(terminal, " fallback > ").unwrap();
         let mut cmd = String::new();
         loop {
             if let Some(key) = ps2ctl.queue.pop_front() {
@@ -71,14 +84,17 @@ memusage   |  View memory usage"#
                                                             slot,
                                                             func,
                                                         };
-                                                        let device =
-                                                            PCIDevice::new(addr, pci.get_io(addr));
+                                                        let device = PCIDevice::new(addr, pci);
 
                                                         unsafe {
-                                                            let vendor_id: u32 = device.cfg_read(
-                                                                PCICfgOffset::VendorId,
-                                                                PCIIOAccessSize::Word,
-                                                            );
+                                                            let vendor_id: u16 = device
+                                                                .cfg_read16(PCICfgOffset::VendorId);
+                                                            let device_id: u16 = device
+                                                                .cfg_read16(PCICfgOffset::DeviceId);
+                                                            let class_code: u16 = device
+                                                                .cfg_read16(
+                                                                    PCICfgOffset::ClassCode,
+                                                                );
                                                             if vendor_id != 0xFFFF {
                                                                 info!(
                                                                     "PCI Device at {}:{}:{} has \
@@ -89,15 +105,9 @@ memusage   |  View memory usage"#
                                                                     slot,
                                                                     func,
                                                                     vendor_id,
-                                                                    device.cfg_read::<_, u32>(
-                                                                        PCICfgOffset::DeviceId,
-                                                                        PCIIOAccessSize::Word,
-                                                                    ),
-                                                                    device.cfg_read::<_, u32>(
-                                                                        PCICfgOffset::ClassCode,
-                                                                        PCIIOAccessSize::Word,
-                                                                    ),
-                                                                )
+                                                                    device_id,
+                                                                    class_code,
+                                                                );
                                                             }
                                                         }
                                                     }
@@ -118,7 +128,7 @@ memusage   |  View memory usage"#
                                                     })
                                                 {
                                                     info!("Starting playback of test audio");
-                                                    ac97.play_audio(module.data)
+                                                    ac97.play_audio(module.data);
                                                 } else {
                                                     error!(
                                                         "Failure to find 'testaudio' boot loader \
@@ -130,22 +140,24 @@ memusage   |  View memory usage"#
                                             error!("No sound device available!");
                                         }
                                     }
-                                    "resume" => {
-                                        if let Some(ac97) = &mut ac97 {
+                                    "resume" => ac97.as_mut().map_or_else(
+                                        || {
+                                            error!("No sound device available!");
+                                        },
+                                        |ac97| {
                                             info!("Resuming audio playback");
                                             ac97.start_playback();
-                                        } else {
+                                        },
+                                    ),
+                                    "pause" => ac97.as_mut().map_or_else(
+                                        || {
                                             error!("No sound device available!");
-                                        }
-                                    }
-                                    "pause" => {
-                                        if let Some(ac97) = &mut ac97 {
+                                        },
+                                        |ac97| {
                                             info!("Pausing audio playback");
                                             ac97.stop_playback();
-                                        } else {
-                                            error!("No sound device available!");
-                                        }
-                                    }
+                                        },
+                                    ),
                                     "restart" => ps2ctl.reset_cpu(),
                                     "memusage" => {
                                         let pmm = unsafe { state.pmm.assume_init_ref() };
@@ -167,10 +179,10 @@ memusage   |  View memory usage"#
                     Ps2Event::BackSpace => {
                         if !cmd.is_empty() {
                             cmd.pop();
-                            terminal.backspace()
+                            terminal.backspace();
                         }
                     }
-                    _ => (),
+                    _ => {}
                 }
             }
         }

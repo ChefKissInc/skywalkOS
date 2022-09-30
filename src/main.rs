@@ -1,9 +1,17 @@
-//! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 #![no_std]
 #![no_main]
-#![deny(warnings, clippy::cargo, unused_extern_crates, rust_2021_compatibility)]
+#![deny(
+    warnings,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::cargo,
+    unused_extern_crates,
+    rust_2021_compatibility
+)]
+#![allow(clippy::module_name_repetitions)]
 #![feature(
     asm_sym,
     asm_const,
@@ -38,6 +46,7 @@ mod terminal_loop;
 mod utils;
 
 #[no_mangle]
+#[allow(clippy::too_many_lines)]
 extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     unwinding::panic::catch_unwind(move || {
         sys::io::serial::SERIAL.lock().init();
@@ -81,18 +90,20 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
 
         if let Some(fb_info) = boot_info.frame_buffer {
             debug!("Got boot display: {:X?}", *fb_info);
-            let mut terminal = Terminal::new(paper_fb::framebuffer::Framebuffer::new(
-                fb_info.base,
-                fb_info.resolution.width as usize,
-                fb_info.resolution.height as usize,
-                paper_fb::pixel::Bitmask {
-                    r: fb_info.pixel_bitmask.red,
-                    g: fb_info.pixel_bitmask.green,
-                    b: fb_info.pixel_bitmask.blue,
-                    a: fb_info.pixel_bitmask.alpha,
-                },
-                fb_info.pitch,
-            ));
+            let mut terminal = Terminal::new(unsafe {
+                paper_fb::framebuffer::Framebuffer::new(
+                    fb_info.base,
+                    fb_info.resolution.width as usize,
+                    fb_info.resolution.height as usize,
+                    fb_info.pitch,
+                    paper_fb::pixel::Bitmask {
+                        r: fb_info.pixel_bitmask.red,
+                        g: fb_info.pixel_bitmask.green,
+                        b: fb_info.pixel_bitmask.blue,
+                        a: fb_info.pixel_bitmask.alpha,
+                    },
+                )
+            });
             terminal.clear();
             state.terminal = Some(terminal);
         }
@@ -102,7 +113,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
             boot_info
                 .kern_symbols
                 .iter()
-                .map(|v| sulphur_dioxide::symbol::KernSymbol {
+                .map(|v| sulphur_dioxide::kern_sym::KernSymbol {
                     name: Box::leak(v.name.to_owned().into_boxed_str()),
                     ..*v
                 })
@@ -128,7 +139,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
         let hpet = acpi
             .find("HPET")
             .map(|v| unsafe {
-                let addr = v as *const _ as usize;
+                let addr = v as *const _ as u64;
                 pml4.map_mmio(
                     addr,
                     addr - amd64::paging::PHYS_VIRT_OFFSET,
@@ -145,11 +156,11 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
             acpi.find("APIC").unwrap(),
         ));
         let addr = driver::acpi::apic::get_set_lapic_addr();
-        let virt_addr = addr as usize + amd64::paging::PHYS_VIRT_OFFSET;
+        let virt_addr = addr + amd64::paging::PHYS_VIRT_OFFSET;
         unsafe {
             pml4.map_mmio(
                 virt_addr,
-                addr as usize,
+                addr,
                 1,
                 amd64::paging::PageTableEntry::new()
                     .with_present(true)

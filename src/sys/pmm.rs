@@ -1,8 +1,8 @@
-//! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use log::trace;
-use sulphur_dioxide::memory_map::MemoryEntry;
+use sulphur_dioxide::mmap::MemoryEntry;
 
 extern "C" {
     static __kernel_top: u64;
@@ -11,19 +11,19 @@ extern "C" {
 #[derive(Debug)]
 pub struct BitmapAllocator {
     bitmap: &'static mut [u64],
-    highest_addr: usize,
-    pub free_pages: usize,
-    pub total_pages: usize,
-    last_index: usize,
+    highest_addr: u64,
+    pub free_pages: u64,
+    pub total_pages: u64,
+    last_index: u64,
 }
 
 impl BitmapAllocator {
     pub fn new(mmap: &'static [MemoryEntry]) -> Self {
         let alloc_base =
-            unsafe { &__kernel_top } as *const _ as usize - amd64::paging::KERNEL_VIRT_OFFSET;
+            unsafe { &__kernel_top } as *const _ as u64 - amd64::paging::KERNEL_VIRT_OFFSET;
         trace!("alloc_base: {:#X?}", alloc_base);
 
-        let mut highest_addr = 0usize;
+        let mut highest_addr = 0;
 
         // Find the highest available address
         for mmap_ent in mmap {
@@ -56,7 +56,7 @@ impl BitmapAllocator {
                     bitmap = unsafe {
                         core::slice::from_raw_parts_mut(
                             (v.base + amd64::paging::PHYS_VIRT_OFFSET) as *mut _,
-                            bitmap_sz,
+                            bitmap_sz.try_into().unwrap(),
                         )
                     };
                     bitmap.fill(!0u64);
@@ -66,14 +66,14 @@ impl BitmapAllocator {
             }
         }
 
-        let mut free_pages = 0usize;
+        let mut free_pages = 0;
 
         // Populate the bitmap
         for mmap_ent in mmap {
             if let MemoryEntry::Usable(v) = mmap_ent {
                 trace!("Base: {:#X?}, End: {:#X?}", v.base, v.base + v.length);
 
-                let v = if v.base == bitmap.as_ptr() as usize {
+                let v = if v.base == bitmap.as_ptr() as u64 {
                     let mut v = *v;
                     v.base += bitmap_sz;
                     v.length -= bitmap_sz;
@@ -107,13 +107,15 @@ impl BitmapAllocator {
         }
     }
 
-    unsafe fn internal_alloc(&mut self, count: usize, limit: usize) -> Option<*mut u8> {
+    unsafe fn internal_alloc(&mut self, count: u64, limit: u64) -> Option<*mut u8> {
         let mut p = 0;
 
         while self.last_index < limit {
             let set = crate::utils::bitmap::bit_test(self.bitmap, self.last_index);
             self.last_index += 1;
-            if !set {
+            if set {
+                p = 0;
+            } else {
                 p += 1;
 
                 if p == count {
@@ -128,15 +130,13 @@ impl BitmapAllocator {
 
                     return Some((page * 0x1000) as *mut _);
                 }
-            } else {
-                p = 0;
             }
         }
 
         None
     }
 
-    pub unsafe fn alloc(&mut self, count: usize) -> Option<*mut u8> {
+    pub unsafe fn alloc(&mut self, count: u64) -> Option<*mut u8> {
         let l = self.last_index;
 
         self.internal_alloc(count, self.highest_addr / 0x1000).or({
@@ -145,8 +145,8 @@ impl BitmapAllocator {
         })
     }
 
-    pub unsafe fn free(&mut self, ptr: *mut u8, count: usize) {
-        let idx = ptr as usize / 0x1000;
+    pub unsafe fn free(&mut self, ptr: *mut u8, count: u64) {
+        let idx = ptr as u64 / 0x1000;
 
         // Mark memory hole as free
         for i in idx..(idx + count) {

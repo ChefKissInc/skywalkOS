@@ -1,5 +1,5 @@
-//! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use alloc::collections::VecDeque;
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
@@ -58,17 +58,17 @@ pub static INSTANCE: SyncUnsafeCell<MaybeUninit<PS2Ctl>> =
     SyncUnsafeCell::new(MaybeUninit::uninit());
 
 unsafe extern "sysv64" fn handler(_state: &mut RegisterState) {
-    let this = (*INSTANCE.get()).assume_init_mut();
-    let key = this.data_port.read();
+    let this = INSTANCE.get().as_mut().unwrap();
+    let this = this.assume_init_mut();
 
-    this.queue.push_back(match key {
+    this.queue.push_back(match this.data_port.read() {
         0xE => Ps2Event::BackSpace,
-        0x2..=0xA => Ps2Event::Pressed("123456789".chars().nth(key as usize - 0x2).unwrap()),
+        v @ 0x2..=0xA => Ps2Event::Pressed("123456789".chars().nth(v as usize - 0x2).unwrap()),
         0x1C => Ps2Event::Pressed('\n'),
-        0x10..=0x1C => Ps2Event::Pressed("qwertyuiop".chars().nth(key as usize - 0x10).unwrap()),
-        0x1E..=0x26 => Ps2Event::Pressed("asdfghjkl".chars().nth(key as usize - 0x1E).unwrap()),
+        v @ 0x10..=0x1C => Ps2Event::Pressed("qwertyuiop".chars().nth(v as usize - 0x10).unwrap()),
+        v @ 0x1E..=0x26 => Ps2Event::Pressed("asdfghjkl".chars().nth(v as usize - 0x1E).unwrap()),
         0x29 => Ps2Event::Pressed('0'),
-        0x2C..=0x32 => Ps2Event::Pressed("zxcvbnm".chars().nth(key as usize - 0x2C).unwrap()),
+        v @ 0x2C..=0x32 => Ps2Event::Pressed("zxcvbnm".chars().nth(v as usize - 0x2C).unwrap()),
         0x39 => Ps2Event::Pressed(' '),
         v => Ps2Event::Other(v),
     });
@@ -85,12 +85,12 @@ impl PS2Ctl {
 
     #[inline]
     fn output_full(&self) -> bool {
-        unsafe { self.sts_or_cmd_reg.read() & 1 != 0 }
+        unsafe { (self.sts_or_cmd_reg.read() & 1) != 0 }
     }
 
     #[inline]
     fn input_full(&self) -> bool {
-        unsafe { self.sts_or_cmd_reg.read() & (1 << 1) != 0 }
+        unsafe { (self.sts_or_cmd_reg.read() & (1 << 1)) != 0 }
     }
 
     #[inline]
@@ -116,6 +116,7 @@ impl PS2Ctl {
             Ps2Cfg::from(self.data_port.read())
                 .with_port1_intr(true)
                 .with_port2_intr(false)
+                .with_port1_translation(true)
         };
         crate::driver::acpi::ioapic::wire_legacy_irq(1, false);
         crate::driver::intrs::idt::set_handler(0x21, handler, true, true);

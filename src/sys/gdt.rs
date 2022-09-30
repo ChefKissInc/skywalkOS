@@ -1,5 +1,5 @@
-//! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use core::{arch::asm, cell::SyncUnsafeCell};
 
@@ -14,7 +14,7 @@ pub static ENTRIES: SyncUnsafeCell<[SegmentDescriptor; 5]> = SyncUnsafeCell::new
 ]);
 
 pub static GDTR: GDTReg = GDTReg {
-    limit: (core::mem::size_of_val(&ENTRIES) - 1) as u16,
+    limit: (((core::mem::size_of_val(&ENTRIES) as u64) - 1) & 0xFFFF) as u16,
     addr: unsafe { (*ENTRIES.get()).as_ptr() },
 };
 
@@ -101,8 +101,8 @@ impl SegmentDescriptor {
     }
 
     pub fn set_base(&mut self, base: u32) {
-        self.base_low = base as u16;
-        self.base_middle = (base >> 16) as u8;
+        self.base_low = (base & 0xFFFF) as u16;
+        self.base_middle = ((base >> 16) & 0xFF) as u8;
         self.base_high = (base >> 24) as u8;
     }
 }
@@ -130,9 +130,9 @@ impl GDTReg {
             "mov gs, {3}",
             "mov ss, {3}",
             in(reg) self,
-            in(reg) cs.0 as u64,
+            in(reg) u64::from(cs.0),
             lateout(reg) _,
-            in(reg) ds.0 as u64,
+            in(reg) u64::from(ds.0),
         );
     }
 }

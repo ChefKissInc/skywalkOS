@@ -1,5 +1,5 @@
-//! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use core::arch::asm;
 
@@ -66,7 +66,7 @@ unsafe extern "C" fn isr_handler(regs: &mut crate::sys::RegisterState) {
     }
     if !handler.should_iret && !handler.is_irq {
         loop {
-            asm!("hlt")
+            asm!("hlt");
         }
     }
 }

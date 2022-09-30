@@ -1,5 +1,5 @@
-//! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use alloc::{
     boxed::Box,
@@ -29,14 +29,14 @@ pub struct Thread {
     pub regs: super::RegisterState,
     pub fs_base: usize,
     pub gs_base: usize,
-    pub rsp: Vec<u8>,
+    pub stack: Vec<u8>,
     pub kern_rsp: Vec<u8>,
 }
 
 impl Thread {
     pub fn new(id: usize, rip: usize) -> Self {
-        let mut rsp = Vec::new();
-        rsp.resize(0x14000, 0);
+        let mut stack = Vec::new();
+        stack.resize(0x14000, 0);
         let mut kern_rsp = Vec::new();
         kern_rsp.resize(0x14000, 0);
         Self {
@@ -46,13 +46,13 @@ impl Thread {
                 rip: rip as u64,
                 cs: 0x08,
                 rflags: 0x202,
-                rsp: rsp.as_ptr() as u64 + rsp.len() as u64,
+                rsp: stack.as_ptr() as u64 + stack.len() as u64,
                 ss: 0x10,
                 ..Default::default()
             },
             fs_base: 0,
             gs_base: 0,
-            rsp,
+            stack,
             kern_rsp,
         }
     }

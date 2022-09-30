@@ -147,7 +147,7 @@ impl HBAMemory {
     }
 
     pub fn is_port_implemented(&self, port: u8) -> bool {
-        self.port_implemented & (1u32 << (port as u32)) != 0
+        self.port_implemented & (1u32 << u32::from(port)) != 0
     }
 
     pub fn get_port_ref(&mut self, port: u8) -> Option<&mut super::HBAPort> {

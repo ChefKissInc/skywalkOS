@@ -10,7 +10,7 @@ use log::info;
 use crate::{
     driver::{
         keyboard::ps2::PS2Ctl,
-        pci::{PCICfgOffset, PCICommand, PCIController, PCIIOAccessSize},
+        pci::{PCICfgOffset, PCICommand, PCIController},
         timer::Timer,
     },
     sys::{tss::TaskSegmentSelector, RegisterState},
@@ -25,24 +25,22 @@ pub struct Scheduler {
 }
 
 unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
-    let mut this = (*crate::sys::state::SYS_STATE.get())
-        .scheduler
-        .assume_init_mut()
-        .lock();
+    let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
+    let mut this = sys_state.scheduler.assume_init_mut().lock();
 
-    if !this.first_launch {
+    if this.first_launch {
+        this.first_launch = false;
+    } else {
         let old_thread = this.current_thread();
         old_thread.regs = *state;
         old_thread.state = super::ThreadState::Inactive;
-    } else {
-        this.first_launch = false;
     }
 
     let thread = this.find_next_thread();
     *state = thread.regs;
     thread.state = super::ThreadState::Active;
     *(*TSS.get()).assume_init_mut() =
-        TaskSegmentSelector::new(thread.kern_rsp.as_ptr() as usize + thread.kern_rsp.len());
+        TaskSegmentSelector::new(thread.kern_rsp.as_ptr() as u64 + thread.kern_rsp.len() as u64);
 
     this.processes[0].cr3.set();
 }
@@ -67,45 +65,33 @@ fn test_thread2() -> ! {
 
     let pci = PCIController::new(acpi.find("MCFG"));
     let ac97 = pci
-        .find(
-            |v| pci.get_io(v),
-            move |dev| unsafe {
-                dev.cfg_read::<_, u32>(PCICfgOffset::ClassCode, PCIIOAccessSize::Word) == 0x0401
-            },
-        )
-        .map(crate::driver::audio::ac97::AC97::new)
-        .map(|v| unsafe { (*crate::driver::audio::ac97::INSTANCE.get()).write(v) });
+        .find(move |dev| unsafe { dev.cfg_read16::<_, u16>(PCICfgOffset::ClassCode) == 0x0401 })
+        .map(|v| unsafe {
+            (*crate::driver::audio::ac97::INSTANCE.get())
+                .write(crate::driver::audio::ac97::AC97::new(&v))
+        });
 
     let sata_device = pci
-        .find(
-            |v| pci.get_io(v),
-            move |dev| unsafe {
-                dev.cfg_read::<_, u32>(PCICfgOffset::ClassCode, PCIIOAccessSize::Word) == 0x0106
-            },
-        )
+        .find(move |dev| unsafe { dev.cfg_read16::<_, u16>(PCICfgOffset::ClassCode) == 0x0106 })
         .unwrap();
 
     unsafe {
-        sata_device.cfg_write::<_, u16>(
+        sata_device.cfg_write16(
             PCICfgOffset::Command,
-            PCICommand::from(
-                sata_device.cfg_read::<_, u32>(PCICfgOffset::Command, PCIIOAccessSize::Word) as u16,
-            )
-            .with_pio(false)
-            .with_bus_master(true)
-            .with_disable_intrs(true)
-            .into(),
-            PCIIOAccessSize::Word,
+            sata_device
+                .cfg_read16::<_, PCICommand>(PCICfgOffset::Command)
+                .with_pio(false)
+                .with_bus_master(true)
+                .with_disable_intrs(true),
         );
 
-        let addr: u32 =
-            sata_device.cfg_read::<_, u32>(PCICfgOffset::BaseAddr5, PCIIOAccessSize::DWord) & !0xF;
-        let addr_virt = addr as usize + amd64::paging::PHYS_VIRT_OFFSET;
+        let addr: u32 = sata_device.cfg_read32::<_, u32>(PCICfgOffset::BaseAddr5) & !0xF;
+        let addr_virt = u64::from(addr) + amd64::paging::PHYS_VIRT_OFFSET;
         let hba_mem = &mut *(addr_virt as *mut crate::driver::storage::ahci::hba::HBAMemory);
         state.pml4.assume_init_mut().map_mmio(
             addr_virt,
-            addr as usize,
-            (size_of::<crate::driver::storage::ahci::hba::HBAMemory>() + 0xFFF) / 0x1000,
+            u64::from(addr),
+            (size_of::<crate::driver::storage::ahci::hba::HBAMemory>() as u64 + 0xFFF) / 0x1000,
             PageTableEntry::new().with_present(true).with_writable(true),
         );
 
@@ -145,14 +131,14 @@ impl Scheduler {
         let kern_thread = super::Thread::new(0, test_thread1 as usize);
         unsafe {
             *(*TSS.get()).assume_init_mut() = TaskSegmentSelector::new(
-                kern_thread.kern_rsp.as_ptr() as usize + kern_thread.kern_rsp.len(),
+                kern_thread.kern_rsp.as_ptr() as u64 + kern_thread.kern_rsp.len() as u64,
             );
             let entries = &mut *crate::sys::gdt::ENTRIES.get();
-            let tss = (*TSS.get()).as_ptr() as usize;
-            entries[entries.len() - 2].set_base(tss as u32);
+            let tss = (*TSS.get()).as_ptr() as u64;
+            entries[entries.len() - 2].set_base((tss & 0xFFFF_FFFF) as u32);
             entries[entries.len() - 2].attrs.set_present(true);
 
-            entries.last_mut().unwrap().limit_low = (tss >> 32) as u16;
+            entries.last_mut().unwrap().limit_low = ((tss >> 32) & 0xFFFF) as u16;
             entries.last_mut().unwrap().base_low = (tss >> 48) as u16;
 
             core::arch::asm!(
@@ -162,7 +148,7 @@ impl Scheduler {
         }
         kern_proc.threads.push_back(kern_thread);
 
-        let kern_thread = super::Thread::new(2, test_thread2 as usize);
+        let kern_thread = super::Thread::new(1, test_thread2 as usize);
         kern_proc.threads.push_back(kern_thread);
         processes.push_back(kern_proc);
 
@@ -175,7 +161,7 @@ impl Scheduler {
         lapic.setup_timer(timer);
 
         crate::driver::intrs::idt::set_handler(128, schedule, true, true);
-        crate::driver::acpi::ioapic::wire_legacy_irq(128 - 0x20, false);
+        crate::driver::acpi::ioapic::wire_legacy_irq(96, false);
 
         Self {
             processes,
@@ -198,8 +184,8 @@ impl Scheduler {
 
     pub fn find_next_thread(&mut self) -> &mut super::Thread {
         let proc = &mut self.processes[0];
-        let t = proc.threads.pop_front().unwrap();
-        proc.threads.push_back(t);
+        let old = proc.threads.pop_front().unwrap();
+        proc.threads.push_back(old);
         proc.threads.front_mut().unwrap()
     }
 }

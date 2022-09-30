@@ -1,5 +1,6 @@
-//! Copyright (c) ChefKiss Inc 2021-2022.
-//! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+#![allow(clippy::cast_possible_truncation)]
 
 use amd64::registers::msr::{apic::APICBase, ModelSpecificReg};
 use modular_bitfield::prelude::*;
@@ -119,8 +120,8 @@ pub struct InterruptCommand {
 
 #[allow(dead_code)]
 impl LocalAPIC {
-    pub fn new(addr: usize) -> Self {
-        Self { addr: addr as _ }
+    pub const fn new(addr: u64) -> Self {
+        Self { addr }
     }
 
     #[inline]
@@ -162,7 +163,7 @@ impl LocalAPIC {
 
     #[inline]
     pub fn write_timer(&self, val: lvt::TimerLVT) {
-        self.write_reg(LocalAPICReg::LVTTimer, val)
+        self.write_reg(LocalAPICReg::LVTTimer, val);
     }
 
     #[inline]
@@ -189,7 +190,7 @@ impl LocalAPIC {
     #[inline]
     pub fn write_icr(&self, val: InterruptCommand) {
         let val: u64 = val.into();
-        let a = val as u32;
+        let a = (val & 0xFFFF_FFFF) as u32;
         let b = (val >> 32) as u32;
         self.write_reg(LocalAPICReg::InterruptCommand2, b);
         self.write_reg(LocalAPICReg::InterruptCommand, a);
@@ -197,7 +198,7 @@ impl LocalAPIC {
 
     #[inline]
     pub fn write_spurious_intr_vec(&self, val: SpuriousIntrVector) {
-        self.write_reg(LocalAPICReg::SpuriousInterruptVector, val)
+        self.write_reg(LocalAPICReg::SpuriousInterruptVector, val);
     }
 
     #[inline]
@@ -206,19 +207,19 @@ impl LocalAPIC {
             SpuriousIntrVector::new()
                 .with_vector(0xFF)
                 .with_apic_soft_enable(true),
-        )
+        );
     }
 
     #[inline]
     pub fn setup_timer(&self, timer: &impl crate::driver::timer::Timer) {
         self.set_timer_divide(0x3);
-        self.set_timer_init_count(0xFFFFFFFF);
+        self.set_timer_init_count(0xFFFF_FFFF);
 
         self.write_timer(self.read_timer().with_mask(false));
         timer.sleep(10);
         self.write_timer(self.read_timer().with_mask(true));
 
-        let ticks_per_ms = (0xFFFFFFFF - self.read_timer_counter()) / 10;
+        let ticks_per_ms = (0xFFFF_FFFF - self.read_timer_counter()) / 10;
         self.write_timer(
             lvt::TimerLVT::new()
                 .with_vector(128)

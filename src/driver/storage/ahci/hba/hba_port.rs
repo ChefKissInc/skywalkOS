@@ -49,10 +49,10 @@ pub struct HBAPortStatus {
 pub enum HBAPortSignature {
     Null = 0x0,
     SerialATA = 0x0101,
-    SerialATAPI = 0xEB140101,
-    EnclosureManagementBridge = 0xC33C0101,
-    PortMultiplier = 0x96690101,
-    Default = 0xFFFFFFFF,
+    SerialATAPI = 0xEB14_0101,
+    EnclosureManagementBridge = 0xC33C_0101,
+    PortMultiplier = 0x9669_0101,
+    Default = 0xFFFF_FFFF,
 }
 
 #[derive(Copy, Clone)]
@@ -82,14 +82,14 @@ pub struct HBAPort {
 
 impl HBAPort {
     pub fn cmd_list_base(&self) -> u64 {
-        (self.clb as u64) | ((self.clbu as u64) << 32)
+        u64::from(self.clb) | (u64::from(self.clbu) << 32)
     }
 
     pub fn fis_base(&self) -> u64 {
-        (self.fb as u64) | ((self.fbu as u64) << 32)
+        u64::from(self.fb) | (u64::from(self.fbu) << 32)
     }
 
-    pub fn signature(&self) -> HBAPortSignature {
+    pub const fn signature(&self) -> HBAPortSignature {
         self.signature
     }
 
