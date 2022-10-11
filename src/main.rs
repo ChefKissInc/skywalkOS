@@ -93,8 +93,8 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
             let mut terminal = Terminal::new(unsafe {
                 paper_fb::framebuffer::Framebuffer::new(
                     fb_info.base,
-                    fb_info.resolution.width as usize,
-                    fb_info.resolution.height as usize,
+                    fb_info.resolution.width,
+                    fb_info.resolution.height,
                     fb_info.pitch,
                     paper_fb::pixel::Bitmask {
                         r: fb_info.pixel_bitmask.red,
