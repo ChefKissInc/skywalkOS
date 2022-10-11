@@ -22,6 +22,8 @@ pub struct SystemState {
     pub madt: MaybeUninit<MADTData>,
     pub lapic: MaybeUninit<LocalAPIC>,
     pub scheduler: MaybeUninit<spin::Mutex<Scheduler>>,
+    pub interrupt_context: Option<super::RegisterState>,
+    pub in_panic: bool,
 }
 
 impl SystemState {
@@ -37,6 +39,8 @@ impl SystemState {
             madt: MaybeUninit::uninit(),
             lapic: MaybeUninit::uninit(),
             scheduler: MaybeUninit::uninit(),
+            interrupt_context: None,
+            in_panic: false,
         }
     }
 }

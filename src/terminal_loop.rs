@@ -4,7 +4,6 @@
 use alloc::string::String;
 use core::fmt::Write;
 
-use log::{error, info};
 use sulphur_dioxide::module::Module;
 
 use crate::{
@@ -39,7 +38,7 @@ pub fn terminal_loop(
             terminal.draw_char(c, paper_fb::pixel::Colour::new(0x0C, 0x96, 0xB5, 0xFF));
             terminal.x += 1;
         }
-        write!(terminal, " fallback > ").unwrap();
+        write!(terminal, " [fallback] > ").unwrap();
         let mut cmd = String::new();
         loop {
             if let Some(key) = ps2ctl.queue.pop_front() {

@@ -3,7 +3,6 @@
 
 use core::arch::asm;
 
-use log::error;
 use unwinding::abi::{UnwindContext, UnwindReasonCode, _Unwind_Backtrace, _Unwind_GetIP};
 
 struct CallbackData<'a> {
@@ -19,31 +18,36 @@ extern "C" fn callback(
     data.counter += 1;
 
     let ip = _Unwind_GetIP(unwind_ctx) as u64;
-    if let Some(symbol) = data
-        .kern_symbols
+    data.kern_symbols
         .iter()
         .find(|v| ip >= v.start && ip < v.end)
-    {
-        if let Ok(demangled) = rustc_demangle::try_demangle(symbol.name) {
-            error!(
-                "{:>4}: {:>#19X}+{:>#04X} -> {:#}",
-                data.counter,
-                symbol.start,
-                ip - symbol.start,
-                demangled
-            );
-        } else {
-            error!(
-                "{:>4}: {:>#19X}+{:>#04X} -> {}",
-                data.counter,
-                symbol.start,
-                ip - symbol.start,
-                symbol.name
-            );
-        }
-    } else {
-        error!("{:>4}: {:>#19X}+{:>#04X} -> ???", data.counter, ip, 0);
-    }
+        .map_or_else(
+            || {
+                error!("{:>4}: {:>#19X}+{:>#04X} -> ???", data.counter, ip, 0);
+            },
+            |symbol| {
+                rustc_demangle::try_demangle(symbol.name).map_or_else(
+                    |_| {
+                        error!(
+                            "{:>4}: {:>#19X}+{:>#04X} -> {}",
+                            data.counter,
+                            symbol.start,
+                            ip - symbol.start,
+                            symbol.name
+                        );
+                    },
+                    |demangled| {
+                        error!(
+                            "{:>4}: {:>#19X}+{:>#04X} -> {:#}",
+                            data.counter,
+                            symbol.start,
+                            ip - symbol.start,
+                            demangled
+                        );
+                    },
+                );
+            },
+        );
 
     UnwindReasonCode::NO_REASON
 }
@@ -56,6 +60,16 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
             super::io::serial::SERIAL.force_unlock();
         }
     }
+
+    if unsafe { (*super::state::SYS_STATE.get()).in_panic } {
+        error!("Panicked while panicking!");
+
+        loop {
+            unsafe { asm!("hlt") }
+        }
+    }
+
+    unsafe { (*super::state::SYS_STATE.get()).in_panic = true }
 
     info.location().map_or_else(
         || {
@@ -99,7 +113,53 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
     };
     _Unwind_Backtrace(callback, core::ptr::addr_of_mut!(data).cast());
 
+    if let Some(ctx) = unsafe { (*super::state::SYS_STATE.get()).interrupt_context } {
+        error!("Interrupt context detected! Backtracing...");
+        let mut rbp = ctx.rbp;
+        loop {
+            if rbp == 0 {
+                error!("End of backtrace.");
+                break;
+            }
+            let ip = unsafe { *((rbp + 8) as *const u64) };
+            rbp = unsafe { *(rbp as *const u64) };
+
+            data.counter += 1;
+
+            data.kern_symbols
+                .iter()
+                .find(|v| ip >= v.start && ip < v.end)
+                .map_or_else(
+                    || {
+                        error!("{:>4}: {:>#19X}+{:>#04X} -> ???", data.counter, ip, 0);
+                    },
+                    |symbol| {
+                        rustc_demangle::try_demangle(symbol.name).map_or_else(
+                            |_| {
+                                error!(
+                                    "{:>4}: {:>#19X}+{:>#04X} -> {}",
+                                    data.counter,
+                                    symbol.start,
+                                    ip - symbol.start,
+                                    symbol.name
+                                );
+                            },
+                            |demangled| {
+                                error!(
+                                    "{:>4}: {:>#19X}+{:>#04X} -> {:#}",
+                                    data.counter,
+                                    symbol.start,
+                                    ip - symbol.start,
+                                    demangled
+                                );
+                            },
+                        );
+                    },
+                );
+        }
+    }
+
     loop {
-        unsafe { asm!("hlt") };
+        unsafe { asm!("hlt") }
     }
 }

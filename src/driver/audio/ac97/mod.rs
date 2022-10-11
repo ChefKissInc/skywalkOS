@@ -5,7 +5,6 @@ use alloc::{collections::VecDeque, vec, vec::Vec};
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
 use amd64::io::port::Port;
-use log::debug;
 
 use crate::{
     driver::pci::{PCICfgOffset, PCICommand, PCIDevice},

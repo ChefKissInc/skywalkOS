@@ -1,15 +1,14 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
+use alloc::format;
 use core::arch::asm;
 
 pub unsafe extern "sysv64" fn handler(regs: &mut crate::sys::RegisterState) {
-    super::exc_msg!("page fault", regs);
-
     let mut cr2: u64;
     asm!("mov {}, cr2", out(reg) cr2, options(nomem, nostack, preserves_flags));
 
-    log::error!(
+    let msg = format!(
         "There was {} while {} a {} at {:#X?}{}{}{}{}",
         if (regs.err_code & (1 << 0)) == 0 {
             "a Non-present page access"
@@ -48,4 +47,6 @@ pub unsafe extern "sysv64" fn handler(regs: &mut crate::sys::RegisterState) {
             "\nSGX was violated"
         },
     );
+
+    super::exc_msg!("page fault", msg, regs);
 }

@@ -2,20 +2,28 @@
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 macro_rules! exc_msg {
-    ($name:expr, $regs:expr) => {
+    ($name:expr, $msg:expr, $regs:expr) => {
         while crate::sys::io::serial::SERIAL.is_locked() {
             crate::sys::io::serial::SERIAL.force_unlock()
         }
 
-        ::log::error!("Received {} exception!", $name);
-        ::log::error!("CPU registers: {:#X?}", $regs);
+        crate::sys::state::SYS_STATE
+            .get()
+            .as_mut()
+            .unwrap()
+            .interrupt_context = Some(*$regs);
+
+        panic!(
+            "Received {} exception: {}. CPU registers: {:#X?}",
+            $name, $msg, $regs
+        );
     };
 }
 
 macro_rules! generic_exception {
     ($ident:ident, $name:expr) => {
         pub unsafe extern "sysv64" fn $ident(regs: &mut crate::sys::RegisterState) {
-            exc_msg!($name, regs);
+            exc_msg!($name, "<No Additional Information>", regs);
         }
     };
 }

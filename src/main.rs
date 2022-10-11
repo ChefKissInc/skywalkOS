@@ -25,11 +25,11 @@
 )]
 
 extern crate alloc;
+#[macro_use]
+extern crate log;
 
 use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 use core::arch::asm;
-
-use log::{debug, info};
 
 use crate::{
     driver::acpi::{apic::LocalAPIC, ACPIPlatform},

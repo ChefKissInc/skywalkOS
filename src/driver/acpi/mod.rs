@@ -3,7 +3,6 @@
 
 use acpi::tables::SDTHeader;
 use hashbrown::HashMap;
-use log::debug;
 
 pub mod apic;
 pub mod ioapic;

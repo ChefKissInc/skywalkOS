@@ -1,7 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-use log::trace;
 use sulphur_dioxide::mmap::MemoryEntry;
 
 extern "C" {

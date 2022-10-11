@@ -15,8 +15,11 @@ super::generic_exception!(
 );
 
 pub unsafe extern "sysv64" fn reserved_handler(regs: &mut crate::sys::RegisterState) {
-    exc_msg!("reserved", regs);
-    log::error!("This should NEVER happen! Make an issue and attach the serial output.");
+    exc_msg!(
+        "reserved",
+        "This should NEVER happen! Make an issue and attach the serial output.",
+        regs
+    );
 }
 
 super::generic_exception!(x87_fp_handler, "x87 floating-point");

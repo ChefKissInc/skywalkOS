@@ -8,7 +8,6 @@ use acpi::tables::madt::ic::{
     proc_lapic::ProcessorLocalAPIC,
     InterruptController,
 };
-use log::trace;
 
 pub struct MADTData {
     pub proc_lapics: Vec<&'static ProcessorLocalAPIC>,

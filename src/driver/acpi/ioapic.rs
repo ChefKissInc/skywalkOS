@@ -3,7 +3,6 @@
 
 use acpi::tables::madt::ic::ioapic::{self, IOAPICRedir};
 use amd64::spec::mps::{Polarity, TriggerMode};
-use log::debug;
 
 pub fn wire_legacy_irq(irq: u8, masked: bool) {
     let madt = unsafe { (*crate::sys::state::SYS_STATE.get()).madt.assume_init_mut() };

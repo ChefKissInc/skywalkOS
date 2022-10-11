@@ -5,7 +5,6 @@ use alloc::collections::VecDeque;
 use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
 
 use amd64::io::port::Port;
-use log::debug;
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 

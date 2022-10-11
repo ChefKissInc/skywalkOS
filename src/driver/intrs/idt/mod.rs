@@ -4,7 +4,6 @@
 
 use core::{arch::asm, cell::SyncUnsafeCell};
 
-use log::{debug, error};
 use modular_bitfield::prelude::*;
 
 use crate::sys::{

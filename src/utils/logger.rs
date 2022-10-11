@@ -15,7 +15,7 @@ impl log::Log for CardboardLogger {
 
         writeln!(
             serial,
-            "[{}] {}: {}",
+            "{} [{}] > {}",
             record.level(),
             record.target(),
             record.args()
@@ -28,7 +28,7 @@ impl log::Log for CardboardLogger {
                 if let Some(terminal) = &mut (*crate::sys::state::SYS_STATE.get()).terminal {
                     writeln!(
                         terminal,
-                        "[{}] {}: {}",
+                        "{} [{}] > {}",
                         record.level(),
                         record.target(),
                         record.args()
