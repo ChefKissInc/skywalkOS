@@ -106,6 +106,10 @@ memusage   |  View memory usage"#
                                                                     class_code,
                                                                 );
                                                             }
+
+                                                            if !device.is_multifunction() {
+                                                                break;
+                                                            }
                                                         }
                                                     }
                                                 }

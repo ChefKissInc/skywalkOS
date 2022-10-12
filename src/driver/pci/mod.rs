@@ -91,6 +91,10 @@ impl<'a> PCIDevice<'a> {
         Self { addr, controller }
     }
 
+    pub unsafe fn is_multifunction(&self) -> bool {
+        self.cfg_read8::<_, u8>(PCICfgOffset::HeaderType) & 0x80 != 0
+    }
+
     pub unsafe fn cfg_read8<A: Into<u8>, R: From<u8>>(&self, off: A) -> R {
         self.controller.cfg_read8(self.addr, off.into()).into()
     }
@@ -213,6 +217,10 @@ impl PCIController {
 
                         if pred(&device) {
                             return Some(device);
+                        }
+
+                        if unsafe { !device.is_multifunction() } {
+                            break;
                         }
                     }
                 }
