@@ -4,8 +4,6 @@
 use alloc::string::String;
 use core::fmt::Write;
 
-use sulphur_dioxide::module::Module;
-
 use crate::{
     driver::{
         acpi::ACPIPlatform,
@@ -117,23 +115,23 @@ memusage   |  View memory usage"#
                                     "audiotest" => {
                                         if let Some(ref mut ac97) = ac97 {
                                             if let Some(ref modules) = state.modules {
-                                                if let Some(Module::Audio(module)) =
-                                                    modules.iter().find(|v| {
-                                                        if let Module::Audio(v) = v {
-                                                            v.name == "testaudio"
-                                                        } else {
-                                                            false
-                                                        }
-                                                    })
-                                                {
-                                                    info!("Starting playback of test audio");
-                                                    ac97.play_audio(module.data);
-                                                } else {
-                                                    error!(
-                                                        "Failure to find 'testaudio' boot loader \
-                                                         module"
+                                                modules
+                                                    .iter()
+                                                    .find(|v| v.name == "testaudio")
+                                                    .map_or_else(
+                                                        || {
+                                                            error!(
+                                                                "Failure to find 'testaudio' boot \
+                                                                 loader module"
+                                                            );
+                                                        },
+                                                        |module| {
+                                                            info!(
+                                                                "Starting playback of test audio"
+                                                            );
+                                                            ac97.play_audio(module.data);
+                                                        },
                                                     );
-                                                }
                                             }
                                         } else {
                                             error!("No sound device available!");
