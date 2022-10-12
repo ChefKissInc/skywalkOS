@@ -92,7 +92,8 @@ memusage   |  View memory usage"#
                                                                 .cfg_read16(
                                                                     PCICfgOffset::ClassCode,
                                                                 );
-                                                            if vendor_id != 0xFFFF {
+                                                            if vendor_id != 0xFFFF && vendor_id != 0
+                                                            {
                                                                 info!(
                                                                     "PCI Device at {}:{}:{} has \
                                                                      vendor ID {:#06X} and device \
