@@ -21,19 +21,19 @@ jobs:
       - run: ln -s .. _work
       - uses: actions/checkout@v2
         with:
-          repository: "BoxOperatingSystem/AMD64Lib"
+          repository: "BridgeCore-OS/AMD64Lib"
           path: "_work/AMD64Lib"
       - uses: actions/checkout@v2
         with:
-          repository: "BoxOperatingSystem/ACPILib"
+          repository: "BridgeCore-OS/ACPILib"
           path: "_work/ACPILib"
       - uses: actions/checkout@v2
         with:
-          repository: "BoxOperatingSystem/SulphurDioxide"
+          repository: "BridgeCore-OS/SulphurDioxide"
           path: "_work/SulphurDioxide"
       - uses: actions/checkout@v2
         with:
-          repository: "BoxOperatingSystem/PaperFramebuffer"
+          repository: "BridgeCore-OS/PaperFramebuffer"
           path: "_work/PaperFramebuffer"
       - uses: actions-rs/toolchain@v1
         with:
@@ -58,19 +58,19 @@ jobs:
       - run: ln -s .. _work
       - uses: actions/checkout@v2
         with:
-          repository: "BoxOperatingSystem/AMD64Lib"
+          repository: "BridgeCore-OS/AMD64Lib"
           path: "_work/AMD64Lib"
       - uses: actions/checkout@v2
         with:
-          repository: "BoxOperatingSystem/ACPILib"
+          repository: "BridgeCore-OS/ACPILib"
           path: "_work/ACPILib"
       - uses: actions/checkout@v2
         with:
-          repository: "BoxOperatingSystem/SulphurDioxide"
+          repository: "BridgeCore-OS/SulphurDioxide"
           path: "_work/SulphurDioxide"
       - uses: actions/checkout@v2
         with:
-          repository: "BoxOperatingSystem/PaperFramebuffer"
+          repository: "BridgeCore-OS/PaperFramebuffer"
           path: "_work/PaperFramebuffer"
       - uses: actions-rs/toolchain@v1
         with:
