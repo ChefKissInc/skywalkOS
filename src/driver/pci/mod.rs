@@ -144,16 +144,6 @@ impl PCIController {
             .unwrap()
     }
 
-    pub fn segment_count(&self) -> u16 {
-        self.entries.as_ref().map_or(1, |entries| {
-            entries
-                .iter()
-                .map(|v| v.segment)
-                .max()
-                .map_or_else(|| 1, |v| v + 1)
-        })
-    }
-
     unsafe fn cfg_read8(&self, addr: PCIAddress, off: u8) -> u8 {
         if self.entries.is_none() {
             pio::PCIPortIO::new().cfg_read8(addr, off)
@@ -203,8 +193,8 @@ impl PCIController {
     }
 
     pub fn find<P: FnMut(&PCIDevice) -> bool>(&self, mut pred: P) -> Option<PCIDevice> {
-        for segment in 0..self.segment_count() {
-            for bus in 0..=255 {
+        let mut scan_seg = |segment, bus_start, bus_end| {
+            for bus in bus_start..=bus_end {
                 for slot in 0..32 {
                     for func in 0..8 {
                         let addr = PCIAddress {
@@ -213,19 +203,24 @@ impl PCIController {
                             slot,
                             func,
                         };
-                        let device = PCIDevice::new(addr, self);
-
-                        if pred(&device) {
-                            return Some(device);
-                        }
-
-                        if unsafe { !device.is_multifunction() } {
-                            break;
+                        let dev = PCIDevice::new(addr, self);
+                        if pred(&dev) {
+                            return Some(dev);
                         }
                     }
                 }
             }
+            None
+        };
+
+        if let Some(entries) = self.entries.as_ref() {
+            for ent in entries {
+                if let Some(dev) = scan_seg(ent.segment, ent.bus_start, ent.bus_end) {
+                    return Some(dev);
+                }
+            }
         }
-        None
+
+        scan_seg(0, 0, 255)
     }
 }
