@@ -93,15 +93,14 @@ impl Scheduler {
             );
             let entries = &mut *crate::sys::gdt::ENTRIES.get();
             let tss = (*TSS.get()).as_ptr() as u64;
-            entries[entries.len() - 2].set_base((tss & 0xFFFF_FFFF) as u32);
-            entries[entries.len() - 2].attrs.set_present(true);
-
-            entries.last_mut().unwrap().limit_low = ((tss >> 32) & 0xFFFF) as u16;
-            entries.last_mut().unwrap().base_low = (tss >> 48) as u16;
+            entries[3].set_base((tss & 0xFFFF_FFFF) as u32);
+            entries[3].attrs.set_present(true);
+            entries[4].limit_low = ((tss >> 32) & 0xFFFF) as u16;
+            entries[4].base_low = (tss >> 48) as u16;
 
             core::arch::asm!(
                 "ltr ax",
-                in("ax") crate::sys::gdt::SegmentSelector::new(3, crate::sys::gdt::PrivilegeLevel::Hypervisor).0,
+                in("ax") crate::sys::gdt::SegmentSelector::new(3, crate::sys::gdt::PrivilegeLevel::Supervisor).0,
             );
         }
         kern_proc.threads.push_back(kern_thread);

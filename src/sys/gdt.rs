@@ -7,9 +7,9 @@ use modular_bitfield::prelude::*;
 
 pub static ENTRIES: SyncUnsafeCell<[SegmentDescriptor; 5]> = SyncUnsafeCell::new([
     SegmentDescriptor::default(),
-    SegmentDescriptor::new_from_ty(DescriptorType::CodeSegment),
-    SegmentDescriptor::new_from_ty(DescriptorType::DataSegment),
-    SegmentDescriptor::new_from_ty(DescriptorType::TaskSegment),
+    SegmentDescriptor::new_from_ty(DescriptorType::CodeSegment, PrivilegeLevel::Supervisor),
+    SegmentDescriptor::new_from_ty(DescriptorType::DataSegment, PrivilegeLevel::Supervisor),
+    SegmentDescriptor::new_from_ty(DescriptorType::TaskSegment, PrivilegeLevel::Supervisor),
     SegmentDescriptor::default(),
 ]);
 
@@ -23,8 +23,8 @@ pub static GDTR: GDTReg = GDTReg {
 #[repr(u16)]
 pub enum PrivilegeLevel {
     #[default]
-    Hypervisor = 0,
-    User = 3,
+    Supervisor = 0,
+    User = 0b11,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -76,27 +76,39 @@ pub struct SegmentDescriptor {
 
 impl SegmentDescriptor {
     pub const fn default() -> Self {
-        Self::new(0, DescriptorType::None, true, false)
+        Self::new(
+            0,
+            DescriptorType::None,
+            PrivilegeLevel::Supervisor,
+            true,
+            false,
+        )
     }
 
-    pub const fn new(limit_low: u16, ty: DescriptorType, present: bool, long: bool) -> Self {
+    pub const fn new(
+        limit_low: u16,
+        ty: DescriptorType,
+        dpl: PrivilegeLevel,
+        present: bool,
+        long: bool,
+    ) -> Self {
         Self {
             limit_low,
             base_low: 0,
             base_middle: 0,
             attrs: SegmentAttributes::from_bytes([
-                ty as u8 | ((present as u8) << 7),
+                ty as u8 | ((dpl as u8) << 5) | ((present as u8) << 7),
                 (long as u8) << 5,
             ]),
             base_high: 0,
         }
     }
 
-    pub const fn new_from_ty(ty: DescriptorType) -> Self {
+    pub const fn new_from_ty(ty: DescriptorType, dpl: PrivilegeLevel) -> Self {
         match ty {
-            DescriptorType::CodeSegment => Self::new(0, ty, true, true),
-            DescriptorType::TaskSegment => Self::new(104, ty, false, false),
-            _ => Self::new(0, ty, true, false),
+            DescriptorType::CodeSegment => Self::new(0, ty, dpl, true, true),
+            DescriptorType::TaskSegment => Self::new(104, ty, dpl, false, false),
+            _ => Self::new(0, ty, dpl, true, false),
         }
     }
 

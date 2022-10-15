@@ -9,11 +9,11 @@ pub unsafe extern "sysv64" fn handler(regs: &mut crate::sys::RegisterState) {
     asm!("mov {}, cr2", out(reg) cr2, options(nomem, nostack, preserves_flags));
 
     let msg = format!(
-        "There was {} while {} a {} at {:#X?}{}{}{}{}",
+        "There was {} while {} a {} at {:#X?}.{}{}{}{}",
         if (regs.err_code & (1 << 0)) == 0 {
-            "a Non-present page access"
+            "a non-present page access"
         } else {
-            "a Page Level protection violation"
+            "a page-level protection violation"
         },
         if (regs.err_code & (1 << 1)) == 0 {
             "reading"
@@ -29,22 +29,22 @@ pub unsafe extern "sysv64" fn handler(regs: &mut crate::sys::RegisterState) {
         if (regs.err_code & (1 << 3)) == 0 {
             ""
         } else {
-            "\nThe page was reserved"
+            " Page was reserved."
         },
         if (regs.err_code & (1 << 4)) == 0 {
             ""
         } else {
-            "\nAnd failed while doing an instruction fetch"
+            " Failed during an instruction fetch."
         },
         if (regs.err_code & (1 << 5)) == 0 {
             ""
         } else {
-            "\nThe protection key was violated"
+            " Protection key violatation."
         },
         if (regs.err_code & (1 << 15)) == 0 {
             ""
         } else {
-            "\nSGX was violated"
+            " SGX violation."
         },
     );
 

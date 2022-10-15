@@ -18,7 +18,7 @@ seq_macro::seq!(N in 0..256 {
         #(
             Entry::new(
                 0,
-                SegmentSelector::new(1, PrivilegeLevel::Hypervisor),
+                SegmentSelector::new(1, PrivilegeLevel::Supervisor),
                 0,
                 EntryType::InterruptGate,
                 0,

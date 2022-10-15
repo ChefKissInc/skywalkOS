@@ -14,7 +14,7 @@ macro_rules! exc_msg {
             .interrupt_context = Some(*$regs);
 
         panic!(
-            "Received {} exception: {}. CPU registers: {:#X?}",
+            "Received {} exception: {}\nCPU registers: {:#X?}",
             $name, $msg, $regs
         );
     };

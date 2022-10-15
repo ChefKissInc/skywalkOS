@@ -68,8 +68,8 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
         unsafe {
             debug!("Initialising the GDT.");
             sys::gdt::GDTR.load(
-                SegmentSelector::new(1, PrivilegeLevel::Hypervisor),
-                SegmentSelector::new(2, PrivilegeLevel::Hypervisor),
+                SegmentSelector::new(1, PrivilegeLevel::Supervisor),
+                SegmentSelector::new(2, PrivilegeLevel::Supervisor),
             );
             debug!("Initialising the IDT.");
             driver::intrs::idt::IDTR.load();
@@ -177,8 +177,8 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
         let total = pmm.lock().total_pages * 4096 / 1024 / 1024;
         info!("Used memory: {}MiB out of {}MiB", used, total);
 
+        info!("Starting process scheduling");
         unsafe { asm!("sti") }
-
         state
             .scheduler
             .write(spin::Mutex::new(sys::proc::sched::Scheduler::new(&hpet)));
