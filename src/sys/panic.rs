@@ -114,7 +114,9 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
     _Unwind_Backtrace(callback, core::ptr::addr_of_mut!(data).cast());
 
     if let Some(ctx) = unsafe { (*super::state::SYS_STATE.get()).interrupt_context } {
-        error!("Interrupt context detected! Backtracing...");
+        error!("In interrupt:");
+        error!("    {ctx:#X?}");
+        error!("Interrupt backtrace:");
         let mut rbp = ctx.rbp;
         loop {
             if rbp == 0 {
