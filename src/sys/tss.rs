@@ -17,9 +17,9 @@ impl TaskSegmentSelector {
     pub const fn new(kern_rsp: u64) -> Self {
         Self {
             __: 0,
-            rsp: [kern_rsp, 0, 0, 0],
+            rsp: [kern_rsp; 4],
             ___: 0,
-            ist: [0; 7],
+            ist: [kern_rsp; 7],
             ____: 0,
             _____: 0,
             io_bitmap_offset: 112,

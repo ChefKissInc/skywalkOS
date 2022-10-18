@@ -71,23 +71,6 @@ impl Terminal {
         }
     }
 
-    pub fn backspace(&mut self) {
-        if self.x > 0 {
-            self.x -= 1;
-        } else {
-            self.y -= 1;
-            self.x = self.width - 1;
-        }
-
-        for y in 0..8 {
-            for x in 0..8 {
-                self.fb
-                    .plot_pixel((self.x * 8) + x, (self.y * 8) + y, 0)
-                    .unwrap();
-            }
-        }
-    }
-
     pub fn handle_scrollback(&mut self) {
         if self.y >= self.height {
             self.fb

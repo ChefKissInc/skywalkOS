@@ -3,7 +3,6 @@
 
 use alloc::{
     boxed::Box,
-    collections::VecDeque,
     string::{String, ToString},
     vec::Vec,
 };
@@ -14,8 +13,7 @@ use super::vmm::PageTableLvl4;
 
 pub mod sched;
 
-#[derive(Debug)]
-#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ThreadState {
     Active,
     Blocked,
@@ -25,7 +23,8 @@ pub enum ThreadState {
 #[derive(Debug)]
 pub struct Thread {
     pub state: ThreadState,
-    pub id: usize,
+    pub uuid: uuid::Uuid,
+    pub proc_uuid: uuid::Uuid,
     pub regs: super::RegisterState,
     pub fs_base: usize,
     pub gs_base: usize,
@@ -34,20 +33,25 @@ pub struct Thread {
 }
 
 impl Thread {
-    pub fn new(id: usize, rip: usize) -> Self {
+    pub fn new(proc_uuid: uuid::Uuid, rip: u64) -> Self {
         let mut stack = Vec::new();
         stack.resize(0x14000, 0);
         let mut kern_rsp = Vec::new();
         kern_rsp.resize(0x14000, 0);
         Self {
             state: ThreadState::Inactive,
-            id,
+            uuid: uuid::Uuid::new_v4(),
+            proc_uuid,
             regs: super::RegisterState {
-                rip: rip as u64,
-                cs: 0x08,
+                rip,
+                cs: super::gdt::SegmentSelector::new(3, super::gdt::PrivilegeLevel::User)
+                    .0
+                    .into(),
                 rflags: 0x202,
-                rsp: stack.as_ptr() as u64 + stack.len() as u64,
-                ss: 0x10,
+                rsp: stack.as_ptr() as u64 + stack.len() as u64 - amd64::paging::PHYS_VIRT_OFFSET,
+                ss: super::gdt::SegmentSelector::new(4, super::gdt::PrivilegeLevel::User)
+                    .0
+                    .into(),
                 ..Default::default()
             },
             fs_base: 0,
@@ -60,26 +64,22 @@ impl Thread {
 
 #[derive(Debug)]
 pub struct Process {
-    pub id: usize,
     pub path: String,
     pub cwd: String,
     pub cr3: Box<PageTableLvl4>,
-    pub threads: VecDeque<Thread>,
 }
 
 impl Process {
-    pub fn new(id: usize, path: &str, cwd: &str) -> Self {
+    pub fn new(path: &str, cwd: &str) -> Self {
         let mut cr3 = Box::new(PageTableLvl4::new());
         unsafe {
             cr3.map_higher_half();
         }
 
         Self {
-            id,
             path: path.to_string(),
             cwd: cwd.to_string(),
             cr3,
-            threads: VecDeque::new(),
         }
     }
 }

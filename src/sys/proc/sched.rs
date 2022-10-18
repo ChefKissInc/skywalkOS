@@ -1,113 +1,62 @@
-use alloc::collections::VecDeque;
-use core::{cell::SyncUnsafeCell, fmt::Write, mem::MaybeUninit};
+use alloc::{collections::VecDeque, vec::Vec};
+use core::cell::SyncUnsafeCell;
 
-use amd64::paging::pml4::PML4;
+use amd64::paging::{pml4::PML4, PageTableEntry};
+use hashbrown::HashMap;
 
 use crate::{
-    driver::{
-        keyboard::ps2::PS2Ctl,
-        pci::{PCICfgOffset, PCIController},
-        timer::Timer,
-    },
+    driver::timer::Timer,
     sys::{tss::TaskSegmentSelector, RegisterState},
 };
 
-static TSS: SyncUnsafeCell<MaybeUninit<TaskSegmentSelector>> =
-    SyncUnsafeCell::new(MaybeUninit::uninit());
+static TSS: SyncUnsafeCell<TaskSegmentSelector> = SyncUnsafeCell::new(TaskSegmentSelector::new(0));
 
 pub struct Scheduler {
-    pub processes: VecDeque<super::Process>,
+    pub processes: HashMap<uuid::Uuid, super::Process>,
+    pub threads: VecDeque<super::Thread>,
     pub first_launch: bool,
 }
 
 unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
+    info!("a");
     let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
     let mut this = sys_state.scheduler.assume_init_mut().lock();
 
     if this.first_launch {
         this.first_launch = false;
     } else {
-        let old_thread = this.current_thread();
+        let old_thread = this.current_thread().unwrap();
         old_thread.regs = *state;
         old_thread.state = super::ThreadState::Inactive;
     }
-
-    let thread = this.find_next_thread();
+    let mut thread = this.find_next_thread().unwrap();
+    while thread.state == super::ThreadState::Blocked {
+        thread = this.find_next_thread().unwrap();
+    }
+    *TSS.get() =
+        TaskSegmentSelector::new(thread.kern_rsp.as_ptr() as u64 + thread.kern_rsp.len() as u64);
     *state = thread.regs;
     thread.state = super::ThreadState::Active;
-    *(*TSS.get()).assume_init_mut() =
-        TaskSegmentSelector::new(thread.kern_rsp.as_ptr() as u64 + thread.kern_rsp.len() as u64);
-
-    this.processes[0].cr3.set();
-}
-
-fn test_thread1() -> ! {
-    unsafe {
-        loop {
-            writeln!(
-                &mut crate::sys::io::serial::SERIAL.lock(),
-                "hi from thread 0"
-            )
-            .unwrap();
-
-            core::arch::asm!("hlt");
-        }
-    }
-}
-
-fn test_thread2() -> ! {
-    let state = unsafe { &mut *crate::sys::state::SYS_STATE.get() };
-    let acpi = unsafe { state.acpi.assume_init_mut() };
-
-    let pci = PCIController::new(acpi.find("MCFG"));
-    let ac97 = pci
-        .find(move |dev| unsafe { dev.cfg_read16::<_, u16>(PCICfgOffset::ClassCode) == 0x0401 })
-        .map(|v| unsafe {
-            (*crate::driver::audio::ac97::INSTANCE.get())
-                .write(crate::driver::audio::ac97::AC97::new(&v))
-        });
-
-    if let Some(terminal) = &mut state.terminal {
-        let ps2ctl = PS2Ctl::new();
-        ps2ctl.init();
-        unsafe {
-            (*crate::driver::keyboard::ps2::INSTANCE.get()).write(ps2ctl);
-        }
-
-        crate::terminal_loop::terminal_loop(acpi, &pci, terminal, ac97);
-    } else {
-        loop {
-            unsafe { core::arch::asm!("hlt") }
-        }
-    }
+    let proc_uuid = thread.proc_uuid;
+    this.processes.get_mut(&proc_uuid).unwrap().cr3.set();
 }
 
 impl Scheduler {
     pub fn new(timer: &impl Timer) -> Self {
-        let mut processes = VecDeque::new();
-        let mut kern_proc = super::Process::new(0, "", "");
-        let kern_thread = super::Thread::new(0, test_thread1 as usize);
         unsafe {
-            *(*TSS.get()).assume_init_mut() = TaskSegmentSelector::new(
-                kern_thread.kern_rsp.as_ptr() as u64 + kern_thread.kern_rsp.len() as u64,
-            );
-            let entries = &mut *crate::sys::gdt::ENTRIES.get();
-            let tss = (*TSS.get()).as_ptr() as u64;
-            entries[3].set_base((tss & 0xFFFF_FFFF) as u32);
-            entries[3].attrs.set_present(true);
-            entries[4].limit_low = ((tss >> 32) & 0xFFFF) as u16;
-            entries[4].base_low = (tss >> 48) as u16;
+            let gdt = &mut *crate::sys::gdt::GDT.get();
+            let tss = TSS.get() as u64;
+            gdt.task_segment.base_low = (tss & 0xFFFF) as u16;
+            gdt.task_segment.base_middle = ((tss >> 16) & 0xFF) as u8;
+            gdt.task_segment.attrs.set_present(true);
+            gdt.task_segment.base_high = ((tss >> 24) & 0xFF) as u8;
+            gdt.task_segment.base_upper = ((tss >> 32) & 0xFFFF_FFFF) as u32;
 
             core::arch::asm!(
                 "ltr ax",
-                in("ax") crate::sys::gdt::SegmentSelector::new(3, crate::sys::gdt::PrivilegeLevel::Supervisor).0,
+                in("ax") crate::sys::gdt::SegmentSelector::new(5, crate::sys::gdt::PrivilegeLevel::Supervisor).0,
             );
         }
-        kern_proc.threads.push_back(kern_thread);
-
-        let kern_thread = super::Thread::new(1, test_thread2 as usize);
-        kern_proc.threads.push_back(kern_thread);
-        processes.push_back(kern_proc);
 
         let lapic = unsafe {
             (*crate::sys::state::SYS_STATE.get())
@@ -117,11 +66,12 @@ impl Scheduler {
 
         lapic.setup_timer(timer);
 
-        crate::driver::intrs::idt::set_handler(128, schedule, true, true);
+        crate::driver::intrs::idt::set_handler(128, 1, schedule, true, true);
         crate::driver::acpi::ioapic::wire_legacy_irq(96, false);
 
         Self {
-            processes,
+            processes: HashMap::new(),
+            threads: VecDeque::new(),
             first_launch: true,
         }
     }
@@ -135,14 +85,73 @@ impl Scheduler {
         }
     }
 
-    pub fn current_thread(&mut self) -> &mut super::Thread {
-        self.processes[0].threads.front_mut().unwrap()
+    pub fn spawn_proc(&mut self, exec_data: &[u8]) {
+        let exec = goblin::elf::Elf::parse(exec_data).unwrap();
+        assert_eq!(exec.header.e_type, goblin::elf::header::ET_DYN);
+        assert!(exec.is_64);
+        assert_ne!(exec.entry, 0);
+
+        let mut data = Vec::new();
+        for hdr in exec
+            .program_headers
+            .iter()
+            .filter(|v| v.p_type == goblin::elf::program_header::PT_LOAD)
+        {
+            let max_vaddr = (hdr.p_vaddr + hdr.p_memsz).try_into().unwrap();
+            if data.len() < max_vaddr {
+                data.resize(max_vaddr, 0u8);
+            }
+            let fsz: usize = hdr.p_filesz.try_into().unwrap();
+            let foff: usize = hdr.p_offset.try_into().unwrap();
+            let ext_vaddr: usize = hdr.p_vaddr.try_into().unwrap();
+            data[ext_vaddr..ext_vaddr + fsz].copy_from_slice(&exec_data[foff..foff + fsz]);
+        }
+
+        let data = data.leak();
+        let phys_addr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
+        let rip = phys_addr + exec.entry;
+
+        let proc_uuid = uuid::Uuid::new_v4();
+        let mut proc = super::Process::new("", "");
+        let thread = super::Thread::new(proc_uuid, rip);
+        info!("data: {:#X?}", data.as_ptr());
+        info!("phys_addr: {phys_addr:#X?}");
+        info!("rip: {:#X?}", rip);
+        unsafe {
+            proc.cr3.map_pages(
+                phys_addr,
+                phys_addr,
+                (data.len() as u64 + 0xFFF) / 0x1000,
+                PageTableEntry::new()
+                    .with_user(true)
+                    .with_writable(true)
+                    .with_present(true),
+            );
+            let stack_addr = thread.stack.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
+            info!("stack: {:#X?}", thread.stack.as_ptr());
+            info!("stack_addr: {stack_addr:#X?}");
+            info!("rsp: {:#X?}", thread.regs.rsp);
+            proc.cr3.map_pages(
+                stack_addr,
+                stack_addr,
+                (0x14000 + 0xFFF) / 0x1000,
+                PageTableEntry::new()
+                    .with_user(true)
+                    .with_writable(true)
+                    .with_present(true),
+            );
+        }
+        self.processes.insert(proc_uuid, proc);
+        self.threads.push_back(thread);
     }
 
-    pub fn find_next_thread(&mut self) -> &mut super::Thread {
-        let proc = &mut self.processes[0];
-        let old = proc.threads.pop_front().unwrap();
-        proc.threads.push_back(old);
-        proc.threads.front_mut().unwrap()
+    pub fn current_thread(&mut self) -> Option<&mut super::Thread> {
+        self.threads.front_mut()
+    }
+
+    pub fn find_next_thread(&mut self) -> Option<&mut super::Thread> {
+        let old = self.threads.pop_front()?;
+        self.threads.push_back(old);
+        self.threads.front_mut()
     }
 }

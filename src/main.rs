@@ -11,7 +11,7 @@
     unused_extern_crates,
     rust_2021_compatibility
 )]
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::module_name_repetitions, clippy::similar_names)]
 #![feature(
     asm_sym,
     asm_const,
@@ -33,16 +33,11 @@ use core::arch::asm;
 
 use crate::{
     driver::acpi::{apic::LocalAPIC, ACPIPlatform},
-    sys::{
-        gdt::{PrivilegeLevel, SegmentSelector},
-        pmm::BitmapAllocator,
-        terminal::Terminal,
-    },
+    sys::{pmm::BitmapAllocator, terminal::Terminal},
 };
 
 mod driver;
 mod sys;
-mod terminal_loop;
 mod utils;
 
 #[no_mangle]
@@ -55,37 +50,25 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
             .map(|()| log::set_max_level(log::LevelFilter::Trace))
             .unwrap();
 
-        let state = unsafe { &mut *sys::state::SYS_STATE.get() };
-
-        state.kern_symbols.write(boot_info.kern_symbols);
-
         assert_eq!(boot_info.revision, sulphur_dioxide::CURRENT_REVISION);
-        info!("Copyright ChefKiss Inc 2021.");
 
+        let state = unsafe { &mut *sys::state::SYS_STATE.get() };
+        state.kern_symbols.write(boot_info.kern_symbols);
         state.boot_settings = boot_info.settings;
-        debug!("Got boot settings: {:X?}", state.boot_settings);
+
+        debug!("{boot_info:X?}");
+        info!("Copyright ChefKiss Inc 2021-2022.");
 
         unsafe {
-            debug!("Initialising the GDT.");
-            sys::gdt::GDTR.load(
-                SegmentSelector::new(1, PrivilegeLevel::Supervisor),
-                SegmentSelector::new(2, PrivilegeLevel::Supervisor),
-            );
-            debug!("Initialising the IDT.");
+            sys::gdt::GDTR.load();
             driver::intrs::idt::IDTR.load();
-            debug!("Initialising the exception handlers.");
             driver::intrs::exc::init();
         }
 
-        debug!("Got memory map: {:X?}", boot_info.memory_map);
         state
             .pmm
             .write(spin::Mutex::new(BitmapAllocator::new(boot_info.memory_map)));
-
-        debug!("Got ACPI RSDP: {:X?}", boot_info.acpi_rsdp);
         state.acpi.write(ACPIPlatform::new(boot_info.acpi_rsdp));
-
-        debug!("Got modules: {:#X?}", boot_info.modules);
         state.modules = Some(boot_info.modules.to_vec());
 
         if let Some(fb_info) = boot_info.frame_buffer {
@@ -130,11 +113,11 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
         if let Some(terminal) = &mut state.terminal {
             terminal.map_fb();
         }
-        info!("Cardboard has been synthesised!");
+        info!("I am Cardboard.");
 
         let acpi = unsafe { state.acpi.assume_init_mut() };
 
-        debug!("ACPI version {}", acpi.version);
+        debug!("ACPI v{}", acpi.version);
 
         let hpet = acpi
             .find("HPET")
@@ -167,21 +150,30 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
                     .with_writable(true),
             );
         }
-        debug!("LAPIC address: {:#X?}", addr);
+        debug!("LAPIC address is {addr:#X?}");
         state.lapic.write(LocalAPIC::new(virt_addr)).enable();
+
         let pmm = unsafe { state.pmm.assume_init_ref() };
         let used = {
             let pmm = pmm.lock();
             (pmm.total_pages - pmm.free_pages) * 4096 / 1024 / 1024
         };
         let total = pmm.lock().total_pages * 4096 / 1024 / 1024;
-        info!("Used memory: {}MiB out of {}MiB", used, total);
+        info!("{}MiB used out of {}MiB.", used, total);
 
-        info!("Starting process scheduling");
         unsafe { asm!("sti") }
-        state
+        let sched = state
             .scheduler
             .write(spin::Mutex::new(sys::proc::sched::Scheduler::new(&hpet)));
+        info!("Starting boot DriverCore extensions");
+        for module in state.modules.as_ref().unwrap() {
+            if module.name.starts_with("com.ChefKissInc.DriverCore.") {
+                info!("Spawning boot DriverCore extension {:#X?}", module.name);
+                sched.get_mut().spawn_proc(module.data);
+            }
+        }
+        info!("Done with boot DriverCore extensions.");
+        info!("Kernel out.");
         sys::proc::sched::Scheduler::start();
 
         loop {

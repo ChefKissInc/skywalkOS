@@ -5,17 +5,47 @@ use core::{arch::asm, cell::SyncUnsafeCell};
 
 use modular_bitfield::prelude::*;
 
-pub static ENTRIES: SyncUnsafeCell<[SegmentDescriptor; 5]> = SyncUnsafeCell::new([
-    SegmentDescriptor::default(),
-    SegmentDescriptor::new_from_ty(DescriptorType::CodeSegment, PrivilegeLevel::Supervisor),
-    SegmentDescriptor::new_from_ty(DescriptorType::DataSegment, PrivilegeLevel::Supervisor),
-    SegmentDescriptor::new_from_ty(DescriptorType::TaskSegment, PrivilegeLevel::Supervisor),
-    SegmentDescriptor::default(),
-]);
+#[derive(Debug, Clone, Copy)]
+#[repr(C, packed)]
+pub struct GDTData {
+    _null: SegmentDescriptor,
+    _code_segment: SegmentDescriptor,
+    _data_segment: SegmentDescriptor,
+    _user_code_segment: SegmentDescriptor,
+    _user_data_segment: SegmentDescriptor,
+    pub task_segment: TaskSegmentDescriptor,
+}
+
+impl GDTData {
+    pub const fn new() -> Self {
+        Self {
+            _null: SegmentDescriptor::null(),
+            _code_segment: SegmentDescriptor::new_from_ty(
+                DescriptorType::CodeSegment,
+                PrivilegeLevel::Supervisor,
+            ),
+            _data_segment: SegmentDescriptor::new_from_ty(
+                DescriptorType::DataSegment,
+                PrivilegeLevel::Supervisor,
+            ),
+            _user_code_segment: SegmentDescriptor::new_from_ty(
+                DescriptorType::CodeSegment,
+                PrivilegeLevel::User,
+            ),
+            _user_data_segment: SegmentDescriptor::new_from_ty(
+                DescriptorType::DataSegment,
+                PrivilegeLevel::User,
+            ),
+            task_segment: TaskSegmentDescriptor::null(),
+        }
+    }
+}
+
+pub static GDT: SyncUnsafeCell<GDTData> = SyncUnsafeCell::new(GDTData::new());
 
 pub static GDTR: GDTReg = GDTReg {
-    limit: (((core::mem::size_of_val(&ENTRIES) as u64) - 1) & 0xFFFF) as u16,
-    addr: unsafe { (*ENTRIES.get()).as_ptr() },
+    limit: (((core::mem::size_of_val(&GDT) as u64) - 1) & 0xFFFF) as u16,
+    addr: GDT.get(),
 };
 
 #[derive(Default, BitfieldSpecifier, Debug, Clone, Copy)]
@@ -24,7 +54,7 @@ pub static GDTR: GDTReg = GDTReg {
 pub enum PrivilegeLevel {
     #[default]
     Supervisor = 0,
-    User = 0b11,
+    User = 3,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -75,7 +105,7 @@ pub struct SegmentDescriptor {
 }
 
 impl SegmentDescriptor {
-    pub const fn default() -> Self {
+    pub const fn null() -> Self {
         Self::new(
             0,
             DescriptorType::None,
@@ -107,28 +137,48 @@ impl SegmentDescriptor {
     pub const fn new_from_ty(ty: DescriptorType, dpl: PrivilegeLevel) -> Self {
         match ty {
             DescriptorType::CodeSegment => Self::new(0, ty, dpl, true, true),
-            DescriptorType::TaskSegment => Self::new(104, ty, dpl, false, false),
             _ => Self::new(0, ty, dpl, true, false),
         }
     }
+}
 
-    pub fn set_base(&mut self, base: u32) {
-        self.base_low = (base & 0xFFFF) as u16;
-        self.base_middle = ((base >> 16) & 0xFF) as u8;
-        self.base_high = (base >> 24) as u8;
+#[derive(Debug, Clone, Copy)]
+#[repr(C, packed)]
+pub struct TaskSegmentDescriptor {
+    pub length: u16,
+    pub base_low: u16,
+    pub base_middle: u8,
+    pub attrs: SegmentAttributes,
+    pub base_high: u8,
+    pub base_upper: u32,
+    __: u32,
+}
+
+impl TaskSegmentDescriptor {
+    pub const fn null() -> Self {
+        Self {
+            length: 104,
+            base_low: 0,
+            base_middle: 0,
+            attrs: SegmentAttributes::from_bytes([DescriptorType::TaskSegment as u8, 1 << 5]),
+            base_high: 0,
+            base_upper: 0,
+            __: 0,
+        }
     }
 }
 
 #[repr(C, packed)]
 pub struct GDTReg {
     pub limit: u16,
-    pub addr: *const SegmentDescriptor,
+    pub addr: *const GDTData,
 }
 
 unsafe impl Sync for GDTReg {}
 
 impl GDTReg {
-    pub unsafe fn load(&self, cs: SegmentSelector, ds: SegmentSelector) {
+    pub unsafe fn load(&self) {
+        debug!("Initialising.");
         asm!(
             "lgdt [{}]",
             "push {}",
@@ -142,9 +192,9 @@ impl GDTReg {
             "mov gs, {3}",
             "mov ss, {3}",
             in(reg) self,
-            in(reg) u64::from(cs.0),
+            in(reg) u64::from(SegmentSelector::new(1, PrivilegeLevel::Supervisor).0),
             lateout(reg) _,
-            in(reg) u64::from(ds.0),
+            in(reg) u64::from(SegmentSelector::new(2, PrivilegeLevel::Supervisor).0),
         );
     }
 }

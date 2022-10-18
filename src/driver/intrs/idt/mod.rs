@@ -21,7 +21,7 @@ seq_macro::seq!(N in 0..256 {
                 SegmentSelector::new(1, PrivilegeLevel::Supervisor),
                 0,
                 EntryType::InterruptGate,
-                0,
+                PrivilegeLevel::Supervisor,
                 true,
             ),
         )*
@@ -86,7 +86,7 @@ pub struct EntryFlags {
     pub ty: EntryType,
     #[skip]
     __: B1,
-    pub dpl: B2,
+    pub dpl: PrivilegeLevel,
     pub present: bool,
 }
 
@@ -107,7 +107,7 @@ impl Entry {
         selector: SegmentSelector,
         ist: u8,
         ty: EntryType,
-        dpl: u8,
+        dpl: PrivilegeLevel,
         present: bool,
     ) -> Self {
         Self {
@@ -115,7 +115,7 @@ impl Entry {
             selector,
             flags: EntryFlags::from_bytes([
                 ist & 0x7,
-                ty as u8 | ((dpl & 0x3) << 5) | ((present as u8) << 7),
+                ty as u8 | ((dpl as u8) << 5) | ((present as u8) << 7),
             ]),
             offset_middle: (base >> 16) as u16,
             offset_high: (base >> 32) as u32,
@@ -133,6 +133,7 @@ pub struct IDTReg {
 
 impl IDTReg {
     pub unsafe fn load(&self) {
+        debug!("Initialising.");
         seq_macro::seq!(N in 0..256 {
             let base = isr::isr~N as usize as u64;
             let entry = &mut (*ENTRIES.get())[N];
