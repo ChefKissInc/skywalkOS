@@ -29,10 +29,9 @@ impl ProgrammableInterruptController {
         unsafe {
             self.master_cmd.write(ICW1_INIT | ICW1_ICW4);
             self.slave_cmd.write(ICW1_INIT | ICW1_ICW4);
-            self.master_data.write(0x08);
-            self.slave_data.write(0x70);
-            self.master_data.write(0b0100); // slave PIC at IRQ2
-            self.slave_data.write(0b0010); // slave PIC cascade identity
+            self.master_data.write(32);
+            self.master_data.write(4); // slave PIC at IRQ2
+            self.slave_data.write(2); // slave PIC cascade identity
             self.master_data.write(ICW4_8086);
             self.slave_data.write(ICW4_8086);
 
