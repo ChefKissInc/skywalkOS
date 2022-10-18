@@ -9,6 +9,7 @@ super::generic_exception!(overflow_handler, "overflow");
 super::generic_exception!(bound_range_handler, "bound range exceeded");
 super::generic_exception!(invalid_opcode_handler, "invalid opcode");
 super::generic_exception!(dev_unavailable_handler, "device unavailable");
+super::generic_exception!(double_fault, "double fault");
 super::generic_exception!(
     coproc_segment_overrun_handler,
     "coprocessor segment overrun"
