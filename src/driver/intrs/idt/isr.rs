@@ -6,8 +6,8 @@ use core::arch::asm;
 macro_rules! isr_stub {
     ($err:expr, $i:expr) => {
         asm!(
-            "cli",
             $err,
+            "cld",
             "push {}",
             "push rax",
             "push rbx",
@@ -24,10 +24,6 @@ macro_rules! isr_stub {
             "push r13",
             "push r14",
             "push r15",
-            "xor ax, ax",
-            "mov es, ax",
-            "mov ds, ax",
-            "cld",
             "mov rdi, rsp",
             "call {}",
             "pop r15",

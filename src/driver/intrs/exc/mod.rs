@@ -7,13 +7,17 @@ macro_rules! exc_msg {
             crate::sys::io::serial::SERIAL.force_unlock()
         }
 
-        crate::sys::state::SYS_STATE
-            .get()
-            .as_mut()
-            .unwrap()
-            .interrupt_context = Some(*$regs);
-
-        panic!("Received {} exception: {}", $name, $msg);
+        if $regs.cs.trailing_zeros() >= 2 {
+            crate::sys::state::SYS_STATE
+                .get()
+                .as_mut()
+                .unwrap()
+                .interrupt_context = Some(*$regs);
+            panic!("Received {} exception: {}", $name, $msg);
+        } else {
+            error!("Received {} exception in user-land: {}", $name, $msg);
+            error!("{:#X?}", $regs);
+        }
     };
 }
 
