@@ -15,6 +15,7 @@ pub struct Scheduler {
     pub processes: HashMap<uuid::Uuid, super::Process>,
     pub threads: VecDeque<super::Thread>,
     pub first_launch: bool,
+    pub kern_stack: Vec<u8>,
 }
 
 unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
@@ -32,9 +33,6 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
     while thread.state == super::ThreadState::Blocked {
         thread = this.find_next_thread().unwrap();
     }
-    *TSS.get() = TaskSegmentSelector::new(
-        thread.kern_stack.as_ptr() as u64 + thread.kern_stack.len() as u64,
-    );
     *state = thread.regs;
     thread.state = super::ThreadState::Active;
     let proc_uuid = thread.proc_uuid;
@@ -43,8 +41,13 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
 
 impl Scheduler {
     pub fn new(timer: &impl Timer) -> Self {
+        let mut kern_stack = Vec::new();
+        kern_stack.resize(0x14000, 0);
+
         unsafe {
             let gdt = &mut *crate::sys::gdt::GDT.get();
+            (*TSS.get()) =
+                TaskSegmentSelector::new(kern_stack.as_ptr() as u64 + kern_stack.len() as u64);
             let tss = TSS.get() as u64;
             gdt.task_segment.base_low = (tss & 0xFFFF) as u16;
             gdt.task_segment.base_middle = ((tss >> 16) & 0xFF) as u8;
@@ -73,6 +76,7 @@ impl Scheduler {
             processes: HashMap::new(),
             threads: VecDeque::new(),
             first_launch: true,
+            kern_stack,
         }
     }
 
@@ -114,12 +118,6 @@ impl Scheduler {
         let mut proc = super::Process::new("", "");
         let thread = super::Thread::new(proc_uuid, rip);
         unsafe {
-            if self.first_launch {
-                *TSS.get() = TaskSegmentSelector::new(
-                    thread.kern_stack.as_ptr() as u64 + thread.kern_stack.len() as u64,
-                );
-            }
-
             proc.cr3.map_pages(
                 phys_addr,
                 phys_addr,
@@ -133,7 +131,7 @@ impl Scheduler {
             proc.cr3.map_pages(
                 stack_addr,
                 stack_addr,
-                (0x14000 + 0xFFF) / 0x1000,
+                (thread.stack.len() as u64 + 0xFFF) / 0x1000,
                 PageTableEntry::new()
                     .with_user(true)
                     .with_writable(true)
