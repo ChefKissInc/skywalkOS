@@ -1,12 +1,13 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
+#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct TaskSegmentSelector {
     __: u32,
-    pub rsp: [u64; 4],
+    pub privilege_stack_table: [u64; 3],
     ___: u64,
-    pub ist: [u64; 7],
+    pub interrupt_stack_table: [u64; 7],
     ____: u64,
     _____: u16,
     pub io_bitmap_offset: u16,
@@ -17,9 +18,9 @@ impl TaskSegmentSelector {
     pub const fn new(kern_rsp: u64) -> Self {
         Self {
             __: 0,
-            rsp: [kern_rsp; 4],
+            privilege_stack_table: [kern_rsp, 0, 0],
             ___: 0,
-            ist: [kern_rsp; 7],
+            interrupt_stack_table: [kern_rsp, 0, 0, 0, 0, 0, 0],
             ____: 0,
             _____: 0,
             io_bitmap_offset: 112,

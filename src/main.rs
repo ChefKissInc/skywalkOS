@@ -168,7 +168,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
         info!("Starting boot DriverCore extensions");
         for module in state.modules.as_ref().unwrap() {
             if module.name.starts_with("com.ChefKissInc.DriverCore.") {
-                info!("Spawning boot DriverCore extension {:#X?}", module.name);
+                info!("    Spawning boot DriverCore extension {:#X?}", module.name);
                 sched.get_mut().spawn_proc(module.data);
             }
         }

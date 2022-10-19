@@ -29,15 +29,15 @@ pub struct Thread {
     pub fs_base: usize,
     pub gs_base: usize,
     pub stack: Vec<u8>,
-    pub kern_rsp: Vec<u8>,
+    pub kern_stack: Vec<u8>,
 }
 
 impl Thread {
     pub fn new(proc_uuid: uuid::Uuid, rip: u64) -> Self {
         let mut stack = Vec::new();
         stack.resize(0x14000, 0);
-        let mut kern_rsp = Vec::new();
-        kern_rsp.resize(0x14000, 0);
+        let mut kern_stack = Vec::new();
+        kern_stack.resize(0x14000, 0);
         Self {
             state: ThreadState::Inactive,
             uuid: uuid::Uuid::new_v4(),
@@ -48,7 +48,7 @@ impl Thread {
                     .0
                     .into(),
                 rflags: 0x202,
-                rsp: stack.as_ptr() as u64 + stack.len() as u64 - amd64::paging::PHYS_VIRT_OFFSET,
+                rsp: stack.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET + stack.len() as u64,
                 ss: super::gdt::SegmentSelector::new(4, super::gdt::PrivilegeLevel::User)
                     .0
                     .into(),
@@ -57,7 +57,7 @@ impl Thread {
             fs_base: 0,
             gs_base: 0,
             stack,
-            kern_rsp,
+            kern_stack,
         }
     }
 }

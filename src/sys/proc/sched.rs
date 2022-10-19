@@ -18,7 +18,6 @@ pub struct Scheduler {
 }
 
 unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
-    info!("a");
     let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
     let mut this = sys_state.scheduler.assume_init_mut().lock();
 
@@ -33,8 +32,9 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
     while thread.state == super::ThreadState::Blocked {
         thread = this.find_next_thread().unwrap();
     }
-    *TSS.get() =
-        TaskSegmentSelector::new(thread.kern_rsp.as_ptr() as u64 + thread.kern_rsp.len() as u64);
+    *TSS.get() = TaskSegmentSelector::new(
+        thread.kern_stack.as_ptr() as u64 + thread.kern_stack.len() as u64,
+    );
     *state = thread.regs;
     thread.state = super::ThreadState::Active;
     let proc_uuid = thread.proc_uuid;
@@ -50,7 +50,7 @@ impl Scheduler {
             gdt.task_segment.base_middle = ((tss >> 16) & 0xFF) as u8;
             gdt.task_segment.attrs.set_present(true);
             gdt.task_segment.base_high = ((tss >> 24) & 0xFF) as u8;
-            gdt.task_segment.base_upper = ((tss >> 32) & 0xFFFF_FFFF) as u32;
+            gdt.task_segment.base_upper = (tss >> 32) as u32;
 
             core::arch::asm!(
                 "ltr ax",
@@ -110,14 +110,16 @@ impl Scheduler {
         let data = data.leak();
         let phys_addr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
         let rip = phys_addr + exec.entry;
-
         let proc_uuid = uuid::Uuid::new_v4();
         let mut proc = super::Process::new("", "");
         let thread = super::Thread::new(proc_uuid, rip);
-        info!("data: {:#X?}", data.as_ptr());
-        info!("phys_addr: {phys_addr:#X?}");
-        info!("rip: {:#X?}", rip);
         unsafe {
+            if self.first_launch {
+                *TSS.get() = TaskSegmentSelector::new(
+                    thread.kern_stack.as_ptr() as u64 + thread.kern_stack.len() as u64,
+                );
+            }
+
             proc.cr3.map_pages(
                 phys_addr,
                 phys_addr,
@@ -128,9 +130,6 @@ impl Scheduler {
                     .with_present(true),
             );
             let stack_addr = thread.stack.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
-            info!("stack: {:#X?}", thread.stack.as_ptr());
-            info!("stack_addr: {stack_addr:#X?}");
-            info!("rsp: {:#X?}", thread.regs.rsp);
             proc.cr3.map_pages(
                 stack_addr,
                 stack_addr,
