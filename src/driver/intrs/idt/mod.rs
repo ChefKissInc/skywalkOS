@@ -159,10 +159,8 @@ pub fn set_handler(isr: u8, ist: u8, func: HandlerFn, is_irq: bool, should_iret:
             );
         }
 
-        if ist != 0 {
-            (*ENTRIES.get())[isr as usize].flags.set_ist(ist);
-            IDTR.load();
-        }
+        (*ENTRIES.get())[isr as usize].flags.set_ist(ist);
+        IDTR.load();
 
         *handler = InterruptHandler {
             func,
