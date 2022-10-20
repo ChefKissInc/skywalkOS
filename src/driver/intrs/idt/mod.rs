@@ -148,24 +148,29 @@ impl IDTReg {
 
 unsafe impl Sync for IDTReg {}
 
-pub fn set_handler(isr: u8, ist: u8, func: HandlerFn, is_irq: bool, should_iret: bool) {
+pub fn set_handler(
+    isr: u8,
+    ist: u8,
+    dpl: PrivilegeLevel,
+    func: HandlerFn,
+    is_irq: bool,
+    should_iret: bool,
+) {
+    let handler = unsafe { &mut HANDLERS.get().as_mut().unwrap()[isr as usize] };
+    assert_eq!(
+        handler.func as usize, default_handler as usize,
+        "Tried to register already existing ISR #{}. This is most likely a bug!",
+        isr
+    );
+
     unsafe {
-        let handler = &mut HANDLERS.get().as_mut().unwrap()[isr as usize];
-
-        if handler.func as usize != default_handler as usize {
-            error!(
-                "Tried to register already existing ISR #{}. This is most likely a bug!",
-                isr
-            );
-        }
-
+        (*ENTRIES.get())[isr as usize].flags.set_dpl(dpl);
         (*ENTRIES.get())[isr as usize].flags.set_ist(ist);
-        IDTR.load();
-
-        *handler = InterruptHandler {
-            func,
-            is_irq,
-            should_iret,
-        };
     }
+
+    *handler = InterruptHandler {
+        func,
+        is_irq,
+        should_iret,
+    };
 }

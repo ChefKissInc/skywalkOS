@@ -6,7 +6,7 @@ use hashbrown::HashMap;
 
 use crate::{
     driver::timer::Timer,
-    sys::{tss::TaskSegmentSelector, RegisterState},
+    sys::{gdt::PrivilegeLevel, tss::TaskSegmentSelector, RegisterState},
 };
 
 static TSS: SyncUnsafeCell<TaskSegmentSelector> = SyncUnsafeCell::new(TaskSegmentSelector::new(0));
@@ -36,6 +36,12 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
         this.processes.get_mut(&proc_uuid).unwrap().cr3.set();
     }
     this.current_thread_uuid = new;
+}
+
+unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
+    info!("Entered system call.");
+    info!("{:#X?}", state.rdi);
+    info!("Exiting system call.");
 }
 
 impl Scheduler {
@@ -68,7 +74,22 @@ impl Scheduler {
 
         lapic.setup_timer(timer);
 
-        crate::driver::intrs::idt::set_handler(128, 1, schedule, true, true);
+        crate::driver::intrs::idt::set_handler(
+            128,
+            1,
+            PrivilegeLevel::Supervisor,
+            schedule,
+            true,
+            true,
+        );
+        crate::driver::intrs::idt::set_handler(
+            249,
+            1,
+            PrivilegeLevel::User,
+            syscall_handler,
+            false,
+            true,
+        );
         crate::driver::acpi::ioapic::wire_legacy_irq(96, false);
 
         Self {

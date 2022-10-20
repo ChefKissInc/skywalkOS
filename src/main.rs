@@ -54,7 +54,6 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
         state.kern_symbols.write(boot_info.kern_symbols);
         state.boot_settings = boot_info.settings;
 
-        debug!("{boot_info:X?}");
         info!("Copyright ChefKiss Inc 2021-2022.");
 
         unsafe {
