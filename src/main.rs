@@ -13,7 +13,6 @@
 )]
 #![allow(clippy::module_name_repetitions, clippy::similar_names)]
 #![feature(
-    asm_sym,
     asm_const,
     alloc_error_handler,
     allocator_api,
