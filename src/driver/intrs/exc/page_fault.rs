@@ -2,11 +2,10 @@
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use alloc::format;
-use core::arch::asm;
 
 pub unsafe extern "sysv64" fn handler(regs: &mut crate::sys::RegisterState) {
     let mut cr2: u64;
-    asm!("mov {}, cr2", out(reg) cr2, options(nomem, nostack, preserves_flags));
+    core::arch::asm!("mov {}, cr2", out(reg) cr2, options(nomem, nostack, preserves_flags));
 
     let msg = format!(
         "There was {} while {} a {} at {:#X?}.{}{}{}{}",

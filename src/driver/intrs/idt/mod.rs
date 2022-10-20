@@ -2,7 +2,7 @@
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 #![allow(clippy::cast_possible_truncation)]
 
-use core::{arch::asm, cell::SyncUnsafeCell};
+use core::cell::SyncUnsafeCell;
 
 use modular_bitfield::prelude::*;
 
@@ -142,7 +142,7 @@ impl IDTReg {
             entry.offset_high = (base >> 32) as u32;
         });
 
-        asm!("lidt [{}]", in(reg) self);
+        core::arch::asm!("lidt [{}]", in(reg) self);
     }
 }
 

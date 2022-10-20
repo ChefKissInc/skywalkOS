@@ -1,11 +1,9 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-use core::arch::asm;
-
 macro_rules! isr_stub {
     ($err:expr, $i:expr) => {
-        asm!(
+        core::arch::asm!(
             $err,
             "cld",
             "push {}",
@@ -62,7 +60,7 @@ unsafe extern "C" fn isr_handler(regs: &mut crate::sys::RegisterState) {
     }
     if !handler.should_iret && !handler.is_irq {
         loop {
-            asm!("hlt");
+            core::arch::asm!("hlt");
         }
     }
 }

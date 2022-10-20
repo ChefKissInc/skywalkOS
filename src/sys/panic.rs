@@ -1,8 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-use core::arch::asm;
-
 use unwinding::abi::{UnwindContext, UnwindReasonCode, _Unwind_Backtrace, _Unwind_GetIP};
 
 struct CallbackData<'a> {
@@ -55,7 +53,7 @@ extern "C" fn callback(
 #[panic_handler]
 pub fn panic(info: &core::panic::PanicInfo) -> ! {
     unsafe {
-        asm!("cli");
+        core::arch::asm!("cli");
         while super::io::serial::SERIAL.is_locked() {
             super::io::serial::SERIAL.force_unlock();
         }
@@ -65,7 +63,7 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
         error!("Panicked while panicking!");
 
         loop {
-            unsafe { asm!("hlt") }
+            unsafe { core::arch::asm!("hlt") }
         }
     }
 
@@ -162,6 +160,6 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
     }
 
     loop {
-        unsafe { asm!("hlt") }
+        unsafe { core::arch::asm!("hlt") }
     }
 }

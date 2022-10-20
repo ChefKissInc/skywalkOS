@@ -28,7 +28,6 @@ extern crate alloc;
 extern crate log;
 
 use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
-use core::arch::asm;
 
 use crate::{
     driver::acpi::{apic::LocalAPIC, ACPIPlatform},
@@ -160,7 +159,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
         let total = pmm.lock().total_pages * 4096 / 1024 / 1024;
         info!("{}MiB used out of {}MiB.", used, total);
 
-        unsafe { asm!("sti") }
+        unsafe { core::arch::asm!("sti") }
         let sched = state
             .scheduler
             .write(spin::Mutex::new(sys::proc::sched::Scheduler::new(&hpet)));
@@ -176,7 +175,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
         sys::proc::sched::Scheduler::start();
 
         loop {
-            unsafe { asm!("hlt") }
+            unsafe { core::arch::asm!("hlt") }
         }
     })
     .unwrap()

@@ -1,4 +1,4 @@
-use alloc::{collections::VecDeque, vec::Vec};
+use alloc::vec::Vec;
 use core::cell::SyncUnsafeCell;
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
@@ -13,8 +13,8 @@ static TSS: SyncUnsafeCell<TaskSegmentSelector> = SyncUnsafeCell::new(TaskSegmen
 
 pub struct Scheduler {
     pub processes: HashMap<uuid::Uuid, super::Process>,
-    pub threads: VecDeque<super::Thread>,
-    pub first_launch: bool,
+    pub threads: Vec<super::Thread>,
+    pub current_thread_uuid: Option<uuid::Uuid>,
     pub kern_stack: Vec<u8>,
 }
 
@@ -22,21 +22,17 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
     let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
     let mut this = sys_state.scheduler.assume_init_mut().lock();
 
-    if this.first_launch {
-        this.first_launch = false;
-    } else {
-        let old_thread = this.current_thread().unwrap();
+    if let Some(old_thread) = this.current_thread_mut() {
         old_thread.regs = *state;
         old_thread.state = super::ThreadState::Inactive;
     }
-    let mut thread = this.find_next_thread().unwrap();
-    while thread.state == super::ThreadState::Blocked {
-        thread = this.find_next_thread().unwrap();
+
+    if let Some(thread) = this.next_thread_mut() {
+        *state = thread.regs;
+        thread.state = super::ThreadState::Active;
+        let proc_uuid = thread.proc_uuid;
+        this.processes.get_mut(&proc_uuid).unwrap().cr3.set();
     }
-    *state = thread.regs;
-    thread.state = super::ThreadState::Active;
-    let proc_uuid = thread.proc_uuid;
-    this.processes.get_mut(&proc_uuid).unwrap().cr3.set();
 }
 
 impl Scheduler {
@@ -48,12 +44,12 @@ impl Scheduler {
             let gdt = &mut *crate::sys::gdt::GDT.get();
             (*TSS.get()) =
                 TaskSegmentSelector::new(kern_stack.as_ptr() as u64 + kern_stack.len() as u64);
-            let tss = TSS.get() as u64;
-            gdt.task_segment.base_low = (tss & 0xFFFF) as u16;
-            gdt.task_segment.base_middle = ((tss >> 16) & 0xFF) as u8;
+            let tss_addr = TSS.get() as u64;
+            gdt.task_segment.base_low = (tss_addr & 0xFFFF) as u16;
+            gdt.task_segment.base_middle = ((tss_addr >> 16) & 0xFF) as u8;
             gdt.task_segment.attrs.set_present(true);
-            gdt.task_segment.base_high = ((tss >> 24) & 0xFF) as u8;
-            gdt.task_segment.base_upper = (tss >> 32) as u32;
+            gdt.task_segment.base_high = ((tss_addr >> 24) & 0xFF) as u8;
+            gdt.task_segment.base_upper = (tss_addr >> 32) as u32;
 
             core::arch::asm!(
                 "ltr ax",
@@ -74,8 +70,8 @@ impl Scheduler {
 
         Self {
             processes: HashMap::new(),
-            threads: VecDeque::new(),
-            first_launch: true,
+            threads: Vec::new(),
+            current_thread_uuid: None,
             kern_stack,
         }
     }
@@ -139,16 +135,30 @@ impl Scheduler {
             );
         }
         self.processes.insert(proc_uuid, proc);
-        self.threads.push_back(thread);
+        self.threads.push(thread);
     }
 
-    pub fn current_thread(&mut self) -> Option<&mut super::Thread> {
-        self.threads.front_mut()
+    pub fn current_thread_mut(&mut self) -> Option<&mut super::Thread> {
+        let uuid = self.current_thread_uuid?;
+        self.threads.iter_mut().find(|v| v.uuid == uuid)
     }
 
-    pub fn find_next_thread(&mut self) -> Option<&mut super::Thread> {
-        let old = self.threads.pop_front()?;
-        self.threads.push_back(old);
-        self.threads.front_mut()
+    pub fn next_thread_mut(&mut self) -> Option<&mut super::Thread> {
+        let i = self
+            .current_thread_uuid
+            .and_then(|uuid| {
+                self.threads
+                    .iter()
+                    .position(|v| v.uuid == uuid)
+                    .map(|i| i + 1)
+            })
+            .unwrap_or_default();
+        if i >= self.threads.len() {
+            None
+        } else {
+            self.threads[i..]
+                .iter_mut()
+                .find(|v| v.state != super::ThreadState::Blocked)
+        }
     }
 }

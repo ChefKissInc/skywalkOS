@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-use core::{arch::asm, cell::SyncUnsafeCell};
+use core::cell::SyncUnsafeCell;
 
 use modular_bitfield::prelude::*;
 
@@ -179,7 +179,7 @@ unsafe impl Sync for GDTReg {}
 impl GDTReg {
     pub unsafe fn load(&self) {
         debug!("Initialising.");
-        asm!(
+        core::arch::asm!(
             "lgdt [{}]",
             "push {}",
             "lea {2}, [1f + rip]",
@@ -188,8 +188,6 @@ impl GDTReg {
             "1:",
             "mov ds, {3}",
             "mov es, {3}",
-            "mov fs, {3}",
-            "mov gs, {3}",
             "mov ss, {3}",
             in(reg) self,
             in(reg) u64::from(SegmentSelector::new(1, PrivilegeLevel::Supervisor).0),
