@@ -43,4 +43,6 @@ unwinding = { version = "0.1.5", default-features = false, features = [
 ] }
 paper-fb = { path = "../paper-fb" }
 uuid = { version = "1.2.1", default-features = false, features = ["v4"] }
-getrandom = { version = "0.2.7", default-features = false, features = ["rdrand"] }
+getrandom = { version = "0.2.7", default-features = false, features = [
+    "rdrand",
+] }
