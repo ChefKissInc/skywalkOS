@@ -1,5 +1,13 @@
 [workspace]
-members = ["acpi", "amd64", "bootx", "kernel", "paper-fb", "sulphur-dioxide"]
+members = [
+    "acpi",
+    "amd64",
+    "bootx",
+    "cardboard",
+    "paper-fb",
+    "sulphur-dioxide",
+    "cardboard-klib",
+]
 resolver = "2"
 
 [profile.release]
