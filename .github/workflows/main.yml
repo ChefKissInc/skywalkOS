@@ -1,0 +1,64 @@
+name: Run lints, test build & cargo test
+
+on:
+  push:
+    branches: [master, staging, trying]
+  pull_request:
+    branches: [master]
+  schedule:
+    - cron: '19 2 * * 4'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  clippy:
+    name: Lints
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          components: rust-src, rustfmt, clippy
+      - uses: actions-rs/cargo@v1
+        with:
+          toolchain: nightly
+          command: fmt
+          args: --all -- --check
+      - uses: actions-rs/cargo@v1
+        with:
+          toolchain: nightly
+          command: clippy
+          
+  build:
+    name: Test build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          components: rust-src
+      - uses: actions-rs/cargo@v1
+        with:
+          toolchain: nightly
+          command: build
+          
+  test:
+    name: Test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          components: rust-src
+      - uses: actions-rs/cargo@v1
+        with:
+          toolchain: nightly
+          command: test
+          args: --workspace --exclude cardboard --exclude bootx

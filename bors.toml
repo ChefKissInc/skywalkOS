@@ -1,6 +1,6 @@
-status = ["Lints", "Test suite"]
+status = ["Lints", "Test build", "Test suite"]
 block_labels = ["Invalid", "Duplicate", "Help wanted", "Won't fix"]
-pr_stats = ["Lints", "Test suite"]
+pr_stats = ["Lints", "Test build", "Test suite"]
 delete_merged_branches = true
 use_squash_merge = true
 update_base_for_deletes = true
