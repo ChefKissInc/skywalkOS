@@ -38,10 +38,30 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
     this.current_thread_uuid = new;
 }
 
+#[derive(Debug)]
+#[allow(dead_code)]
+#[repr(C)]
+enum Message {
+    Print(*const u8, usize),
+    Exit,
+}
+
 unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
-    info!("Entered system call.");
-    info!("{:#X?}", state.rdi);
-    info!("Exiting system call.");
+    state.rax = 0;
+    if let Some(v) = (state.rdi as *const Message).as_ref() {
+        match v {
+            &Message::Print(data, len) => {
+                if let Ok(s) = core::str::from_utf8(core::slice::from_raw_parts(data, len)) {
+                    info!("{s:#X?}");
+                } else {
+                    state.rax = !0;
+                }
+            }
+            Message::Exit => info!("Thread requested to exit"),
+        }
+    } else {
+        state.rax = !0;
+    }
 }
 
 impl Scheduler {

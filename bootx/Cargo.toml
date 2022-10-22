@@ -1,0 +1,25 @@
+[package]
+name = "bootx"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "bootx64"
+path = "src/main.rs"
+
+[dependencies]
+uefi = { version = "0.17.0", features = ["exts", "logger"] }
+uefi-services = "0.14.0"
+log = { version = "0.4.17", default-features = false, features = [
+    "release_max_level_debug",
+    "max_level_trace",
+] }
+goblin = { version = "0.5.4", default-features = false, features = [
+    "elf32",
+    "elf64",
+    "endian_fd",
+] }
+amd64 = { path = "../amd64" }
+acpi = { path = "../acpi" }
+sulphur-dioxide = { path = "../sulphur-dioxide" }

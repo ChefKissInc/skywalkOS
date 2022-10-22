@@ -1,0 +1,13 @@
+[package]
+name = "amd64"
+description = "The BridgeCore AMD64 implementation"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+arrayvec = { version = "0.7.2", default-features = false }
+num_enum = { version = "0.5.7", default-features = false, features = [
+    "nightly",
+] }
+modular-bitfield = { version = "0.11.2", git = "https://github.com/ChefKissInc/modular-bitfield" }
