@@ -42,14 +42,14 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
     state.rax = 0;
     if let Some(v) = (state.rdi as *const cardboard_klib::KernelRequest).as_ref() {
         match v {
-            &Message::Print(data, len) => {
+            &cardboard_klib::KernelRequest::Print(data, len) => {
                 if let Ok(s) = core::str::from_utf8(core::slice::from_raw_parts(data, len)) {
                     info!("{s:#X?}");
                 } else {
                     state.rax = !0;
                 }
             }
-            Message::Exit => info!("Thread requested to exit"),
+            cardboard_klib::KernelRequest::Exit => info!("Thread requested to exit"),
         }
     } else {
         state.rax = !0;
