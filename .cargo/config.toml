@@ -1,7 +1,2 @@
 [unstable]
-build-std = ["core", "compiler_builtins", "alloc"]
-build-std-features = ["compiler-builtins-mem"]
 unstable-options = true
-
-[build]
-target = "x86_64-bridgecore-kernel.json"
