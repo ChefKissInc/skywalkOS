@@ -11,12 +11,12 @@
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
-pub enum KernelRequest {
-    Print(&'static [u8]),
+pub enum KernelRequest<'a> {
+    Print(&'a [u8]),
     Exit,
 }
 
-impl KernelRequest {
+impl<'a> KernelRequest<'a> {
     pub fn send(&self) {
         unsafe {
             core::arch::asm!("int 249", in("rdi") self as *const _);
