@@ -15,3 +15,11 @@ pub enum KernelRequest {
     Print(&'static [u8]),
     Exit,
 }
+
+impl KernelRequest {
+    pub fn send(&self) {
+        unsafe {
+            core::arch::asm!("int 249", in("rdi") self as *const _);
+        }
+    }
+}
