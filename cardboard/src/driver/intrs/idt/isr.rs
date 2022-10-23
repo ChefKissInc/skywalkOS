@@ -4,6 +4,7 @@
 macro_rules! isr_stub {
     ($err:expr, $i:expr) => {
         core::arch::asm!(
+            "cli",
             $err,
             "cld",
             "push {}",
