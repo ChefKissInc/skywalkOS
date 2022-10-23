@@ -20,5 +20,6 @@
     "relro-level": "off",
     "target-endian": "little",
     "target-c-int-width": "32",
-    "target-pointer-width": "64"
+    "target-pointer-width": "64",
+    "has-thread-local": false
 }
