@@ -42,14 +42,18 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
     state.rax = 0;
     if let Some(v) = (state.rdi as *const cardboard_klib::KernelRequest).as_ref() {
         match v {
-            &cardboard_klib::KernelRequest::Print(data, len) => {
-                if let Ok(s) = core::str::from_utf8(core::slice::from_raw_parts(data, len)) {
-                    info!("{s:#X?}");
+            &cardboard_klib::KernelRequest::Print(s) => {
+                if s.as_ptr().is_null() {
+                    info!(target: "ThreadMessage", "Failed to print message: invalid pointer");
+                } else if let Ok(s) = core::str::from_utf8(s) {
+                    info!(target: "ThreadMessage", "{s}");
                 } else {
                     state.rax = !0;
                 }
             }
-            cardboard_klib::KernelRequest::Exit => info!("Thread requested to exit"),
+            cardboard_klib::KernelRequest::Exit => {
+                info!(target: "ThreadMessage", "Thread requested to exit");
+            }
         }
     } else {
         state.rax = !0;

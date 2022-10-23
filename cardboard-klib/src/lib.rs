@@ -12,6 +12,6 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub enum KernelRequest {
-    Print(*const u8, usize),
+    Print(&'static [u8]),
     Exit,
 }
