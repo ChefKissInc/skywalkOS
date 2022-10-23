@@ -45,6 +45,7 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             &cardboard_klib::KernelRequest::Print(s) => {
                 if s.as_ptr().is_null() {
                     info!(target: "ThreadMessage", "Failed to print message: invalid pointer");
+                    state.rax = !0;
                 } else if let Ok(s) = core::str::from_utf8(s) {
                     info!(target: "ThreadMessage", "{s}");
                 } else {
@@ -52,7 +53,10 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
                 }
             }
             cardboard_klib::KernelRequest::Exit => {
-                info!(target: "ThreadMessage", "Thread requested to exit");
+                trace!(target: "ThreadMessage", "Thread requested to exit");
+            }
+            cardboard_klib::KernelRequest::SkipMe => {
+                trace!(target: "ThreadMessage", "Thread requested to get skipped");
             }
         }
     } else {
@@ -149,6 +153,18 @@ impl Scheduler {
 
         let data = data.leak();
         let phys_addr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
+        for reloc in exec.dynrelas.iter() {
+            let addend = reloc.r_addend.unwrap_or_default();
+            #[allow(clippy::cast_sign_loss)]
+            let target = if addend.is_negative() {
+                phys_addr - addend.wrapping_abs() as u64
+            } else {
+                phys_addr + addend as u64
+            };
+            unsafe {
+                ((data.as_ptr() as u64 + reloc.r_offset) as *mut u64).write(target);
+            }
+        }
         let rip = phys_addr + exec.entry;
         let proc_uuid = uuid::Uuid::new_v4();
         let mut proc = super::Process::new("", "");
