@@ -1,4 +1,4 @@
-# BridgeCore OS Core [![Run lints](https://github.com/BridgeCore-OS/Cardboard/actions/workflows/run_lints.yml/badge.svg)](https://github.com/BridgeCore-OS/Cardboard/actions/workflows/run_lints.yml)
+# BridgeCore Core Components [![Run lints](https://github.com/BridgeCore-OS/OSCoreComponents/actions/workflows/main.yml/badge.svg)](https://github.com/BridgeCore-OS/OSCoreComponents/actions/workflows/main.yml)
 
 BridgeCore's core OS components.
 
