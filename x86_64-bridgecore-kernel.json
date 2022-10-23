@@ -21,5 +21,7 @@
     "target-endian": "little",
     "target-c-int-width": "32",
     "target-pointer-width": "64",
-    "has-thread-local": false
+    "has-thread-local": false,
+    "no-default-libraries": true,
+    "default-hidden-visibility": false
 }

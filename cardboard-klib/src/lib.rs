@@ -14,6 +14,7 @@
 pub enum KernelRequest<'a> {
     Print(&'a [u8]),
     Exit,
+    SkipMe,
 }
 
 impl<'a> KernelRequest<'a> {
