@@ -66,39 +66,9 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
             unsafe { core::arch::asm!("hlt") }
         }
     }
-
     unsafe { (*super::state::SYS_STATE.get()).in_panic = true }
 
-    info.location().map_or_else(
-        || {
-            error!("Panicked at an unknown location.");
-        },
-        |loc| {
-            error!(
-                "Panicked at {}@{}:{}.",
-                loc.file(),
-                loc.line(),
-                loc.column()
-            );
-        },
-    );
-
-    info.message().map_or_else(
-        || {
-            error!("Payload: {:#X?}", info.payload());
-        },
-        |args| {
-            args.as_str().map_or_else(
-                || {
-                    error!("{args:#X?}");
-                },
-                |s| {
-                    error!("{s}");
-                },
-            );
-        },
-    );
-
+    error!("{info}");
     error!("Backtrace:");
     let mut data = CallbackData {
         counter: 0,

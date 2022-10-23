@@ -16,7 +16,6 @@
     asm_const,
     alloc_error_handler,
     const_size_of_val,
-    panic_info_message,
     naked_functions,
     const_mut_refs,
     sync_unsafe_cell
