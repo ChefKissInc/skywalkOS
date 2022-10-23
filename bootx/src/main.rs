@@ -46,7 +46,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     let drv_buffer = helpers::file::load(
         &mut esp,
-        cstr16!("\\System\\Drivers\\Test.dcext\\test-drv"),
+        cstr16!("\\System\\Drivers\\Test.dcext\\test-drv.exec"),
         FileMode::Read,
         FileAttribute::empty(),
     )
