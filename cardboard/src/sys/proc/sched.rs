@@ -161,9 +161,7 @@ impl Scheduler {
             } else {
                 phys_addr + addend as u64
             };
-            unsafe {
-                ((data.as_ptr() as u64 + reloc.r_offset) as *mut u64).write(target);
-            }
+            unsafe { *((data.as_ptr() as u64 + reloc.r_offset) as *mut u64) = target }
         }
         let rip = phys_addr + exec.entry;
         let proc_uuid = uuid::Uuid::new_v4();
