@@ -21,7 +21,7 @@ extern "C" fn callback(
         .find(|v| ip >= v.start && ip < v.end)
         .map_or_else(
             || {
-                error!("{:>4}: {:>#19X}+{:>#04X} -> ???", data.counter, ip, 0);
+                error!("{:>4}: {ip:>#19X}+{0:>#04X} -> ???", data.counter);
             },
             |symbol| {
                 rustc_demangle::try_demangle(symbol.name).map_or_else(
@@ -71,11 +71,11 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
 
     info.location().map_or_else(
         || {
-            error!("Oops. Your system crashed... A panic has occurred at an unknown location.");
+            error!("Panicked at an unknown location.");
         },
         |loc| {
             error!(
-                "Oops. Your system crashed... A panic has occurred at {}@{}:{}.",
+                "Panicked at {}@{}:{}.",
                 loc.file(),
                 loc.line(),
                 loc.column()
@@ -85,22 +85,21 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
 
     info.message().map_or_else(
         || {
-            error!("No message provided. Payload: {:#X?}", info.payload());
+            error!("Payload: {:#X?}", info.payload());
         },
         |args| {
             args.as_str().map_or_else(
                 || {
-                    error!("The arguments are: {:#X?}", args);
+                    error!("{args:#X?}");
                 },
                 |s| {
-                    error!("The message is: {}.", s);
+                    error!("{s}");
                 },
             );
         },
     );
 
     error!("Backtrace:");
-
     let mut data = CallbackData {
         counter: 0,
         kern_symbols: unsafe {
@@ -112,6 +111,7 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
     _Unwind_Backtrace(callback, core::ptr::addr_of_mut!(data).cast());
 
     if let Some(ctx) = unsafe { (*super::state::SYS_STATE.get()).interrupt_context } {
+        data.counter = 0;
         error!("In interrupt:");
         error!("    {ctx:#X?}");
         error!("Interrupt backtrace:");
