@@ -15,7 +15,6 @@
 #![feature(
     asm_const,
     alloc_error_handler,
-    allocator_api,
     const_size_of_val,
     panic_info_message,
     naked_functions,
