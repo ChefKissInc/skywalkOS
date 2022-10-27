@@ -2,7 +2,7 @@
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use alloc::vec::Vec;
-use core::{cell::SyncUnsafeCell, mem::MaybeUninit};
+use core::cell::SyncUnsafeCell;
 
 use sulphur_dioxide::{boot_attrs::BootSettings, module::Module};
 
@@ -12,16 +12,16 @@ use crate::driver::acpi::{apic::LocalAPIC, madt::MADTData, ACPIPlatform};
 pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemState::new());
 
 pub struct SystemState {
-    pub kern_symbols: MaybeUninit<&'static [sulphur_dioxide::kern_sym::KernSymbol]>,
+    pub kern_symbols: spin::Once<&'static [sulphur_dioxide::kern_sym::KernSymbol]>,
     pub boot_settings: BootSettings,
-    pub pmm: MaybeUninit<spin::Mutex<BitmapAllocator>>,
-    pub pml4: MaybeUninit<&'static mut PageTableLvl4>,
+    pub pmm: spin::Once<spin::Mutex<BitmapAllocator>>,
+    pub pml4: spin::Once<&'static mut PageTableLvl4>,
     pub modules: Option<Vec<Module>>,
     pub terminal: Option<Terminal>,
-    pub acpi: MaybeUninit<ACPIPlatform>,
-    pub madt: MaybeUninit<MADTData>,
-    pub lapic: MaybeUninit<LocalAPIC>,
-    pub scheduler: MaybeUninit<spin::Mutex<Scheduler>>,
+    pub acpi: spin::Once<ACPIPlatform>,
+    pub madt: spin::Once<MADTData>,
+    pub lapic: spin::Once<LocalAPIC>,
+    pub scheduler: spin::Once<spin::Mutex<Scheduler>>,
     pub interrupt_context: Option<super::RegisterState>,
     pub in_panic: bool,
 }
@@ -29,16 +29,16 @@ pub struct SystemState {
 impl SystemState {
     pub const fn new() -> Self {
         Self {
-            kern_symbols: MaybeUninit::uninit(),
+            kern_symbols: spin::Once::new(),
             boot_settings: BootSettings { verbose: false },
-            pmm: MaybeUninit::uninit(),
-            pml4: MaybeUninit::uninit(),
+            pmm: spin::Once::new(),
+            pml4: spin::Once::new(),
             modules: None,
             terminal: None,
-            acpi: MaybeUninit::uninit(),
-            madt: MaybeUninit::uninit(),
-            lapic: MaybeUninit::uninit(),
-            scheduler: MaybeUninit::uninit(),
+            acpi: spin::Once::new(),
+            madt: spin::Once::new(),
+            lapic: spin::Once::new(),
+            scheduler: spin::Once::new(),
             interrupt_context: None,
             in_panic: false,
         }

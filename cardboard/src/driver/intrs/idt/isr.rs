@@ -4,7 +4,6 @@
 macro_rules! isr_stub {
     ($err:expr, $i:expr) => {
         core::arch::asm!(
-            "cli",
             $err,
             "cld",
             "push {}",
@@ -54,10 +53,8 @@ unsafe extern "C" fn isr_handler(regs: &mut crate::sys::RegisterState) {
     let handler = &super::HANDLERS.get().as_mut().unwrap()[n as usize];
     (handler.func)(regs);
     if handler.is_irq {
-        (*crate::sys::state::SYS_STATE.get())
-            .lapic
-            .assume_init_mut()
-            .send_eoi();
+        let state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
+        state.lapic.get_mut().unwrap().send_eoi();
     }
     if !handler.should_iret && !handler.is_irq {
         loop {

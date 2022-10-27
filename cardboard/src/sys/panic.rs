@@ -58,29 +58,26 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
             super::io::serial::SERIAL.force_unlock();
         }
     }
+    let state = unsafe { super::state::SYS_STATE.get().as_mut().unwrap() };
 
-    if unsafe { (*super::state::SYS_STATE.get()).in_panic } {
+    if state.in_panic {
         error!("Panicked while panicking!");
 
         loop {
             unsafe { core::arch::asm!("hlt") }
         }
     }
-    unsafe { (*super::state::SYS_STATE.get()).in_panic = true }
+    state.in_panic = true;
 
     error!("{info}");
     error!("Backtrace:");
     let mut data = CallbackData {
         counter: 0,
-        kern_symbols: unsafe {
-            (*super::state::SYS_STATE.get())
-                .kern_symbols
-                .assume_init_mut()
-        },
+        kern_symbols: state.kern_symbols.get_mut().unwrap(),
     };
     _Unwind_Backtrace(callback, core::ptr::addr_of_mut!(data).cast());
 
-    if let Some(ctx) = unsafe { (*super::state::SYS_STATE.get()).interrupt_context } {
+    if let Some(ctx) = state.interrupt_context {
         data.counter = 0;
         error!("In interrupt:");
         error!("    {ctx:#X?}");

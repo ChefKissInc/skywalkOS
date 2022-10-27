@@ -233,12 +233,8 @@ impl LocalAPIC {
 
 #[inline]
 pub fn get_set_lapic_addr() -> u64 {
-    unsafe {
-        let addr = (*crate::sys::state::SYS_STATE.get())
-            .madt
-            .assume_init_mut()
-            .lapic_addr;
-        APICBase::read().with_apic_base(addr).write();
-        addr
-    }
+    let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+    let addr = state.madt.get().unwrap().lapic_addr;
+    unsafe { APICBase::read().with_apic_base(addr).write() }
+    addr
 }

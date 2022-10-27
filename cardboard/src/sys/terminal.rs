@@ -32,21 +32,19 @@ impl Terminal {
 
     pub fn map_fb(&self) {
         unsafe {
+            let state = super::state::SYS_STATE.get().as_mut().unwrap();
             let base = self.fb.base.as_ptr() as u64;
-            (*super::state::SYS_STATE.get())
-                .pml4
-                .assume_init_mut()
-                .map_huge_pages(
-                    base,
-                    base - amd64::paging::PHYS_VIRT_OFFSET,
-                    ((self.fb.height * self.fb.stride + 0x20_0000 - 1) / 0x20_0000)
-                        .try_into()
-                        .unwrap(),
-                    amd64::paging::PageTableEntry::new()
-                        .with_writable(true)
-                        .with_present(true)
-                        .with_pcd(true),
-                );
+            state.pml4.get_mut().unwrap().map_huge_pages(
+                base,
+                base - amd64::paging::PHYS_VIRT_OFFSET,
+                ((self.fb.height * self.fb.stride + 0x20_0000 - 1) / 0x20_0000)
+                    .try_into()
+                    .unwrap(),
+                amd64::paging::PageTableEntry::new()
+                    .with_writable(true)
+                    .with_present(true)
+                    .with_pcd(true),
+            );
         }
     }
 
