@@ -15,6 +15,7 @@ use super::vmm::PageTableLvl4;
 pub mod sched;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum ThreadState {
     Active,
     Blocked,

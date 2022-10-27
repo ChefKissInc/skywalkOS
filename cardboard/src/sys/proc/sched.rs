@@ -245,6 +245,6 @@ impl Scheduler {
 
         self.threads[i..]
             .iter_mut()
-            .find(|v| v.state != super::ThreadState::Blocked)
+            .find(|v| v.state == super::ThreadState::Inactive)
     }
 }
