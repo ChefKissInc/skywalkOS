@@ -63,7 +63,8 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             }
             KernelRequest::SkipMe => {
                 trace!(target: "ThreadMessage", "Thread requested to get skipped");
-                state.rax = KernelRequestStatusCode::Unimplemented as u64;
+                state.rax = KernelRequestStatusCode::Success as u64;
+                schedule(state);
             }
         }
     } else {
