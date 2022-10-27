@@ -11,50 +11,55 @@
 
 use num_enum::{FromPrimitive, IntoPrimitive};
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, FromPrimitive, IntoPrimitive)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive, IntoPrimitive)]
 #[must_use]
 #[repr(u64)]
-pub enum KernelRequestStatusCode {
-    Success = 0,
+pub enum KernelRequestStatus {
+    Success,
     InvalidRequest,
     MalformedData,
     UnknownRequest,
     Unimplemented,
-    #[num_enum(default)]
-    Failure = !0u64,
+    Failure,
+    #[num_enum(catch_all)]
+    Other(u64),
 }
 
-impl KernelRequestStatusCode {
+impl KernelRequestStatus {
     /// # Panics
     ///
     /// Panics if self not Success
-    pub fn unwrap(self) {
-        assert!(
-            self == Self::Success,
-            "called unwrap on an error value: {:?}",
-            self
-        );
+    #[allow(clippy::must_use_candidate)]
+    pub fn unwrap(self) -> u64 {
+        match self {
+            Self::Success => 0,
+            Self::Other(v) => v,
+            v => panic!(
+                "called `KernelRequestStatusCode::unwrap()` on an `{:#X?}` value",
+                v
+            ),
+        }
     }
 }
 
-#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 #[repr(C)]
-pub enum Message<T> {
-    Some(T),
-    None,
+pub enum MessageChannelEntry {
+    Occupied(uuid::Uuid, u64),
+    Free,
 }
 
-#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 #[repr(C)]
-pub struct MessageChannel<T> {
-    pub data: [Message<T>; 20],
+pub struct MessageChannel {
+    pub data: [MessageChannelEntry; 64],
 }
 
-impl<T: Copy> MessageChannel<T> {
+impl MessageChannel {
     #[must_use]
     pub const fn new() -> Self {
         Self {
-            data: [Message::None; 20],
+            data: [MessageChannelEntry::Free; 64],
         }
     }
 }
@@ -63,17 +68,15 @@ impl<T: Copy> MessageChannel<T> {
 #[repr(C)]
 pub enum KernelRequest<'a> {
     Print(&'a [u8]),
-    RegisterMessageChannel(u64),
+    GetMyMessageChannel,
     Exit,
     SkipMe,
 }
 
 impl<'a> KernelRequest<'a> {
-    pub fn send(&self) -> KernelRequestStatusCode {
+    pub fn send(&self) -> KernelRequestStatus {
         let mut ret: u64;
-        unsafe {
-            core::arch::asm!("int 249", in("rdi") self as *const _, lateout("rax") ret);
-        }
+        unsafe { core::arch::asm!("int 249", in("rdi") self as *const _, out("rax") ret) }
         ret.into()
     }
 }

@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use core::cell::SyncUnsafeCell;
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
-use cardboard_klib::{KernelRequest, KernelRequestStatusCode};
+use cardboard_klib::{KernelRequest, KernelRequestStatus};
 use hashbrown::HashMap;
 
 use crate::{
@@ -45,30 +45,30 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             &KernelRequest::Print(s) => {
                 if s.as_ptr().is_null() {
                     info!(target: "ThreadMessage", "Failed to print message: invalid pointer");
-                    state.rax = KernelRequestStatusCode::InvalidRequest as u64;
+                    state.rax = KernelRequestStatus::InvalidRequest.into();
                 } else if let Ok(s) = core::str::from_utf8(s) {
                     info!(target: "ThreadMessage", "{s}");
-                    state.rax = KernelRequestStatusCode::Success as u64;
+                    state.rax = KernelRequestStatus::Success.into();
                 } else {
-                    state.rax = KernelRequestStatusCode::MalformedData as u64;
+                    state.rax = KernelRequestStatus::MalformedData.into();
                 }
             }
-            KernelRequest::RegisterMessageChannel(chan_addr) => {
-                info!(target: "ThreadMessage", "Registering message channel at {:#x}", chan_addr);
-                state.rax = KernelRequestStatusCode::Unimplemented as u64;
+            KernelRequest::GetMyMessageChannel => {
+                // info!(target: "ThreadMessage", "Registering message channel at {:#X?}", chan_addr);
+                state.rax = KernelRequestStatus::Unimplemented.into();
             }
             KernelRequest::Exit => {
                 trace!(target: "ThreadMessage", "Thread requested to exit");
-                state.rax = KernelRequestStatusCode::Unimplemented as u64;
+                state.rax = KernelRequestStatus::Unimplemented.into();
             }
             KernelRequest::SkipMe => {
                 trace!(target: "ThreadMessage", "Thread requested to get skipped");
-                state.rax = KernelRequestStatusCode::Success as u64;
+                state.rax = KernelRequestStatus::Success.into();
                 schedule(state);
             }
         }
     } else {
-        state.rax = KernelRequestStatusCode::InvalidRequest as u64;
+        state.rax = KernelRequestStatus::InvalidRequest.into();
     }
 }
 
