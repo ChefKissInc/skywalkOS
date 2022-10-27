@@ -208,7 +208,7 @@ impl Scheduler {
     }
 
     pub fn next_thread_mut(&mut self) -> Option<&mut super::Thread> {
-        let i = self
+        let mut i = self
             .current_thread_uuid
             .and_then(|uuid| {
                 self.threads
@@ -218,11 +218,11 @@ impl Scheduler {
             })
             .unwrap_or_default();
         if i >= self.threads.len() {
-            None
-        } else {
-            self.threads[i..]
-                .iter_mut()
-                .find(|v| v.state != super::ThreadState::Blocked)
+            i = 0;
         }
+
+        self.threads[i..]
+            .iter_mut()
+            .find(|v| v.state != super::ThreadState::Blocked)
     }
 }
