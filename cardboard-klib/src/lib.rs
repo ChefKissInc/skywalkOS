@@ -45,7 +45,7 @@ impl KernelRequestStatus {
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 #[repr(C)]
 pub enum MessageChannelEntry {
-    Occupied(uuid::Uuid, u64),
+    Occupied(u64),
     Unoccupied,
 }
 
