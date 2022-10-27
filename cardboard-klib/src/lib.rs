@@ -46,7 +46,7 @@ impl KernelRequestStatus {
 #[repr(C)]
 pub enum MessageChannelEntry {
     Occupied(uuid::Uuid, u64),
-    Free,
+    Unoccupied,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
@@ -59,7 +59,7 @@ impl MessageChannel {
     #[must_use]
     pub const fn new() -> Self {
         Self {
-            data: [MessageChannelEntry::Free; 64],
+            data: [MessageChannelEntry::Unoccupied; 64],
         }
     }
 }
