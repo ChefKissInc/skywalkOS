@@ -22,19 +22,18 @@ impl log::Log for CardboardLogger {
         )
         .unwrap();
 
-        unsafe {
-            let verbose = (*crate::sys::state::SYS_STATE.get()).boot_settings.verbose;
-            if record.metadata().level() <= log::Level::Info || verbose {
-                if let Some(terminal) = &mut (*crate::sys::state::SYS_STATE.get()).terminal {
-                    writeln!(
-                        terminal,
-                        "{} [{}] > {}",
-                        record.level(),
-                        record.target(),
-                        record.args()
-                    )
-                    .unwrap();
-                }
+        let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+        let verbose = state.boot_settings.verbose;
+        if record.metadata().level() <= log::Level::Info || verbose {
+            if let Some(terminal) = &mut state.terminal {
+                writeln!(
+                    terminal,
+                    "{} [{}] > {}",
+                    record.level(),
+                    record.target(),
+                    record.args()
+                )
+                .unwrap();
             }
         }
     }

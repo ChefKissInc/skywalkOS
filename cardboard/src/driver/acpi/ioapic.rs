@@ -5,7 +5,8 @@ use acpi::tables::madt::ic::ioapic::{self, IOAPICRedir};
 use amd64::spec::mps::{Polarity, TriggerMode};
 
 pub fn wire_legacy_irq(irq: u8, masked: bool) {
-    let madt = unsafe { (*crate::sys::state::SYS_STATE.get()).madt.assume_init_mut() };
+    let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+    let madt = state.madt.get_mut().unwrap();
     madt.isos.iter().find(|v| v.irq == irq).map_or_else(
         || {
             let ioapic = find_for_gsi(0).unwrap();
@@ -37,7 +38,11 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
 }
 
 pub fn find_for_gsi(gsi: u32) -> Option<&'static ioapic::IOAPIC> {
-    unsafe { (*crate::sys::state::SYS_STATE.get()).madt.assume_init_mut() }
+    let state = unsafe { crate::sys::state::SYS_STATE.get().as_ref().unwrap() };
+    state
+        .madt
+        .get()
+        .unwrap()
         .ioapics
         .iter()
         .find(|ioapic| {

@@ -2,6 +2,7 @@ use alloc::vec::Vec;
 use core::cell::SyncUnsafeCell;
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
+use cardboard_klib::{KernelRequest, KernelRequestStatusCode};
 use hashbrown::HashMap;
 
 use crate::{
@@ -20,7 +21,7 @@ pub struct Scheduler {
 
 unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
     let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
-    let mut this = sys_state.scheduler.assume_init_mut().lock();
+    let mut this = sys_state.scheduler.get_mut().unwrap().lock();
 
     if let Some(old_thread) = this.current_thread_mut() {
         old_thread.regs = *state;
@@ -39,28 +40,34 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
 }
 
 unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
-    state.rax = 0;
-    if let Some(v) = (state.rdi as *const cardboard_klib::KernelRequest).as_ref() {
+    if let Some(v) = (state.rdi as *const KernelRequest).as_ref() {
         match v {
-            &cardboard_klib::KernelRequest::Print(s) => {
+            &KernelRequest::Print(s) => {
                 if s.as_ptr().is_null() {
                     info!(target: "ThreadMessage", "Failed to print message: invalid pointer");
-                    state.rax = !0;
+                    state.rax = KernelRequestStatusCode::InvalidRequest as u64;
                 } else if let Ok(s) = core::str::from_utf8(s) {
                     info!(target: "ThreadMessage", "{s}");
+                    state.rax = KernelRequestStatusCode::Success as u64;
                 } else {
-                    state.rax = !0;
+                    state.rax = KernelRequestStatusCode::MalformedData as u64;
                 }
             }
-            cardboard_klib::KernelRequest::Exit => {
-                trace!(target: "ThreadMessage", "Thread requested to exit");
+            KernelRequest::RegisterMessageChannel(chan_addr) => {
+                info!(target: "ThreadMessage", "Registering message channel at {:#x}", chan_addr);
+                state.rax = KernelRequestStatusCode::Unimplemented as u64;
             }
-            cardboard_klib::KernelRequest::SkipMe => {
+            KernelRequest::Exit => {
+                trace!(target: "ThreadMessage", "Thread requested to exit");
+                state.rax = KernelRequestStatusCode::Unimplemented as u64;
+            }
+            KernelRequest::SkipMe => {
                 trace!(target: "ThreadMessage", "Thread requested to get skipped");
+                state.rax = KernelRequestStatusCode::Unimplemented as u64;
             }
         }
     } else {
-        state.rax = !0;
+        state.rax = KernelRequestStatusCode::InvalidRequest as u64;
     }
 }
 
@@ -86,11 +93,8 @@ impl Scheduler {
             );
         }
 
-        let lapic = unsafe {
-            (*crate::sys::state::SYS_STATE.get())
-                .lapic
-                .assume_init_ref()
-        };
+        let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+        let lapic = state.lapic.get_mut().unwrap();
 
         lapic.setup_timer(timer);
 
@@ -121,12 +125,9 @@ impl Scheduler {
     }
 
     pub fn start() {
-        unsafe {
-            let lapic = (*crate::sys::state::SYS_STATE.get())
-                .lapic
-                .assume_init_ref();
-            lapic.write_timer(lapic.read_timer().with_mask(false));
-        }
+        let state = unsafe { crate::sys::state::SYS_STATE.get().as_ref().unwrap() };
+        let lapic = state.lapic.get().unwrap();
+        lapic.write_timer(lapic.read_timer().with_mask(false));
     }
 
     pub fn spawn_proc(&mut self, exec_data: &[u8]) {
@@ -154,14 +155,23 @@ impl Scheduler {
         let data = data.leak();
         let phys_addr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
         for reloc in exec.dynrelas.iter() {
-            let addend = reloc.r_addend.unwrap_or_default();
-            #[allow(clippy::cast_sign_loss)]
-            let target = if addend.is_negative() {
-                phys_addr - addend.wrapping_abs() as u64
-            } else {
-                phys_addr + addend as u64
+            let ptr = unsafe {
+                ((data.as_ptr() as u64 + reloc.r_offset) as *mut u64)
+                    .as_mut()
+                    .unwrap()
             };
-            unsafe { *((data.as_ptr() as u64 + reloc.r_offset) as *mut u64) = target }
+            let target = reloc.r_addend.map_or_else(
+                || phys_addr + *ptr,
+                |addend| {
+                    #[allow(clippy::cast_sign_loss)]
+                    if addend.is_negative() {
+                        phys_addr - addend.wrapping_abs() as u64
+                    } else {
+                        phys_addr + addend as u64
+                    }
+                },
+            );
+            *ptr = target;
         }
         let rip = phys_addr + exec.entry;
         let proc_uuid = uuid::Uuid::new_v4();

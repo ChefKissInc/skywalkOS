@@ -8,9 +8,11 @@ struct KernAllocator;
 
 unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        (*super::state::SYS_STATE.get())
+        let state = super::state::SYS_STATE.get().as_mut().unwrap();
+        state
             .pmm
-            .assume_init_mut()
+            .get_mut()
+            .unwrap()
             .lock()
             .alloc(((layout.size() + 0xFFF) / 0x1000).try_into().unwrap())
             .map_or(core::ptr::null_mut(), |ptr| {
@@ -19,14 +21,11 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
-        (*super::state::SYS_STATE.get())
-            .pmm
-            .assume_init_mut()
-            .lock()
-            .free(
-                ptr.sub(amd64::paging::PHYS_VIRT_OFFSET.try_into().unwrap()),
-                ((layout.size() + 0xFFF) / 0x1000).try_into().unwrap(),
-            );
+        let state = super::state::SYS_STATE.get().as_mut().unwrap();
+        state.pmm.get_mut().unwrap().lock().free(
+            ptr.sub(amd64::paging::PHYS_VIRT_OFFSET.try_into().unwrap()),
+            ((layout.size() + 0xFFF) / 0x1000).try_into().unwrap(),
+        );
     }
 }
 

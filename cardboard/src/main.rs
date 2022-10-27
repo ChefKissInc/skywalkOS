@@ -48,8 +48,8 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
 
         assert_eq!(boot_info.revision, sulphur_dioxide::CURRENT_REVISION);
 
-        let state = unsafe { &mut *sys::state::SYS_STATE.get() };
-        state.kern_symbols.write(boot_info.kern_symbols);
+        let state = unsafe { sys::state::SYS_STATE.get().as_mut().unwrap() };
+        state.kern_symbols.call_once(|| boot_info.kern_symbols);
         state.boot_settings = boot_info.settings;
 
         info!("Copyright ChefKiss Inc 2021-2022.");
@@ -62,8 +62,10 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
 
         state
             .pmm
-            .write(spin::Mutex::new(BitmapAllocator::new(boot_info.memory_map)));
-        state.acpi.write(ACPIPlatform::new(boot_info.acpi_rsdp));
+            .call_once(|| spin::Mutex::new(BitmapAllocator::new(boot_info.memory_map)));
+        state
+            .acpi
+            .call_once(|| ACPIPlatform::new(boot_info.acpi_rsdp));
         state.modules = Some(boot_info.modules.to_vec());
 
         if let Some(fb_info) = boot_info.frame_buffer {
@@ -87,7 +89,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
         }
 
         // Switch ownership of symbol data to kernel
-        state.kern_symbols.write(
+        state.kern_symbols.call_once(|| {
             boot_info
                 .kern_symbols
                 .iter()
@@ -96,21 +98,23 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
                     ..*v
                 })
                 .collect::<Vec<_>>()
-                .leak(),
-        );
+                .leak()
+        });
 
         debug!("Initialising paging");
 
         let pml4 = Box::leak(Box::new(sys::vmm::PageTableLvl4::new()));
         unsafe { pml4.init() }
-        let pml4 = state.pml4.write(pml4);
+
+        state.pml4.call_once(|| pml4);
+        let pml4 = state.pml4.get_mut().unwrap();
 
         if let Some(terminal) = &mut state.terminal {
             terminal.map_fb();
         }
         info!("I am Cardboard.");
 
-        let acpi = unsafe { state.acpi.assume_init_mut() };
+        let acpi = state.acpi.get_mut().unwrap();
 
         debug!("ACPI v{}", acpi.version);
 
@@ -130,9 +134,10 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
             })
             .unwrap();
 
-        state.madt.write(driver::acpi::madt::MADTData::new(
-            acpi.find("APIC").unwrap(),
-        ));
+        state
+            .madt
+            .call_once(|| driver::acpi::madt::MADTData::new(acpi.find("APIC").unwrap()));
+
         let addr = driver::acpi::apic::get_set_lapic_addr();
         let virt_addr = addr + amd64::paging::PHYS_VIRT_OFFSET;
         unsafe {
@@ -146,9 +151,9 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
             );
         }
         debug!("LAPIC address is {addr:#X?}");
-        state.lapic.write(LocalAPIC::new(virt_addr)).enable();
+        state.lapic.call_once(|| LocalAPIC::new(virt_addr)).enable();
 
-        let pmm = unsafe { state.pmm.assume_init_ref() };
+        let pmm = state.pmm.get_mut().unwrap();
         let used = {
             let pmm = pmm.lock();
             (pmm.total_pages - pmm.free_pages) * 4096 / 1024 / 1024
@@ -159,12 +164,12 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
         unsafe { core::arch::asm!("sti") }
         let sched = state
             .scheduler
-            .write(spin::Mutex::new(sys::proc::sched::Scheduler::new(&hpet)));
+            .call_once(|| spin::Mutex::new(sys::proc::sched::Scheduler::new(&hpet)));
         info!("Starting boot DriverCore extensions");
         for module in state.modules.as_ref().unwrap() {
             if module.name.starts_with("com.ChefKissInc.DriverCore.") {
                 info!("    Spawning boot DriverCore extension {:#X?}", module.name);
-                sched.get_mut().spawn_proc(module.data);
+                sched.lock().spawn_proc(module.data);
             }
         }
         info!("Done with boot DriverCore extensions.");
