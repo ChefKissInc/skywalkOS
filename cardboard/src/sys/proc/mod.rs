@@ -8,6 +8,7 @@ use alloc::{
 };
 
 use amd64::paging::pml4::PML4;
+use cardboard_klib::MessageChannel;
 
 use super::vmm::PageTableLvl4;
 
@@ -29,6 +30,7 @@ pub struct Thread {
     pub fs_base: usize,
     pub gs_base: usize,
     pub stack: Vec<u8>,
+    pub message_channel: Box<MessageChannel>,
 }
 
 impl Thread {
@@ -54,6 +56,7 @@ impl Thread {
             fs_base: 0,
             gs_base: 0,
             stack,
+            message_channel: Box::new(MessageChannel::new()),
         }
     }
 }
