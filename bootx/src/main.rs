@@ -14,18 +14,19 @@
 #![allow(clippy::module_name_repetitions)]
 #![feature(abi_efiapi, allocator_api, asm_const, used_with_arg)]
 
+#[macro_use]
 extern crate alloc;
 #[macro_use]
 extern crate log;
 
-mod helpers;
-
-use alloc::{boxed::Box, vec, vec::Vec};
+use alloc::{boxed::Box, vec::Vec};
 
 use uefi::{
     prelude::*,
     proto::media::file::{FileAttribute, FileMode},
 };
+
+mod helpers;
 
 #[entry]
 fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {

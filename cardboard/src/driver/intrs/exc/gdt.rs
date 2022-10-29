@@ -1,8 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-use alloc::format;
-
 use crate::sys::RegisterState;
 
 pub unsafe extern "sysv64" fn invalid_tss_handler(regs: &mut RegisterState) {

@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-use alloc::{vec, vec::Vec};
+use alloc::vec::Vec;
 
 use uefi::{
     prelude::*,

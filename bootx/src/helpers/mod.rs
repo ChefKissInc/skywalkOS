@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-use crate::alloc::boxed::Box;
+use alloc::boxed::Box;
 
 pub mod fb;
 pub mod file;
