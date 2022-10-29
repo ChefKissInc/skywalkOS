@@ -1,8 +1,7 @@
 use alloc::vec::Vec;
-use core::{cell::SyncUnsafeCell, fmt::Write, mem::size_of};
+use core::cell::SyncUnsafeCell;
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
-use cardboard_klib::{KernelRequest, KernelRequestStatus, MessageChannel};
 use hashbrown::HashMap;
 
 use crate::{
@@ -19,7 +18,7 @@ pub struct Scheduler {
     pub kern_stack: Vec<u8>,
 }
 
-unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
+pub unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
     let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
     let mut this = sys_state.scheduler.get_mut().unwrap().lock();
 
@@ -37,60 +36,6 @@ unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
         this.processes.get_mut(&proc_uuid).unwrap().cr3.set();
     }
     this.current_thread_uuid = new;
-}
-
-unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
-    let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
-    let mut this = sys_state.scheduler.get_mut().unwrap().lock();
-
-    if let Some(v) = (state.rdi as *const KernelRequest).as_ref() {
-        match v {
-            KernelRequest::Print(s) => {
-                if s.as_ptr().is_null() {
-                    error!(target: "ThreadMessage", "Failed to print message: invalid pointer");
-                    state.rax = KernelRequestStatus::InvalidRequest.into();
-                } else if let Ok(s) = core::str::from_utf8(s) {
-                    let mut serial = crate::sys::io::serial::SERIAL.lock();
-                    write!(serial, "{s}").unwrap();
-                    if let Some(terminal) = &mut sys_state.terminal {
-                        write!(terminal, "{s}").unwrap();
-                    }
-                    state.rax = KernelRequestStatus::Success.into();
-                } else {
-                    state.rax = KernelRequestStatus::MalformedData.into();
-                }
-            }
-            KernelRequest::GetMyMessageChannel => {
-                let thread = this.current_thread_mut().unwrap();
-                let phys = thread.message_channel.as_ref() as *const _ as u64
-                    - amd64::paging::PHYS_VIRT_OFFSET;
-                let proc_uuid = thread.proc_uuid;
-                let process = this.processes.get_mut(&proc_uuid).unwrap();
-                process.cr3.map_pages(
-                    phys,
-                    phys,
-                    (size_of::<MessageChannel>() as u64 + 0xFFF) / 0x1000,
-                    PageTableEntry::new()
-                        .with_user(true)
-                        .with_writable(true)
-                        .with_present(true),
-                );
-                state.rax = phys;
-            }
-            KernelRequest::Exit => {
-                trace!(target: "ThreadMessage", "Thread requested to exit");
-                state.rax = KernelRequestStatus::Unimplemented.into();
-            }
-            KernelRequest::SkipMe => {
-                trace!(target: "ThreadMessage", "Thread requested to get skipped");
-                state.rax = KernelRequestStatus::Success.into();
-                drop(this);
-                schedule(state);
-            }
-        }
-    } else {
-        state.rax = KernelRequestStatus::InvalidRequest.into();
-    }
 }
 
 impl Scheduler {
@@ -126,14 +71,6 @@ impl Scheduler {
             PrivilegeLevel::Supervisor,
             schedule,
             true,
-            true,
-        );
-        crate::driver::intrs::idt::set_handler(
-            249,
-            1,
-            PrivilegeLevel::User,
-            syscall_handler,
-            false,
             true,
         );
         crate::driver::acpi::ioapic::wire_legacy_irq(96, false);

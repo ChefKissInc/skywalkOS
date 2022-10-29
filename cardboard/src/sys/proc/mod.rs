@@ -13,6 +13,7 @@ use cardboard_klib::MessageChannel;
 use super::vmm::PageTableLvl4;
 
 pub mod sched;
+pub mod userland;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code)]
@@ -31,7 +32,7 @@ pub struct Thread {
     pub fs_base: usize,
     pub gs_base: usize,
     pub stack: Vec<u8>,
-    pub message_channel: Box<MessageChannel>,
+    pub message_channel: Box<MessageChannel<'static>>,
 }
 
 impl Thread {

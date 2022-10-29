@@ -44,18 +44,21 @@ impl KernelRequestStatus {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 #[repr(C)]
-pub enum MessageChannelEntry {
-    Occupied(uuid::Uuid, u64),
+pub enum MessageChannelEntry<'a> {
+    Occupied {
+        source_process: uuid::Uuid,
+        data: &'a [u8],
+    },
     Unoccupied,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 #[repr(C)]
-pub struct MessageChannel {
-    pub data: [MessageChannelEntry; 64],
+pub struct MessageChannel<'a> {
+    pub data: [MessageChannelEntry<'a>; 64],
 }
 
-impl MessageChannel {
+impl<'a> MessageChannel<'a> {
     #[must_use]
     pub const fn new() -> Self {
         Self {

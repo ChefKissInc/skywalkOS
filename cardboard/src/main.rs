@@ -174,6 +174,7 @@ extern "sysv64" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) ->
         }
         info!("Done with boot DriverCore extensions.");
         info!("Kernel out.");
+        sys::proc::userland::setup();
         sys::proc::sched::Scheduler::start();
 
         loop {
