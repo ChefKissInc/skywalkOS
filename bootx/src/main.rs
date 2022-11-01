@@ -11,8 +11,8 @@
     unused_extern_crates,
     rust_2021_compatibility
 )]
-#![allow(clippy::module_name_repetitions)]
-#![feature(abi_efiapi, allocator_api, asm_const, used_with_arg)]
+#![allow(clippy::module_name_repetitions, clippy::similar_names)]
+#![feature(abi_efiapi, asm_const)]
 
 #[macro_use]
 extern crate alloc;
