@@ -12,6 +12,13 @@ pub struct Framebuffer {
     pub bitmask: crate::pixel::Bitmask,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum FramebufferError {
+    OutOfBounds,
+}
+
+pub type Result<T> = core::result::Result<T, FramebufferError>;
+
 impl Framebuffer {
     /// # Safety
     ///
@@ -44,9 +51,9 @@ impl Framebuffer {
     ///
     /// This operation errors when X and Y coordinates are outside the screen boundaries
     #[inline]
-    pub fn plot_pixel(&mut self, x: usize, y: usize, colour: u32) -> Result<(), &'static str> {
+    pub fn plot_pixel(&mut self, x: usize, y: usize, colour: u32) -> Result<()> {
         if x >= self.width || y >= self.height {
-            Err("x and/or y are out of screen bounds")
+            Err(FramebufferError::OutOfBounds)
         } else {
             self.base[x + self.stride * y] = colour;
 

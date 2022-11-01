@@ -13,9 +13,9 @@ impl crate::framebuffer::Framebuffer {
         len: usize,
         horizontal: bool,
         colour: u32,
-    ) -> Result<(), &'static str> {
-        if x + len > self.width || y + len > self.height {
-            Err("x + len and/or y + len are out of screen bounds")
+    ) -> crate::framebuffer::Result<()> {
+        if x + len >= self.width || y + len >= self.height {
+            Err(crate::framebuffer::FramebufferError::OutOfBounds)
         } else {
             if horizontal {
                 for i in 0..len {
