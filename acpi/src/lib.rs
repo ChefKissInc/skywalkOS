@@ -10,6 +10,6 @@
     unused_extern_crates,
     rust_2021_compatibility
 )]
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::module_name_repetitions, clippy::similar_names)]
 
 pub mod tables;

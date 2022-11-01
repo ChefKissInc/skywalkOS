@@ -13,7 +13,8 @@
 #![allow(
     clippy::cast_possible_truncation,
     clippy::too_many_lines,
-    clippy::module_name_repetitions
+    clippy::module_name_repetitions,
+    clippy::similar_names
 )]
 
 pub mod cpuid;

@@ -26,8 +26,6 @@ extern crate alloc;
 #[macro_use]
 extern crate log;
 
-use crate::sys::terminal::Terminal;
-
 mod driver;
 mod sys;
 mod utils;
@@ -46,7 +44,7 @@ fn real_main(boot_info: &sulphur_dioxide::BootInfo) -> ! {
     let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
     state.terminal = boot_info.frame_buffer.map(|fb_info| {
         debug!("Got boot display: {:X?}", fb_info);
-        let mut terminal = Terminal::new(unsafe {
+        let mut terminal = crate::sys::terminal:: Terminal::new(unsafe {
             paper_fb::framebuffer::Framebuffer::new(
                 fb_info.base,
                 fb_info.resolution.width,
