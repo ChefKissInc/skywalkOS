@@ -42,3 +42,11 @@ impl log::Log for CardboardLogger {
 }
 
 pub static LOGGER: CardboardLogger = CardboardLogger;
+
+pub fn init() {
+    crate::sys::io::serial::SERIAL.lock().init();
+
+    log::set_logger(&LOGGER)
+        .map(|()| log::set_max_level(log::LevelFilter::Trace))
+        .unwrap();
+}

@@ -5,7 +5,7 @@ use cardboard_klib::{KernelRequest, KernelRequestStatus, MessageChannel};
 
 use crate::sys::{gdt::PrivilegeLevel, RegisterState};
 
-unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
+unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
     let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
     let mut scheduler = sys_state.scheduler.get_mut().unwrap().lock();
 

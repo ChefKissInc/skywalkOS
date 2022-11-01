@@ -45,7 +45,7 @@ pub static IDTR: IDTReg = IDTReg {
     base: unsafe { (*ENTRIES.get()).as_ptr() },
 };
 
-type HandlerFn = unsafe extern "sysv64" fn(&mut RegisterState);
+type HandlerFn = unsafe extern "C" fn(&mut RegisterState);
 
 pub struct InterruptHandler {
     pub func: HandlerFn,
@@ -63,7 +63,7 @@ impl core::fmt::Debug for InterruptHandler {
     }
 }
 
-unsafe extern "sysv64" fn default_handler(regs: &mut RegisterState) {
+unsafe extern "C" fn default_handler(regs: &mut RegisterState) {
     let n = (regs.int_num & 0xFF) as u8;
     debug!("No handler for ISR #{}", n);
 }

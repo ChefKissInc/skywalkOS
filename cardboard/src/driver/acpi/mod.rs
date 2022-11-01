@@ -42,3 +42,25 @@ impl ACPIPlatform {
             .map(|&v| unsafe { (v as *const SDTHeader).cast::<T>().as_ref().unwrap() })
     }
 }
+
+pub fn get_hpet(
+    state: &mut crate::sys::state::SystemState,
+) -> super::timer::hpet::HighPrecisionEventTimer {
+    let acpi = state.acpi.get_mut().unwrap();
+    let pml4 = state.pml4.get_mut().unwrap();
+
+    acpi.find("HPET")
+        .map(|v| unsafe {
+            let addr = v as *const _ as u64;
+            pml4.map_mmio(
+                addr,
+                addr - amd64::paging::PHYS_VIRT_OFFSET,
+                1,
+                amd64::paging::PageTableEntry::new()
+                    .with_present(true)
+                    .with_writable(true),
+            );
+            super::timer::hpet::HighPrecisionEventTimer::new(v)
+        })
+        .unwrap()
+}

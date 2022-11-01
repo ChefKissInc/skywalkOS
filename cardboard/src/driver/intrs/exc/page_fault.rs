@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-pub unsafe extern "sysv64" fn handler(regs: &mut crate::sys::RegisterState) {
+pub unsafe extern "C" fn handler(regs: &mut crate::sys::RegisterState) {
     let mut cr2: u64;
     core::arch::asm!("mov {}, cr2", out(reg) cr2, options(nomem, nostack, preserves_flags));
 

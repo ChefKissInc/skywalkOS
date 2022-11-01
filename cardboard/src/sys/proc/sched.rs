@@ -18,7 +18,7 @@ pub struct Scheduler {
     pub kern_stack: Vec<u8>,
 }
 
-pub unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
+pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
     let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
     let mut this = sys_state.scheduler.get_mut().unwrap().lock();
 
@@ -83,7 +83,8 @@ impl Scheduler {
         }
     }
 
-    pub fn start() {
+    pub fn unmask() {
+        crate::sti!();
         let state = unsafe { crate::sys::state::SYS_STATE.get().as_ref().unwrap() };
         let lapic = state.lapic.get().unwrap();
         lapic.write_timer(lapic.read_timer().with_mask(false));

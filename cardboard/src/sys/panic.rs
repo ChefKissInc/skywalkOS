@@ -52,8 +52,8 @@ extern "C" fn callback(
 
 #[panic_handler]
 pub fn panic(info: &core::panic::PanicInfo) -> ! {
+    crate::cli!();
     unsafe {
-        core::arch::asm!("cli");
         while super::io::serial::SERIAL.is_locked() {
             super::io::serial::SERIAL.force_unlock();
         }
@@ -63,9 +63,7 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
     if state.in_panic {
         error!("Panicked while panicking!");
 
-        loop {
-            unsafe { core::arch::asm!("hlt") }
-        }
+        crate::hlt_loop!();
     }
     state.in_panic = true;
 
@@ -126,7 +124,5 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
         }
     }
 
-    loop {
-        unsafe { core::arch::asm!("hlt") }
-    }
+    crate::hlt_loop!();
 }

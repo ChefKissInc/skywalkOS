@@ -231,10 +231,22 @@ impl LocalAPIC {
     }
 }
 
-#[inline]
-pub fn get_set_lapic_addr() -> u64 {
-    let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+pub fn setup(state: &mut crate::sys::state::SystemState) {
     let addr = state.madt.get().unwrap().lapic_addr;
     unsafe { APICBase::read().with_apic_base(addr).write() }
-    addr
+    let pml4 = state.pml4.get_mut().unwrap();
+
+    let virt_addr = addr + amd64::paging::PHYS_VIRT_OFFSET;
+    unsafe {
+        pml4.map_mmio(
+            virt_addr,
+            addr,
+            1,
+            amd64::paging::PageTableEntry::new()
+                .with_present(true)
+                .with_writable(true),
+        );
+    }
+    debug!("LAPIC address is {addr:#X?}");
+    state.lapic.call_once(|| LocalAPIC::new(virt_addr)).enable();
 }

@@ -154,4 +154,10 @@ impl BitmapAllocator {
 
         self.free_pages += count;
     }
+
+    pub fn print_usage(&self) {
+        let used = { (self.total_pages - self.free_pages) * 4096 / 1024 / 1024 };
+        let total = self.total_pages * 4096 / 1024 / 1024;
+        info!("{}MiB used out of {}MiB.", used, total);
+    }
 }

@@ -57,9 +57,7 @@ unsafe extern "C" fn isr_handler(regs: &mut crate::sys::RegisterState) {
         state.lapic.get_mut().unwrap().send_eoi();
     }
     if !handler.should_iret && !handler.is_irq {
-        loop {
-            core::arch::asm!("hlt");
-        }
+        crate::hlt_loop!();
     }
 }
 
