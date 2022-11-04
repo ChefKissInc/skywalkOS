@@ -64,7 +64,7 @@ pub enum KernelRequest<'a> {
     Print(&'a [u8]),
     GetMyMessageChannel,
     Exit,
-    SkipMe,
+    ScheduleNext,
 }
 
 impl<'a> KernelRequest<'a> {

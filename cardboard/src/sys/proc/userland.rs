@@ -47,7 +47,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 trace!(target: "ThreadMessage", "Thread requested to exit");
                 state.rax = KernelRequestStatus::Unimplemented.into();
             }
-            KernelRequest::SkipMe => {
+            KernelRequest::ScheduleNext => {
                 trace!(target: "ThreadMessage", "Thread requested to get skipped");
                 state.rax = KernelRequestStatus::Success.into();
                 drop(scheduler);
