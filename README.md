@@ -1,4 +1,4 @@
-# BridgeCore [![Run lints](https://github.com/BridgeCore-OS/BridgeCore/actions/workflows/main.yml/badge.svg)](https://github.com/BridgeCore-OS/BridgeCore/actions/workflows/main.yml)
+# BridgeCore ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/BridgeCore-OS/BridgeCore/Run%20cargo%20clippy%20and%20cargo%20test)
 
 The BridgeCore Operating System.
 
