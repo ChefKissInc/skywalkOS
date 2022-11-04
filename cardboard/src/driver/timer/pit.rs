@@ -83,7 +83,7 @@ impl ProgrammableIntervalTimer {
     }
 
     pub fn set_reload(self, val: u16) {
-        let lo = (val & 0xFF) as u8;
+        let lo = val as u8;
         let hi = (val >> 8) as u8;
 
         unsafe {

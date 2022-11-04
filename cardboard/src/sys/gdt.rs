@@ -44,7 +44,7 @@ impl GDTData {
 pub static GDT: SyncUnsafeCell<GDTData> = SyncUnsafeCell::new(GDTData::new());
 
 pub static GDTR: GDTReg = GDTReg {
-    limit: (((core::mem::size_of_val(&GDT) as u64) - 1) & 0xFFFF) as u16,
+    limit: (core::mem::size_of_val(&GDT) - 1) as u16,
     addr: GDT.get(),
 };
 

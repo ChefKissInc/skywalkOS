@@ -14,17 +14,17 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
             .get_mut()
             .unwrap()
             .lock()
-            .alloc(((layout.size() + 0xFFF) / 0x1000).try_into().unwrap())
+            .alloc(((layout.size() + 0xFFF) / 0x1000) as _)
             .map_or(core::ptr::null_mut(), |ptr| {
-                ptr.add(amd64::paging::PHYS_VIRT_OFFSET.try_into().unwrap())
+                ptr.add(amd64::paging::PHYS_VIRT_OFFSET as _)
             })
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
         let state = super::state::SYS_STATE.get().as_mut().unwrap();
         state.pmm.get_mut().unwrap().lock().free(
-            ptr.sub(amd64::paging::PHYS_VIRT_OFFSET.try_into().unwrap()),
-            ((layout.size() + 0xFFF) / 0x1000).try_into().unwrap(),
+            ptr.sub(amd64::paging::PHYS_VIRT_OFFSET as _),
+            ((layout.size() + 0xFFF) / 0x1000) as _,
         );
     }
 }

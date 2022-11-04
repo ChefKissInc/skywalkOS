@@ -109,7 +109,7 @@ impl IOAPIC {
     pub fn write_redir(&self, num: u32, redir: IOAPICRedir) {
         let reg = IOAPICReg::IORedirTable as u32 + num * 2;
         let val = u64::from(redir);
-        self.write(reg, (val & 0xFFFF_FFFF) as u32);
+        self.write(reg, val as u32);
         self.write(reg + 1, (val >> 32) as u32);
     }
 }

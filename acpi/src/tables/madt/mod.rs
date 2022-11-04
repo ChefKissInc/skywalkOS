@@ -92,7 +92,6 @@ impl MADT {
     }
 
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
     pub fn into_iter(&self) -> MADTIter {
         MADTIter {
             ptr: unsafe { (self as *const Self).cast::<u8>().add(size_of::<Self>()) },

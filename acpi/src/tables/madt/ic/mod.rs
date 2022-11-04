@@ -41,7 +41,6 @@ pub struct ICHeader {
 
 impl ICHeader {
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
     pub fn length(&self) -> usize {
         self.length.into()
     }

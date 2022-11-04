@@ -48,9 +48,9 @@ pub fn parse_elf(
             "Only higher-half kernels."
         );
 
-        let offset: usize = phdr.p_offset.try_into().unwrap();
-        let memsz: usize = phdr.p_memsz.try_into().unwrap();
-        let file_size: usize = phdr.p_filesz.try_into().unwrap();
+        let offset = phdr.p_offset as usize;
+        let memsz = phdr.p_memsz as usize;
+        let file_size = phdr.p_filesz as usize;
         let src = &buffer[offset..(offset + file_size)];
         let dest = unsafe {
             core::slice::from_raw_parts_mut(
@@ -70,9 +70,7 @@ pub fn parse_elf(
                 .boot_services()
                 .allocate_pages(
                     uefi::table::boot::AllocateType::Address(
-                        (phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET)
-                            .try_into()
-                            .unwrap(),
+                        (phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET) as _,
                     ),
                     uefi::table::boot::MemoryType::LOADER_DATA,
                     npages,

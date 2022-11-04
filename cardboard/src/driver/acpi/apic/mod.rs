@@ -1,6 +1,5 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
-#![allow(clippy::cast_possible_truncation)]
 
 use amd64::registers::msr::{apic::APICBase, ModelSpecificReg};
 use modular_bitfield::prelude::*;
@@ -190,7 +189,7 @@ impl LocalAPIC {
     #[inline]
     pub fn write_icr(&self, val: InterruptCommand) {
         let val: u64 = val.into();
-        let a = (val & 0xFFFF_FFFF) as u32;
+        let a = val as u32;
         let b = (val >> 32) as u32;
         self.write_reg(LocalAPICReg::InterruptCommand2, b);
         self.write_reg(LocalAPICReg::InterruptCommand, a);

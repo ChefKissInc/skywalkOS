@@ -1,6 +1,5 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
-#![allow(clippy::cast_possible_truncation)]
 
 use core::cell::SyncUnsafeCell;
 
@@ -41,7 +40,7 @@ seq_macro::seq!(N in 0..256 {
 });
 
 pub static IDTR: IDTReg = IDTReg {
-    limit: (((core::mem::size_of_val(&ENTRIES) - 1) as u64) & 0xFFFF) as u16,
+    limit: (core::mem::size_of_val(&ENTRIES) - 1) as u16,
     base: unsafe { (*ENTRIES.get()).as_ptr() },
 };
 
@@ -64,7 +63,7 @@ impl core::fmt::Debug for InterruptHandler {
 }
 
 unsafe extern "C" fn default_handler(regs: &mut RegisterState) {
-    let n = (regs.int_num & 0xFF) as u8;
+    let n = regs.int_num as u8;
     debug!("No handler for ISR #{}", n);
 }
 
@@ -137,8 +136,8 @@ impl IDTReg {
         seq_macro::seq!(N in 0..256 {
             let base = isr::isr~N as usize as u64;
             let entry = &mut (*ENTRIES.get())[N];
-            entry.offset_low = (base & 0xFFFF) as u16;
-            entry.offset_middle = ((base >> 16) & 0xFFFF) as u16;
+            entry.offset_low = base as u16;
+            entry.offset_middle = (base >> 16) as u16;
             entry.offset_high = (base >> 32) as u32;
         });
 

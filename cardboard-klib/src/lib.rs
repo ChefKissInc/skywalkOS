@@ -1,13 +1,5 @@
 #![no_std]
-#![deny(
-    warnings,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::cargo,
-    unused_extern_crates,
-    rust_2021_compatibility
-)]
-#![allow(clippy::module_name_repetitions, clippy::similar_names)]
+#![deny(warnings, clippy::cargo, unused_extern_crates)]
 
 use num_enum::{FromPrimitive, IntoPrimitive};
 
@@ -29,7 +21,6 @@ impl KernelRequestStatus {
     /// # Panics
     ///
     /// Panics if self not Success
-    #[allow(clippy::must_use_candidate)]
     pub fn unwrap(self) -> u64 {
         match self {
             Self::Success => 0,

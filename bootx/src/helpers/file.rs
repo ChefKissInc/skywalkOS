@@ -41,9 +41,7 @@ pub fn load(
         0;
         file.get_boxed_info::<FileInfo>()
             .unwrap_or_else(|_| panic!("Failed to get {} file info", path))
-            .file_size()
-            .try_into()
-            .unwrap()
+            .file_size() as _
     ];
 
     file.read(&mut buffer)

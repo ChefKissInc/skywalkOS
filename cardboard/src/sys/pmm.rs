@@ -55,7 +55,7 @@ impl BitmapAllocator {
                     bitmap = unsafe {
                         core::slice::from_raw_parts_mut(
                             (v.base + amd64::paging::PHYS_VIRT_OFFSET) as *mut _,
-                            bitmap_sz.try_into().unwrap(),
+                            bitmap_sz as _,
                         )
                     };
                     bitmap.fill(!0u64);

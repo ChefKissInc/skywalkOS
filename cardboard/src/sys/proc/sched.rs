@@ -48,10 +48,10 @@ impl Scheduler {
             (*TSS.get()) =
                 TaskSegmentSelector::new(kern_stack.as_ptr() as u64 + kern_stack.len() as u64);
             let tss_addr = TSS.get() as u64;
-            gdt.task_segment.base_low = (tss_addr & 0xFFFF) as u16;
-            gdt.task_segment.base_middle = ((tss_addr >> 16) & 0xFF) as u8;
+            gdt.task_segment.base_low = tss_addr as u16;
+            gdt.task_segment.base_middle = (tss_addr >> 16) as u8;
             gdt.task_segment.attrs.set_present(true);
-            gdt.task_segment.base_high = ((tss_addr >> 24) & 0xFF) as u8;
+            gdt.task_segment.base_high = (tss_addr >> 24) as u8;
             gdt.task_segment.base_upper = (tss_addr >> 32) as u32;
 
             core::arch::asm!(
@@ -102,13 +102,13 @@ impl Scheduler {
             .iter()
             .filter(|v| v.p_type == goblin::elf::program_header::PT_LOAD)
         {
-            let max_vaddr = (hdr.p_vaddr + hdr.p_memsz).try_into().unwrap();
+            let max_vaddr = (hdr.p_vaddr + hdr.p_memsz) as _;
             if data.len() < max_vaddr {
                 data.resize(max_vaddr, 0u8);
             }
-            let fsz: usize = hdr.p_filesz.try_into().unwrap();
-            let foff: usize = hdr.p_offset.try_into().unwrap();
-            let ext_vaddr: usize = hdr.p_vaddr.try_into().unwrap();
+            let fsz = hdr.p_filesz as usize;
+            let foff = hdr.p_offset as usize;
+            let ext_vaddr = hdr.p_vaddr as usize;
             data[ext_vaddr..ext_vaddr + fsz].copy_from_slice(&exec_data[foff..foff + fsz]);
         }
 
@@ -123,7 +123,6 @@ impl Scheduler {
             let target = reloc.r_addend.map_or_else(
                 || phys_addr + *ptr,
                 |addend| {
-                    #[allow(clippy::cast_sign_loss)]
                     if addend.is_negative() {
                         phys_addr - addend.wrapping_abs() as u64
                     } else {

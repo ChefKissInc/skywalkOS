@@ -28,7 +28,6 @@ pub struct BootInfo {
 
 impl BootInfo {
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
     pub fn new(
         kern_symbols: &'static [kern_sym::KernSymbol],
         settings: boot_attrs::BootSettings,

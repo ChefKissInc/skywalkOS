@@ -47,8 +47,7 @@ impl PML4Trait for PageTableLvl4 {
 
     #[inline]
     fn get_entry(&mut self, offset: u64) -> &mut amd64::paging::PageTableEntry {
-        let offset: usize = offset.try_into().unwrap();
-        &mut self.0.entries[offset]
+        &mut self.0.entries[offset as usize]
     }
 
     #[inline]
