@@ -3,15 +3,7 @@
 
 #![no_std]
 #![no_main]
-#![deny(
-    warnings,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::cargo,
-    unused_extern_crates,
-    rust_2021_compatibility
-)]
-#![allow(clippy::module_name_repetitions, clippy::similar_names)]
+#![deny(warnings, clippy::cargo, unused_extern_crates)]
 #![feature(
     asm_const,
     alloc_error_handler,

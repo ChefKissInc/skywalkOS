@@ -1,14 +1,14 @@
 [package]
-name = "cardboard-klib"
-version = "0.1.0"
 edition = "2021"
+name = "cardboard-klib"
 publish = false
+version = "0.1.0"
 
 [dependencies]
-num_enum = { version = "0.5.7", default-features = false, features = [
-    "nightly",
-] }
 getrandom = { version = "0.2.8", default-features = false, features = [
     "rdrand",
+] }
+num_enum = { version = "0.5.7", default-features = false, features = [
+    "nightly",
 ] }
 uuid = { version = "1.2.1", default-features = false, features = ["v4"] }

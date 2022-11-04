@@ -1,49 +1,49 @@
 [package]
-name = "cardboard"
-version = "0.1.0"
 edition = "2021"
+name = "cardboard"
 publish = false
+version = "0.1.0"
 
 [dependencies]
 acpi = { path = "../acpi" }
 amd64 = { path = "../amd64" }
+cardboard-klib = { path = "../cardboard-klib" }
 font8x8 = { version = "0.3.1", default-features = false }
-hashbrown = { version = "0.12.3", features = ["nightly"] }
-sulphur-dioxide = { path = "../sulphur-dioxide" }
-log = { version = "0.4.17", default-features = false, features = [
-    "release_max_level_debug",
-    "max_level_trace",
+getrandom = { version = "0.2.8", default-features = false, features = [
+    "rdrand",
 ] }
 goblin = { version = "0.6.0", default-features = false, features = [
     "elf32",
     "elf64",
     "endian_fd",
 ] }
-rustc-demangle = "0.1.21"
+hashbrown = { version = "0.12.3", features = ["nightly"] }
+log = { version = "0.4.17", default-features = false, features = [
+    "max_level_trace",
+    "release_max_level_debug",
+] }
 modular-bitfield = { version = "0.11.2", git = "https://github.com/ChefKissInc/modular-bitfield" }
 num_enum = { version = "0.5.7", default-features = false, features = [
     "nightly",
 ] }
+paper-fb = { path = "../paper-fb" }
+rustc-demangle = "0.1.21"
 seq-macro = "0.3.1"
 spin = { version = "0.9.4", default-features = false, features = [
+    "barrier",
     "lock_api",
     "mutex",
+    "once",
+    "rwlock",
     "ticket_mutex",
     "use_ticket_mutex",
-    "rwlock",
-    "once",
-    "barrier",
 ] }
+sulphur-dioxide = { path = "../sulphur-dioxide" }
 unwinding = { version = "0.1.5", default-features = false, features = [
-    "unwinder",
     "fde-static",
-    "personality",
-    "panic",
     "hide-trace",
+    "panic",
+    "personality",
+    "unwinder",
 ] }
-paper-fb = { path = "../paper-fb" }
 uuid = { version = "1.2.1", default-features = false, features = ["v4"] }
-getrandom = { version = "0.2.8", default-features = false, features = [
-    "rdrand",
-] }
-cardboard-klib = { path = "../cardboard-klib" }

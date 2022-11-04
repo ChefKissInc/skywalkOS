@@ -2,15 +2,7 @@
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 #![no_std]
-#![deny(
-    warnings,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::cargo,
-    unused_extern_crates,
-    rust_2021_compatibility
-)]
-#![allow(clippy::module_name_repetitions, clippy::similar_names)]
+#![deny(warnings, clippy::cargo, unused_extern_crates)]
 
 pub mod boot_attrs;
 pub mod fb;

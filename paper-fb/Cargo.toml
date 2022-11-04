@@ -1,8 +1,8 @@
 [package]
-name = "paper-fb"
 description = "The BridgeCore frame-buffer implementation"
-version = "0.1.0"
 edition = "2021"
+name = "paper-fb"
 publish = false
+version = "0.1.0"
 
 [dependencies]

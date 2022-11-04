@@ -1,9 +1,9 @@
 [package]
-name = "sulphur-dioxide"
 description = "The BridgeCore boot protocol"
-version = "0.1.0"
 edition = "2021"
+name = "sulphur-dioxide"
 publish = false
+version = "0.1.0"
 
 [dependencies]
 acpi = { path = "../acpi" }

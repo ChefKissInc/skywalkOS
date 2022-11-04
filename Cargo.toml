@@ -4,9 +4,9 @@ members = [
     "amd64",
     "bootx",
     "cardboard",
+    "cardboard-klib",
     "paper-fb",
     "sulphur-dioxide",
-    "cardboard-klib",
 ]
 resolver = "2"
 
