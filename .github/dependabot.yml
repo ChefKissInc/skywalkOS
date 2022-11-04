@@ -1,0 +1,64 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    labels:
+      - "Enhancement"
+    schedule:
+      interval: "daily"
+      
+  - package-ecosystem: "cargo"
+    directory: "/acpi"
+    labels:
+      - "Enhancement"
+      - "Project:acpi"
+    schedule:
+      interval: "daily"
+ 
+  - package-ecosystem: "cargo"
+    directory: "/amd64"
+    labels:
+      - "Enhancement"
+      - "Project:amd64"
+    schedule:
+      interval: "daily"
+      
+  - package-ecosystem: "cargo"
+    directory: "/bootx"
+    labels:
+      - "Enhancement"
+      - "Project:bootx"
+    schedule:
+      interval: "daily"
+      
+  - package-ecosystem: "cargo"
+    directory: "/cardboard"
+    labels:
+      - "Enhancement"
+      - "Project:cardboard"
+    schedule:
+      interval: "daily"
+      
+  - package-ecosystem: "cargo"
+    directory: "/cardboard-klib"
+    labels:
+      - "Enhancement"
+      - "Project:cardboard"
+    schedule:
+      interval: "daily"
+      
+  - package-ecosystem: "cargo"
+    directory: "/paper-fb"
+    labels:
+      - "Enhancement"
+      - "Project:paper-fb"
+    schedule:
+      interval: "daily"
+      
+  - package-ecosystem: "cargo"
+    directory: "/sulphur-dioxide"
+    labels:
+      - "Enhancement"
+      - "Project:sulphur-dioxide"
+    schedule:
+      interval: "daily"
