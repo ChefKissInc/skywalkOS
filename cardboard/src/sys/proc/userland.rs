@@ -26,7 +26,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                     state.rax = KernelRequestStatus::MalformedData.into();
                 }
             }
-            KernelRequest::GetMyMessageChannel => {
+            KernelRequest::AcquireMsgChannelRef => {
                 let thread = scheduler.current_thread_mut().unwrap();
                 let phys = thread.message_channel.as_ref() as *const _ as u64
                     - amd64::paging::PHYS_VIRT_OFFSET;

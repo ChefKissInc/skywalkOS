@@ -62,7 +62,7 @@ impl<'a> MessageChannel<'a> {
 #[repr(C)]
 pub enum KernelRequest<'a> {
     Print(&'a [u8]),
-    GetMyMessageChannel,
+    AcquireMsgChannelRef,
     Exit,
     ScheduleNext,
 }
