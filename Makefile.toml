@@ -1,0 +1,65 @@
+[tasks.clippy]
+command = "cargo"
+args = [
+    "clippy",
+    "-Zbuild-std=core,compiler_builtins,alloc",
+    "-Zbuild-std-features=compiler-builtins-mem",
+    "--target",
+    "x86_64-unknown-uefi",
+]
+
+[tasks.build-bootx]
+command = "cargo"
+args = [
+    "build",
+    "-Zbuild-std=core,compiler_builtins,alloc",
+    "-Zbuild-std-features=compiler-builtins-mem",
+    "--bin",
+    "bootx64",
+    "--target",
+    "x86_64-unknown-uefi",
+    "--out-dir",
+    "Drive/EFI/BOOT/",
+    "--release",
+]
+
+[tasks.build-kernel]
+command = "cargo"
+args = [
+    "build",
+    "-Zbuild-std=core,compiler_builtins,alloc",
+    "-Zbuild-std-features=compiler-builtins-mem",
+    "--bin",
+    "cardboard",
+    "--target",
+    "x86_64-bridgecore-kernel.json",
+    "--out-dir",
+    "Drive/System/",
+    "--release",
+]
+
+[tasks.make]
+dependencies = ["clippy", "build-bootx", "build-kernel"]
+
+[tasks.run]
+command = "qemu-system-x86_64"
+args = [
+    "-M",
+    "q35",
+    "-cpu",
+    "max",
+    "-m",
+    "1G",
+    "-drive",
+    "if=pflash,format=raw,readonly=on,unit=0,file=${@}/OVMF_CODE.fd",
+    "-drive",
+    "if=pflash,format=raw,unit=1,file=${@}/OVMF_VARS.fd",
+    "-hda",
+    "fat:rw:Drive",
+    "-serial",
+    "stdio",
+]
+dependencies = ["make"]
+
+[config]
+default_to_workspace = false
