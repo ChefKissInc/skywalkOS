@@ -9,6 +9,7 @@ pub trait PML4: Sized {
     fn alloc_entry() -> u64;
 
     /// # Safety
+    ///
     /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn set(&mut self) {
@@ -16,6 +17,7 @@ pub trait PML4: Sized {
     }
 
     /// # Safety
+    ///
     /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     #[must_use]
@@ -26,6 +28,7 @@ pub trait PML4: Sized {
     }
 
     /// # Safety
+    ///
     /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     #[must_use]
@@ -46,6 +49,7 @@ pub trait PML4: Sized {
     }
 
     /// # Safety
+    ///
     /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn get_or_null_entry(&mut self, offset: u64) -> Option<&mut Self> {
@@ -63,6 +67,7 @@ pub trait PML4: Sized {
     }
 
     /// # Safety
+    ///
     /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn virt_to_phys(&mut self, virt: u64) -> Option<u64> {
@@ -84,6 +89,7 @@ pub trait PML4: Sized {
     }
 
     /// # Safety
+    ///
     /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn map_pages(&mut self, virt: u64, phys: u64, count: u64, flags: super::PageTableEntry) {
@@ -101,6 +107,7 @@ pub trait PML4: Sized {
     }
 
     /// # Safety
+    ///
     /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn map_huge_pages(
@@ -124,6 +131,7 @@ pub trait PML4: Sized {
     }
 
     /// # Safety
+    ///
     /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn map_higher_half(&mut self) {

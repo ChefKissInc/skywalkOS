@@ -10,6 +10,7 @@ pub trait ModelSpecificReg: Sized {
     const MSR_NUM: u32;
 
     /// # Safety
+    ///
     /// The caller must ensure that this operation has no unsafe side effects.
     #[must_use]
     unsafe fn read() -> Self
@@ -22,6 +23,7 @@ pub trait ModelSpecificReg: Sized {
     }
 
     /// # Safety
+    ///
     /// The caller must ensure that this operation has no unsafe side effects.
     unsafe fn write(self)
     where
