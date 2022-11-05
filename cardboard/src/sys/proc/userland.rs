@@ -1,7 +1,10 @@
 use core::{fmt::Write, mem::size_of};
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
-use cardboard_klib::{KernelRequest, KernelRequestStatus, MessageChannel};
+use cardboard_klib::{
+    request::{KernelRequest, KernelRequestStatus},
+    MessageChannel,
+};
 
 use crate::sys::{gdt::PrivilegeLevel, RegisterState};
 
