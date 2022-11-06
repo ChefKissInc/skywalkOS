@@ -31,7 +31,7 @@ fn real_main(boot_info: &sulphur_dioxide::BootInfo) -> ! {
     utils::logger::init();
     assert_eq!(boot_info.revision, sulphur_dioxide::CURRENT_REVISION);
     utils::init_core(boot_info);
-    info!("Copyright ChefKiss Inc 2021-2022.");
+    debug!("Copyright ChefKiss Inc 2021-2022.");
 
     let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
     state.terminal = boot_info.frame_buffer.map(|fb_info| {
@@ -63,16 +63,14 @@ fn real_main(boot_info: &sulphur_dioxide::BootInfo) -> ! {
     let sched = state
         .scheduler
         .call_once(|| spin::Mutex::new(sys::proc::sched::Scheduler::new(&hpet)));
-    info!("Starting boot DriverCore extensions");
     for module in state.modules.as_ref().unwrap() {
         if module.name.starts_with("com.ChefKissInc.DriverCore.") {
-            info!("    Spawning boot DriverCore extension {:#X?}", module.name);
+            debug!("Spawning boot DriverCore extension {:#X?}", module.name);
             sched.lock().spawn_proc(module.data);
         }
     }
-    info!("Done with boot DriverCore extensions.");
-    state.pmm.get().unwrap().lock().print_usage();
-    info!("Kernel out.");
+
+    debug!("Kernel out.");
     sys::proc::userland::setup();
     sys::proc::sched::Scheduler::unmask();
 

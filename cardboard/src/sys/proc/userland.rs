@@ -56,7 +56,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 super::sched::schedule(state);
             }
             KernelRequest::SendMessage(target, data) => {
-                info!(target: "ThreadMessage", "Thread requested to send message to {target}");
+                trace!(target: "ThreadMessage", "Thread requested to send message to {target}");
                 let proc_uuid = scheduler.current_thread_mut().unwrap().proc_uuid;
                 let process = scheduler.processes.get_mut(&proc_uuid).unwrap();
                 for ent in &mut process.message_channel.data {
