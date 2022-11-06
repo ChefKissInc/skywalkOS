@@ -5,12 +5,22 @@ pub mod request;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 #[repr(C)]
+pub struct Message<'a> {
+    pub proc_uuid: uuid::Uuid,
+    pub data: &'a [u8],
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+#[repr(C)]
 pub enum MessageChannelEntry<'a> {
-    Occupied {
-        source_process: uuid::Uuid,
-        data: &'a [u8],
-    },
+    Occupied(Message<'a>),
     Unoccupied,
+}
+
+impl<'a> MessageChannelEntry<'a> {
+    pub fn is_unoccupied(&self) -> bool {
+        matches!(self, MessageChannelEntry::Unoccupied)
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
@@ -25,5 +35,16 @@ impl<'a> MessageChannel<'a> {
         Self {
             data: [MessageChannelEntry::Unoccupied; 64],
         }
+    }
+
+    pub fn try_recv(&mut self) -> Option<Message<'a>> {
+        for data in &mut self.data {
+            if let MessageChannelEntry::Occupied(msg) = data {
+                let val = Some(*msg);
+                *data = MessageChannelEntry::Unoccupied;
+                return val;
+            }
+        }
+        None
     }
 }

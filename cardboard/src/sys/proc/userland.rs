@@ -3,7 +3,7 @@ use core::{fmt::Write, mem::size_of};
 use amd64::paging::{pml4::PML4, PageTableEntry};
 use cardboard_klib::{
     request::{KernelRequest, KernelRequestStatus},
-    MessageChannel,
+    Message, MessageChannel, MessageChannelEntry,
 };
 
 use crate::sys::{gdt::PrivilegeLevel, RegisterState};
@@ -30,11 +30,10 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 }
             }
             KernelRequest::AcquireMsgChannelRef => {
-                let thread = scheduler.current_thread_mut().unwrap();
-                let phys = thread.message_channel.as_ref() as *const _ as u64
-                    - amd64::paging::PHYS_VIRT_OFFSET;
-                let proc_uuid = thread.proc_uuid;
+                let proc_uuid = scheduler.current_thread_mut().unwrap().proc_uuid;
                 let process = scheduler.processes.get_mut(&proc_uuid).unwrap();
+                let phys = process.message_channel.as_ref() as *const _ as u64
+                    - amd64::paging::PHYS_VIRT_OFFSET;
                 process.cr3.map_pages(
                     phys,
                     phys,
@@ -55,6 +54,18 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 state.rax = KernelRequestStatus::Success.into();
                 drop(scheduler);
                 super::sched::schedule(state);
+            }
+            KernelRequest::SendMessage(target, data) => {
+                info!(target: "ThreadMessage", "Thread requested to send message to {target}");
+                let proc_uuid = scheduler.current_thread_mut().unwrap().proc_uuid;
+                let process = scheduler.processes.get_mut(&proc_uuid).unwrap();
+                for ent in &mut process.message_channel.data {
+                    if ent.is_unoccupied() {
+                        *ent = MessageChannelEntry::Occupied(Message { proc_uuid, data });
+                        state.rax = KernelRequestStatus::Success.into();
+                        break;
+                    }
+                }
             }
         }
     } else {

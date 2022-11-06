@@ -32,7 +32,6 @@ pub struct Thread {
     pub fs_base: usize,
     pub gs_base: usize,
     pub stack: Vec<u8>,
-    pub message_channel: Box<MessageChannel<'static>>,
 }
 
 impl Thread {
@@ -58,7 +57,6 @@ impl Thread {
             fs_base: 0,
             gs_base: 0,
             stack,
-            message_channel: Box::new(MessageChannel::new()),
         }
     }
 }
@@ -68,6 +66,7 @@ pub struct Process {
     pub path: String,
     pub cwd: String,
     pub cr3: Box<PageTableLvl4>,
+    pub message_channel: Box<MessageChannel<'static>>,
 }
 
 impl Process {
@@ -81,6 +80,7 @@ impl Process {
             path: path.to_string(),
             cwd: cwd.to_string(),
             cr3,
+            message_channel: Box::new(MessageChannel::new()),
         }
     }
 }
