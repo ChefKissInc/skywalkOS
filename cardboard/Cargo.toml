@@ -17,7 +17,7 @@ goblin = { version = "0.6.0", default-features = false, features = [
     "elf64",
     "endian_fd",
 ] }
-hashbrown = { version = "0.12.3", features = ["nightly"] }
+hashbrown = { version = "0.13.1", features = ["nightly"] }
 log = { version = "0.4.17", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",
