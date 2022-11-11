@@ -16,7 +16,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         match v {
             KernelRequest::Print(s) => {
                 if s.as_ptr().is_null() {
-                    error!(target: "ThreadMessage", "Failed to print message: invalid pointer");
+                    error!("Failed to print message: invalid pointer");
                     state.rax = KernelRequestStatus::InvalidRequest.into();
                 } else if let Ok(s) = core::str::from_utf8(s) {
                     let mut serial = crate::sys::io::serial::SERIAL.lock();
@@ -45,27 +45,63 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 );
                 state.rax = phys;
             }
-            KernelRequest::Exit => {
-                trace!(target: "ThreadMessage", "Thread requested to exit");
-                state.rax = KernelRequestStatus::Unimplemented.into();
+            KernelRequest::RefreshMessageChannel => {
+                let proc_uuid = scheduler.current_thread_mut().unwrap().proc_uuid;
+                let process = scheduler.processes.get_mut(&proc_uuid).unwrap();
+                state.rax = KernelRequestStatus::Success.into();
+                if process.message_backlog.is_empty() {
+                    return;
+                }
+                for ent in process
+                    .message_channel
+                    .data
+                    .iter_mut()
+                    .filter(|v| v.is_unoccupied())
+                {
+                    if let Some(v) = process.message_backlog.pop() {
+                        *ent = MessageChannelEntry::Occupied(v);
+                    } else {
+                        break;
+                    }
+                }
             }
-            KernelRequest::ScheduleNext => {
-                trace!(target: "ThreadMessage", "Thread requested to get skipped");
+            KernelRequest::Exit => {
+                let index = scheduler
+                    .threads
+                    .iter()
+                    .position(|v| v.uuid == scheduler.current_thread_uuid.unwrap())
+                    .unwrap_or_default();
+                scheduler.threads.remove(index);
+                scheduler.current_thread_uuid = None;
                 state.rax = KernelRequestStatus::Success.into();
                 drop(scheduler);
                 super::sched::schedule(state);
             }
-            KernelRequest::SendMessage(target, data) => {
-                trace!(target: "ThreadMessage", "Thread requested to send message to {target}");
-                let proc_uuid = scheduler.current_thread_mut().unwrap().proc_uuid;
+            KernelRequest::ScheduleNext => {
+                drop(scheduler);
+                state.rax = KernelRequestStatus::Success.into();
+                super::sched::schedule(state);
+            }
+            KernelRequest::SendMessage(_target, data) => {
+                let src_proc_uuid = scheduler.current_thread_mut().unwrap().proc_uuid;
+                let proc_uuid = scheduler.next_thread_mut().unwrap().proc_uuid;
                 let process = scheduler.processes.get_mut(&proc_uuid).unwrap();
+                let addr = data.as_ptr() as u64;
+                process.cr3.map_pages(
+                    addr,
+                    addr,
+                    (data.len() as u64 + 0xFFF) / 0x1000,
+                    PageTableEntry::new().with_user(true).with_present(true),
+                );
+                state.rax = KernelRequestStatus::Success.into();
+                let msg = Message::new(src_proc_uuid, data);
                 for ent in &mut process.message_channel.data {
                     if ent.is_unoccupied() {
-                        *ent = MessageChannelEntry::Occupied(Message { proc_uuid, data });
-                        state.rax = KernelRequestStatus::Success.into();
-                        break;
+                        *ent = MessageChannelEntry::Occupied(msg);
+                        return;
                     }
                 }
+                process.message_backlog.push(msg);
             }
         }
     } else {

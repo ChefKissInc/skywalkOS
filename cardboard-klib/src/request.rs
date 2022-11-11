@@ -35,6 +35,7 @@ impl KernelRequestStatus {
 pub enum KernelRequest<'a> {
     Print(&'a [u8]),
     AcquireMsgChannelRef,
+    RefreshMessageChannel,
     SendMessage(uuid::Uuid, &'a [u8]),
     Exit,
     ScheduleNext,

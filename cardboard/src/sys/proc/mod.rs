@@ -8,7 +8,7 @@ use alloc::{
 };
 
 use amd64::paging::pml4::PML4;
-use cardboard_klib::MessageChannel;
+use cardboard_klib::{Message, MessageChannel};
 
 use super::vmm::PageTableLvl4;
 
@@ -67,6 +67,7 @@ pub struct Process {
     pub cwd: String,
     pub cr3: Box<PageTableLvl4>,
     pub message_channel: Box<MessageChannel<'static>>,
+    pub message_backlog: Vec<Message<'static>>,
 }
 
 impl Process {
@@ -81,6 +82,7 @@ impl Process {
             cwd: cwd.to_string(),
             cr3,
             message_channel: Box::new(MessageChannel::new()),
+            message_backlog: Vec::new(),
         }
     }
 }

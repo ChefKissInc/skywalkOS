@@ -45,13 +45,21 @@ impl<'a> MessageChannel<'a> {
     }
 
     pub fn try_recv(&mut self) -> Option<Message<'a>> {
-        for data in &mut self.data {
-            if let MessageChannelEntry::Occupied(msg) = data {
-                let val = Some(*msg);
-                *data = MessageChannelEntry::Unoccupied;
-                return val;
-            }
+        if self.data.iter().all(|v| v.is_unoccupied()) {
+            unsafe {
+                request::KernelRequest::RefreshMessageChannel
+                    .send()
+                    .unwrap()
+            };
         }
-        None
+        self.data.iter_mut().find_map(|v| {
+            if let MessageChannelEntry::Occupied(msg) = v {
+                let val = Some(*msg);
+                *v = MessageChannelEntry::Unoccupied;
+                val
+            } else {
+                None
+            }
+        })
     }
 }
