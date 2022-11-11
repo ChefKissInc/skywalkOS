@@ -96,16 +96,18 @@ impl Scheduler {
         assert!(exec.is_64);
         assert_ne!(exec.entry, 0);
 
-        let mut data = Vec::new();
+        let max_vaddr = exec
+            .program_headers
+            .iter()
+            .map(|v| v.p_vaddr + v.p_memsz)
+            .max()
+            .unwrap_or_default();
+        let mut data = vec![0; max_vaddr as usize];
         for hdr in exec
             .program_headers
             .iter()
             .filter(|v| v.p_type == goblin::elf::program_header::PT_LOAD)
         {
-            let max_vaddr = (hdr.p_vaddr + hdr.p_memsz) as _;
-            if data.len() < max_vaddr {
-                data.resize(max_vaddr, 0u8);
-            }
             let fsz = hdr.p_filesz as usize;
             let foff = hdr.p_offset as usize;
             let ext_vaddr = hdr.p_vaddr as usize;
