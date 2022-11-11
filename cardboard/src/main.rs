@@ -64,10 +64,8 @@ fn real_main(boot_info: &sulphur_dioxide::BootInfo) -> ! {
         .scheduler
         .call_once(|| spin::Mutex::new(sys::proc::sched::Scheduler::new(&hpet)));
     for module in state.modules.as_ref().unwrap() {
-        if module.name.starts_with("com.ChefKissInc.DriverCore.") {
-            debug!("Spawning boot DriverCore extension {:#X?}", module.name);
-            sched.lock().spawn_proc(module.data);
-        }
+        debug!("Spawning {:#X?} module", module.name);
+        sched.lock().spawn_proc(module.data);
     }
 
     debug!("Kernel out.");
