@@ -70,12 +70,10 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     ));
 
     let modules = vec![sulphur_dioxide::module::Module {
-        name: core::str::from_utf8(helpers::phys_to_kern_slice_ref(
-            b"com.ChefKissInc.DriverCore.TestDrv",
-        ))
-        .unwrap(),
+        name: core::str::from_utf8(helpers::phys_to_kern_slice_ref(b"Text.dcext")).unwrap(),
         data: helpers::phys_to_kern_slice_ref(drv_buffer),
     }];
+    boot_info.modules = modules.leak();
 
     trace!("{:#X?}", boot_info.as_ref() as *const _);
 
@@ -97,7 +95,6 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         });
 
     boot_info.memory_map = helpers::phys_to_kern_slice_ref(memory_map_entries.leak());
-    boot_info.modules = modules.leak();
 
     unsafe {
         core::arch::asm!(
