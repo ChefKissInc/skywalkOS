@@ -10,6 +10,13 @@ pub struct Message<'a> {
     pub data: &'a [u8],
 }
 
+impl<'a> Message<'a> {
+    #[must_use]
+    pub const fn new(proc_uuid: uuid::Uuid, data: &'a [u8]) -> Self {
+        Self { proc_uuid, data }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 #[repr(C)]
 pub enum MessageChannelEntry<'a> {
