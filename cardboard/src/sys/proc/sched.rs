@@ -27,14 +27,13 @@ pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
         old_thread.state = super::ThreadState::Inactive;
     }
 
-    let mut new = None;
-    if let Some(thread) = this.next_thread_mut() {
-        *state = thread.regs;
-        thread.state = super::ThreadState::Active;
-        new = Some(thread.uuid);
-        let proc_uuid = thread.proc_uuid;
-        this.processes.get_mut(&proc_uuid).unwrap().cr3.set();
-    }
+    let thread = this.next_thread_mut().expect("All threads are dead");
+    *state = thread.regs;
+    thread.state = super::ThreadState::Active;
+    let proc_uuid = thread.proc_uuid;
+    let new = Some(thread.uuid);
+    this.processes.get_mut(&proc_uuid).unwrap().cr3.set();
+
     this.current_thread_uuid = new;
 }
 
