@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use core::{fmt::Write, mem::size_of};
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
@@ -95,15 +96,6 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 return;
             };
 
-            // Move to mmap system call
-            // let addr = data.as_ptr() as u64;
-            // process.cr3.map_pages(
-            //     addr,
-            //     addr,
-            //     (data.len() as u64 + 0xFFF) / 0x1000,
-            //     PageTableEntry::new().with_user(true).with_present(true),
-            // );
-
             for ent in &mut process.message_channel.data {
                 if ent.is_unoccupied() {
                     *ent = MessageChannelEntry::Occupied(msg);
@@ -113,6 +105,43 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             }
             process.message_backlog.push(msg);
             state.rax = KernelRequestStatus::Success.into();
+        }
+        KernelRequest::RegisterProvider(provider_uuid) => {
+            if provider_uuid.is_nil() {
+                state.rax = KernelRequestStatus::MalformedData.into();
+                return;
+            }
+            let proc_uuid = scheduler.current_thread_mut().unwrap().proc_uuid;
+            if scheduler
+                .providers
+                .try_insert(*provider_uuid, proc_uuid)
+                .is_err()
+            {
+                state.rax = KernelRequestStatus::InvalidRequest.into();
+            } else {
+                state.rax = KernelRequestStatus::Success.into();
+            }
+        }
+        KernelRequest::GetProvidingProcess(provider_uuid) => {
+            if provider_uuid.is_nil() {
+                state.rax = KernelRequestStatus::MalformedData.into();
+                return;
+            }
+            let Some(proc_uuid) = scheduler.providers.get(provider_uuid) else {
+                state.rax = KernelRequestStatus::MalformedData.into();
+                return;
+            };
+            let addr =
+                Box::leak(Box::new(*proc_uuid)) as *mut _ as u64 - amd64::paging::PHYS_VIRT_OFFSET;
+            let curr_proc_uuid = scheduler.current_thread_mut().unwrap().proc_uuid;
+            let process = scheduler.processes.get_mut(&curr_proc_uuid).unwrap();
+            process.cr3.map_pages(
+                addr,
+                addr,
+                (size_of::<uuid::Uuid>() as u64 + 0xFFF) / 0x1000,
+                PageTableEntry::new().with_user(true).with_present(true),
+            );
+            state.rax = addr;
         }
     }
 }

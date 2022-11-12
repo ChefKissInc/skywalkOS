@@ -39,6 +39,8 @@ pub enum KernelRequest<'a> {
     SendMessage(uuid::Uuid, &'a [u8]),
     Exit,
     ScheduleNext,
+    RegisterProvider(uuid::Uuid),
+    GetProvidingProcess(uuid::Uuid),
 }
 
 impl<'a> KernelRequest<'a> {
