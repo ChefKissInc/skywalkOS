@@ -50,8 +50,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     let (kernel_main, symbols) = helpers::parse_elf::parse_elf(&mut mem_mgr, buffer);
 
-    let mut stack = Vec::new();
-    stack.resize(0x14000, 0u8);
+    let stack = vec![0u8; 0x14000];
     let stack = (stack.leak().as_ptr() as u64 + amd64::paging::KERNEL_VIRT_OFFSET) as *const u8;
     mem_mgr.allocate((stack as u64 - amd64::paging::KERNEL_VIRT_OFFSET, 0x2000));
 

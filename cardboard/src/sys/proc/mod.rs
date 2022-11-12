@@ -36,8 +36,7 @@ pub struct Thread {
 
 impl Thread {
     pub fn new(proc_uuid: uuid::Uuid, rip: u64) -> Self {
-        let mut stack = Vec::new();
-        stack.resize(0x14000, 0);
+        let stack = vec![0; 0x14000];
         Self {
             state: ThreadState::Inactive,
             uuid: uuid::Uuid::new_v4(),

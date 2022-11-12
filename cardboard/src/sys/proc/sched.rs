@@ -27,7 +27,7 @@ pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
         old_thread.state = super::ThreadState::Inactive;
     }
 
-    let thread = this.next_thread_mut().expect("All threads are dead");
+    let thread = this.next_thread_mut().unwrap();
     *state = thread.regs;
     thread.state = super::ThreadState::Active;
     let proc_uuid = thread.proc_uuid;
@@ -39,8 +39,7 @@ pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
 
 impl Scheduler {
     pub fn new(timer: &impl Timer) -> Self {
-        let mut kern_stack = Vec::new();
-        kern_stack.resize(0x14000, 0);
+        let kern_stack = vec![0; 0x14000];
 
         unsafe {
             let gdt = &mut *crate::sys::gdt::GDT.get();
