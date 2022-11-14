@@ -12,7 +12,7 @@ pub fn parse_elf(
 ) {
     let elf = goblin::elf::Elf::parse(buffer).expect("Failed to parse kernel elf");
 
-    debug!("{:X?}", elf.header);
+    trace!("{:X?}", elf.header);
     assert!(elf.is_64, "Only ELF64");
     assert_eq!(elf.header.e_machine, goblin::elf::header::EM_X86_64);
     assert!(elf.little_endian, "Only little-endian ELFs");
@@ -37,7 +37,7 @@ pub fn parse_elf(
         })
         .collect();
 
-    debug!("Parsing program headers: ");
+    trace!("Parsing program headers: ");
     for phdr in elf
         .program_headers
         .iter()
@@ -59,7 +59,7 @@ pub fn parse_elf(
             )
         };
         let npages = (memsz + 0xFFF) / 0x1000;
-        debug!(
+        trace!(
             "vaddr: {:#X}, paddr: {:#X}, npages: {:#X}",
             phdr.p_vaddr,
             phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET,

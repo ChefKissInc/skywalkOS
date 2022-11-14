@@ -22,8 +22,8 @@ pub fn init_output() {
 }
 
 pub fn setup() {
-    debug!("Setting up higher-half paging mappings:");
-    debug!("    1. Turning off write protection...");
+    trace!("Setting up higher-half paging mappings:");
+    trace!("    1. Turning off write protection...");
 
     unsafe {
         core::arch::asm!(
@@ -34,7 +34,7 @@ pub fn setup() {
         );
     }
 
-    debug!("    2. Modifying paging mappings to map higher-half...");
+    trace!("    2. Modifying paging mappings to map higher-half...");
 
     unsafe {
         let pml4 = super::PML4::get();

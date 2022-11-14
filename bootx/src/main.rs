@@ -86,8 +86,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     boot_info.modules = modules.leak();
 
     trace!("{:#X?}", boot_info.as_ref() as *const _);
-
-    debug!("Exiting boot services and jumping to kernel...");
+    trace!("Exiting boot services and jumping to kernel...");
     let sizes = system_table.boot_services().memory_map_size();
     let mut mmap_buf = vec![0; sizes.map_size + 4 * sizes.entry_size];
     let mut memory_map_entries = Vec::with_capacity(
