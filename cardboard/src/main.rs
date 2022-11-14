@@ -22,6 +22,15 @@ mod driver;
 mod sys;
 mod utils;
 
+#[used]
+#[no_mangle]
+static __stack_chk_guard: u64 = 0x595e9fbd94fda766;
+
+#[no_mangle]
+extern "C" fn __stack_chk_fail() {
+    panic!("stack check failure");
+}
+
 #[no_mangle]
 extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     unwinding::panic::catch_unwind(move || real_main(boot_info)).unwrap()

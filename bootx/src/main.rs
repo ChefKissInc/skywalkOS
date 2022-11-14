@@ -4,7 +4,7 @@
 #![no_std]
 #![no_main]
 #![deny(warnings, clippy::cargo, unused_extern_crates)]
-#![feature(abi_efiapi, asm_const)]
+#![feature(abi_efiapi, asm_const, core_intrinsics)]
 
 #[macro_use]
 extern crate alloc;
@@ -19,6 +19,17 @@ use uefi::{
 };
 
 mod helpers;
+
+#[used]
+#[no_mangle]
+static __security_cookie: usize = 0x595e9fbd94fda766;
+
+#[no_mangle]
+unsafe extern "C" fn __security_check_cookie(cookie: usize) {
+    if cookie != __security_cookie {
+        core::intrinsics::abort();
+    }
+}
 
 #[entry]
 fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
