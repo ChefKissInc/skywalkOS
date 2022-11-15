@@ -3,12 +3,12 @@
 
 use alloc::{
     boxed::Box,
+    collections::VecDeque,
     string::{String, ToString},
     vec::Vec,
 };
 
 use amd64::paging::pml4::PML4;
-use cardboard_klib::{Message, MessageChannel};
 
 use super::vmm::PageTableLvl4;
 
@@ -65,8 +65,7 @@ pub struct Process {
     pub path: String,
     pub cwd: String,
     pub cr3: Box<PageTableLvl4>,
-    pub message_channel: Box<MessageChannel<'static>>,
-    pub message_backlog: Vec<Message<'static>>,
+    pub messages: VecDeque<(uuid::Uuid, u64, u64)>,
 }
 
 impl Process {
@@ -80,8 +79,7 @@ impl Process {
             path: path.to_string(),
             cwd: cwd.to_string(),
             cr3,
-            message_channel: Box::new(MessageChannel::new()),
-            message_backlog: Vec::new(),
+            messages: VecDeque::new(),
         }
     }
 }

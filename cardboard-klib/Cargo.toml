@@ -11,4 +11,4 @@ getrandom = { version = "0.2.8", default-features = false, features = [
 num_enum = { version = "0.5.7", default-features = false, features = [
     "nightly",
 ] }
-uuid = { version = "1.2.1", default-features = false, features = ["v4"] }
+uuid = { version = "1.2.2", default-features = false, features = ["v4"] }
