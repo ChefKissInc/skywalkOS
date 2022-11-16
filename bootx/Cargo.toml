@@ -22,4 +22,4 @@ log = { version = "0.4.17", default-features = false, features = [
 ] }
 sulphur-dioxide = { path = "../sulphur-dioxide" }
 uefi = { version = "0.17.0", features = ["exts", "logger"] }
-uefi-services = "0.14.0"
+uefi-services = "0.15.0"
