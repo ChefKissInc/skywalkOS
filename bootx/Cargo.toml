@@ -21,5 +21,5 @@ log = { version = "0.4.17", default-features = false, features = [
     "release_max_level_debug",
 ] }
 sulphur-dioxide = { path = "../sulphur-dioxide" }
-uefi = { version = "0.17.0", features = ["exts", "logger"] }
+uefi = { version = "0.18.0", features = ["exts", "logger"] }
 uefi-services = "0.14.0"
