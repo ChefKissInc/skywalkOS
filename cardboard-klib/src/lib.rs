@@ -1,6 +1,8 @@
 #![no_std]
 #![deny(warnings, clippy::cargo, unused_extern_crates)]
 
+pub mod port;
+
 use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive, IntoPrimitive)]
@@ -39,6 +41,12 @@ pub enum SystemCall {
     Skip,
     RegisterProvider,
     GetProvidingProcess,
+    PortInByte,
+    PortInWord,
+    PortInDWord,
+    PortOutByte,
+    PortOutWord,
+    PortOutDWord,
 }
 
 impl SystemCall {
@@ -190,6 +198,135 @@ impl SystemCall {
 
         if ret == 0 {
             Ok(uuid::Uuid::from_u64_pair(uuid_hi, uuid_lo))
+        } else {
+            Err(ret.into())
+        }
+    }
+
+    /// # Safety
+    ///
+    /// The caller must ensure that this operation has no unsafe side effects.
+    pub unsafe fn port_in_byte(port: u16) -> Result<u8, SystemCallStatus> {
+        let ty: u64 = Self::PortInByte.into();
+        let mut ret: u64;
+        let mut val: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") ty,
+            in("rsi") port as u64,
+            lateout("rdi") val,
+            out("rax") ret,
+        );
+
+        if ret == 0 {
+            Ok(val as u8)
+        } else {
+            Err(ret.into())
+        }
+    }
+
+    /// # Safety
+    ///
+    /// The caller must ensure that this operation has no unsafe side effects.
+    pub unsafe fn port_out_byte(port: u16, val: u8) -> Result<(), SystemCallStatus> {
+        let ty: u64 = Self::PortOutByte.into();
+        let mut ret: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") ty,
+            in("rsi") port as u64,
+            in("rdx") val as u64,
+            out("rax") ret,
+        );
+
+        if ret == 0 {
+            Ok(())
+        } else {
+            Err(ret.into())
+        }
+    }
+
+    /// # Safety
+    ///
+    /// The caller must ensure that this operation has no unsafe side effects.
+    pub unsafe fn port_in_word(port: u16) -> Result<u16, SystemCallStatus> {
+        let ty: u64 = Self::PortInWord.into();
+        let mut ret: u64;
+        let mut val: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") ty,
+            in("rsi") port as u64,
+            lateout("rdi") val,
+            out("rax") ret,
+        );
+
+        if ret == 0 {
+            Ok(val as u16)
+        } else {
+            Err(ret.into())
+        }
+    }
+
+    /// # Safety
+    ///
+    /// The caller must ensure that this operation has no unsafe side effects.
+    pub unsafe fn port_out_word(port: u16, val: u16) -> Result<(), SystemCallStatus> {
+        let ty: u64 = Self::PortOutWord.into();
+        let mut ret: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") ty,
+            in("rsi") port as u64,
+            in("rdx") val as u64,
+            out("rax") ret,
+        );
+
+        if ret == 0 {
+            Ok(())
+        } else {
+            Err(ret.into())
+        }
+    }
+
+    /// # Safety
+    ///
+    /// The caller must ensure that this operation has no unsafe side effects.
+    pub unsafe fn port_in_dword(port: u16) -> Result<u32, SystemCallStatus> {
+        let ty: u64 = Self::PortInDWord.into();
+        let mut ret: u64;
+        let mut val: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") ty,
+            in("rsi") port as u64,
+            lateout("rdi") val,
+            out("rax") ret,
+        );
+
+        if ret == 0 {
+            Ok(val as u32)
+        } else {
+            Err(ret.into())
+        }
+    }
+
+    /// # Safety
+    ///
+    /// The caller must ensure that this operation has no unsafe side effects.
+    pub unsafe fn port_out_dword(port: u16, val: u32) -> Result<(), SystemCallStatus> {
+        let ty: u64 = Self::PortOutDWord.into();
+        let mut ret: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") ty,
+            in("rsi") port as u64,
+            in("rdx") val as u64,
+            out("rax") ret,
+        );
+
+        if ret == 0 {
+            Ok(())
         } else {
             Err(ret.into())
         }

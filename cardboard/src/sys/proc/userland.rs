@@ -1,5 +1,6 @@
 use core::fmt::Write;
 
+use amd64::io::port::PortIO;
 // use amd64::paging::{pml4::PML4, PageTableEntry};
 use cardboard_klib::{SystemCall, SystemCallStatus};
 
@@ -108,6 +109,39 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             state.rax = 0;
             state.rdi = hi;
             state.rsi = lo;
+        }
+        SystemCall::PortInByte => {
+            let port = state.rsi as u16;
+            state.rax = 0;
+            state.rdi = u8::read(port) as u64;
+        }
+        SystemCall::PortInWord => {
+            let port = state.rsi as u16;
+            state.rax = 0;
+            state.rdi = u16::read(port) as u64;
+        }
+        SystemCall::PortInDWord => {
+            let port = state.rsi as u16;
+            state.rax = 0;
+            state.rdi = u32::read(port) as u64;
+        }
+        SystemCall::PortOutByte => {
+            let port = state.rsi as u16;
+            let value = state.rdx as u8;
+            state.rax = 0;
+            u8::write(port, value);
+        }
+        SystemCall::PortOutWord => {
+            let port = state.rsi as u16;
+            let value = state.rdx as u16;
+            state.rax = 0;
+            u16::write(port, value);
+        }
+        SystemCall::PortOutDWord => {
+            let port = state.rsi as u16;
+            let value = state.rdx as u32;
+            state.rax = 0;
+            u32::write(port, value);
         }
     }
 }
