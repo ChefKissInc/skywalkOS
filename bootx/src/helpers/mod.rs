@@ -25,7 +25,7 @@ impl amd64::paging::pml4::PML4 for PML4 {
     }
 }
 
-fn pa_to_kern_va<T>(v: *const T) -> *const T {
+pub fn pa_to_kern_va<T>(v: *const T) -> *const T {
     (v as u64 + amd64::paging::PHYS_VIRT_OFFSET) as *const T
 }
 

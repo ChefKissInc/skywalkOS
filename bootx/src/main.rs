@@ -32,12 +32,12 @@ unsafe extern "C" fn __security_check_cookie(cookie: usize) {
 }
 
 #[entry]
-fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
+fn efi_main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     uefi_services::init(&mut system_table).expect("Failed to initialize utilities");
     helpers::setup::init_output();
     helpers::setup::setup();
 
-    let mut esp = helpers::file::open_esp(image);
+    let mut esp = helpers::file::open_esp(image_handle);
 
     let buffer = helpers::file::load(
         &mut esp,
@@ -57,13 +57,13 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     trace!("{:#X?}", drv_buffer.as_ptr());
 
     let mut mem_mgr = helpers::mem::MemoryManager::new();
-    mem_mgr.allocate((drv_buffer.as_ptr() as u64, drv_buffer.len() as u64));
+    mem_mgr.allocate((drv_buffer.as_ptr() as _, drv_buffer.len() as _));
 
     let (kernel_main, symbols) = helpers::parse_elf::parse_elf(&mut mem_mgr, buffer);
 
-    let stack = vec![0u8; 0x14000];
-    let stack = (stack.leak().as_ptr() as u64 + amd64::paging::KERNEL_VIRT_OFFSET) as *const u8;
-    mem_mgr.allocate((stack as u64 - amd64::paging::KERNEL_VIRT_OFFSET, 0x2000));
+    let stack = vec![0u8; 0x14000].leak();
+    let stack_ptr = unsafe { helpers::pa_to_kern_va(stack.as_ptr()).add(stack.len()) };
+    mem_mgr.allocate((stack.as_ptr() as _, stack.len() as _));
 
     let fbinfo = helpers::phys_to_kern_ref(Box::leak(helpers::fb::fbinfo_from_gop(
         helpers::setup::get_gop(),
@@ -94,7 +94,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     );
 
     system_table
-        .exit_boot_services(image, &mut mmap_buf)
+        .exit_boot_services(image_handle, &mut mmap_buf)
         .expect("Failed to exit boot services.")
         .1
         .for_each(|v| {
@@ -111,7 +111,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
             "mov rsp, {}",
             "xor rbp, rbp",
             "call {}",
-            in(reg) stack,
+            in(reg) stack_ptr,
             in(reg) kernel_main,
             in("rdi") helpers::phys_to_kern_ref(Box::leak(boot_info)),
             options(noreturn)
