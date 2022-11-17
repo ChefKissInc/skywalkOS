@@ -43,23 +43,16 @@ pub fn setup() {
     }
 }
 
-pub fn get_gop() -> ScopedProtocol<'static, GraphicsOutput<'static>> {
-    unsafe {
-        let search_ty = uefi::table::boot::SearchType::from_proto::<
-            uefi::proto::console::gop::GraphicsOutput,
-        >();
-        let handles = uefi_services::system_table()
-            .as_mut()
-            .boot_services()
-            .locate_handle_buffer(search_ty)
-            .unwrap();
-        let handle = handles.handles().first().unwrap();
-        uefi_services::system_table()
-            .as_mut()
-            .boot_services()
-            .open_protocol_exclusive(*handle)
-            .expect("Failed to get GOP protocol")
-    }
+pub fn get_gop<'a>() -> ScopedProtocol<'a, GraphicsOutput<'a>> {
+    let system_table = unsafe { uefi_services::system_table().as_mut() };
+    let handle = system_table
+        .boot_services()
+        .get_handle_for_protocol::<uefi::proto::console::gop::GraphicsOutput>()
+        .unwrap();
+    system_table
+        .boot_services()
+        .open_protocol_exclusive(handle)
+        .expect("Failed to get GOP protocol")
 }
 
 pub fn get_rsdp() -> &'static RSDP {
