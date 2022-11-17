@@ -91,9 +91,9 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 .is_err()
             {
                 state.rax = SystemCallStatus::InvalidRequest.into();
-            } else {
-                state.rax = 0;
+                return;
             }
+            state.rax = 0;
         }
         SystemCall::GetProvidingProcess => {
             let provider_uuid = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);

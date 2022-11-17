@@ -55,7 +55,10 @@ impl Terminal {
     pub fn draw_char(&mut self, c: char, colour: Colour) {
         let x = self.x * 8;
         let mut y = self.y * 8;
-        for &x_bit in &font8x8::legacy::BASIC_LEGACY[c as usize] {
+        let Some(v) = font8x8::legacy::BASIC_LEGACY.get(c as usize) else {
+            return;
+        };
+        for &x_bit in v {
             for bit in 0..8 {
                 if x_bit & (1 << bit) != 0 {
                     self.fb

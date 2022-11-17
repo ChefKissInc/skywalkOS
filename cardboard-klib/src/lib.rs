@@ -63,11 +63,12 @@ impl SystemCall {
             in("rdx") s.len() as u64,
             out("rax") ret,
         );
+
         if ret == 0 {
-            Ok(())
-        } else {
-            Err(SystemCallStatus::from(ret))
+            return Ok(());
         }
+
+        Err(SystemCallStatus::from(ret))
     }
 
     /// # Safety
@@ -121,10 +122,10 @@ impl SystemCall {
         );
 
         if ret == 0 {
-            Ok(())
-        } else {
-            Err(ret.into())
+            return Ok(());
         }
+
+        Err(ret.into())
     }
 
     /// # Safety
@@ -135,10 +136,10 @@ impl SystemCall {
         let mut ret: u64;
         core::arch::asm!("int 249", in("rdi") ty, out("rax") ret);
         if ret == 0 {
-            Ok(())
-        } else {
-            Err(ret.into())
+            return Ok(());
         }
+
+        Err(ret.into())
     }
 
     /// # Safety
@@ -149,10 +150,10 @@ impl SystemCall {
         let mut ret: u64;
         core::arch::asm!("int 249", in("rdi") ty, out("rax") ret);
         if ret == 0 {
-            Ok(())
-        } else {
-            Err(ret.into())
+            return Ok(());
         }
+
+        Err(ret.into())
     }
 
     /// # Safety
@@ -171,10 +172,10 @@ impl SystemCall {
         );
 
         if ret == 0 {
-            Ok(())
-        } else {
-            Err(ret.into())
+            return Ok(());
         }
+
+        Err(ret.into())
     }
 
     /// # Safety
@@ -197,10 +198,10 @@ impl SystemCall {
         );
 
         if ret == 0 {
-            Ok(uuid::Uuid::from_u64_pair(uuid_hi, uuid_lo))
-        } else {
-            Err(ret.into())
+            return Ok(uuid::Uuid::from_u64_pair(uuid_hi, uuid_lo));
         }
+
+        Err(ret.into())
     }
 
     /// # Safety
@@ -219,10 +220,10 @@ impl SystemCall {
         );
 
         if ret == 0 {
-            Ok(val as u8)
-        } else {
-            Err(ret.into())
+            return Ok(val as u8);
         }
+
+        Err(ret.into())
     }
 
     /// # Safety
@@ -240,10 +241,10 @@ impl SystemCall {
         );
 
         if ret == 0 {
-            Ok(())
-        } else {
-            Err(ret.into())
+            return Ok(());
         }
+
+        Err(ret.into())
     }
 
     /// # Safety
@@ -262,10 +263,10 @@ impl SystemCall {
         );
 
         if ret == 0 {
-            Ok(val as u16)
-        } else {
-            Err(ret.into())
+            return Ok(val as u16);
         }
+
+        Err(ret.into())
     }
 
     /// # Safety
@@ -283,10 +284,10 @@ impl SystemCall {
         );
 
         if ret == 0 {
-            Ok(())
-        } else {
-            Err(ret.into())
+            return Ok(());
         }
+
+        Err(ret.into())
     }
 
     /// # Safety
@@ -305,10 +306,10 @@ impl SystemCall {
         );
 
         if ret == 0 {
-            Ok(val as u32)
-        } else {
-            Err(ret.into())
+            return Ok(val as u32);
         }
+
+        Err(ret.into())
     }
 
     /// # Safety
@@ -326,9 +327,9 @@ impl SystemCall {
         );
 
         if ret == 0 {
-            Ok(())
-        } else {
-            Err(ret.into())
+            return Ok(());
         }
+
+        Err(ret.into())
     }
 }
