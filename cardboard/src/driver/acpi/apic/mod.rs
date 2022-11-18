@@ -5,6 +5,8 @@ use amd64::registers::msr::{apic::APICBase, ModelSpecificReg};
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 
+use crate::sys::{gdt::PrivilegeLevel, RegisterState};
+
 pub mod lvt;
 
 pub struct LocalAPIC {
@@ -52,7 +54,7 @@ pub enum DeliveryMode {
     Smi = 0b010,
     Nmi = 0b100,
     Init = 0b101,
-    StartuUp = 0b110,
+    StartUp = 0b110,
     ExtInt = 0b111,
 }
 
@@ -117,8 +119,25 @@ pub struct InterruptCommand {
     pub dest: u8,
 }
 
+#[bitfield(bits = 32)]
+#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub struct LocalAPICVer {
+    #[skip(setters)]
+    pub ver: u8,
+    #[skip]
+    __: u8,
+    #[skip(setters)]
+    pub max_lvt_entry: u8,
+    #[skip(setters)]
+    pub support_eoi_suppression: bool,
+    #[skip]
+    __: B7,
+}
+
 #[allow(dead_code)]
 impl LocalAPIC {
+    #[must_use]
     pub const fn new(addr: u64) -> Self {
         Self { addr }
     }
@@ -133,6 +152,11 @@ impl LocalAPIC {
     #[inline]
     pub fn read_reg<T: Into<u64>, R: From<u32>>(&self, reg: T) -> R {
         unsafe { ((self.addr + reg.into()) as *const u32).read_volatile() }.into()
+    }
+
+    #[inline]
+    pub fn read_ver(&self) -> LocalAPICVer {
+        self.read_reg(LocalAPICReg::Ver)
     }
 
     #[inline]
@@ -172,6 +196,18 @@ impl LocalAPIC {
         } else {
             LocalAPICReg::LVTLint0
         })
+    }
+
+    #[inline]
+    pub fn write_lint(&self, lint1: bool, val: lvt::LocalVectorTable) {
+        self.write_reg(
+            if lint1 {
+                LocalAPICReg::LVTLint1
+            } else {
+                LocalAPICReg::LVTLint0
+            },
+            val,
+        );
     }
 
     #[inline]
@@ -230,9 +266,19 @@ impl LocalAPIC {
     }
 }
 
+unsafe extern "C" fn lapic_error_handler(_state: &mut RegisterState) {
+    let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+    error!("APIC error: {:?}", state.lapic.get().unwrap().error());
+}
+
 pub fn setup(state: &mut crate::sys::state::SystemState) {
     let addr = state.madt.get().unwrap().lapic_addr;
-    unsafe { APICBase::read().with_apic_base(addr).write() }
+    unsafe {
+        APICBase::read()
+            .with_apic_base(addr)
+            .with_apic_global_enable(true)
+            .write()
+    }
     let pml4 = state.pml4.get_mut().unwrap();
 
     let virt_addr = addr + amd64::paging::PHYS_VIRT_OFFSET;
@@ -247,5 +293,60 @@ pub fn setup(state: &mut crate::sys::state::SystemState) {
         );
     }
     debug!("LAPIC address is {addr:#X?}");
-    state.lapic.call_once(|| LocalAPIC::new(virt_addr)).enable();
+    let lapic = state.lapic.call_once(|| LocalAPIC::new(virt_addr));
+    let ver = lapic.read_ver();
+    debug!("LAPIC version is {ver:#X?}");
+
+    // Do not trust LAPIC to be empty at boot
+    if ver.max_lvt_entry() > 2 {
+        lapic.write_reg(
+            LocalAPICReg::LVTError,
+            lvt::LocalVectorTable::new().with_mask(true),
+        );
+        crate::driver::intrs::idt::set_handler(
+            0xFE,
+            0,
+            PrivilegeLevel::Supervisor,
+            lapic_error_handler,
+            false,
+            true,
+        );
+    }
+
+    lapic.write_timer(lapic.read_timer().with_mask(true));
+    lapic.write_lint(false, lapic.read_lint(false).with_mask(true));
+    lapic.write_lint(true, lapic.read_lint(true).with_mask(true));
+    if ver.max_lvt_entry() > 3 {
+        lapic.write_reg(
+            LocalAPICReg::LVTPerfCounter,
+            lvt::LocalVectorTable::new().with_mask(true),
+        );
+    }
+
+    if ver.max_lvt_entry() > 4 {
+        lapic.write_reg(
+            LocalAPICReg::LVTThermalSensor,
+            lvt::LocalVectorTable::new().with_mask(true),
+        );
+    }
+
+    // Enable LAPIC
+    lapic.enable();
+
+    // Set up virtual wire
+    lapic.write_lint(
+        false,
+        lvt::LocalVectorTable::new().with_delivery_mode(DeliveryMode::ExtInt),
+    );
+    lapic.write_lint(
+        true,
+        lvt::LocalVectorTable::new().with_delivery_mode(DeliveryMode::Nmi),
+    );
+
+    if ver.max_lvt_entry() > 2 {
+        lapic.write_reg(
+            LocalAPICReg::LVTError,
+            lvt::LocalVectorTable::new().with_vector(0xFE),
+        );
+    }
 }
