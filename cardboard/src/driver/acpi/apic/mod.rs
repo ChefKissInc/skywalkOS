@@ -135,7 +135,6 @@ pub struct LocalAPICVer {
     __: B7,
 }
 
-#[allow(dead_code)]
 impl LocalAPIC {
     #[must_use]
     pub const fn new(addr: u64) -> Self {
@@ -211,10 +210,16 @@ impl LocalAPIC {
     }
 
     #[inline]
+    pub fn reset_error(&self) {
+        self.write_reg(LocalAPICReg::ErrorStatus, 0u32);
+    }
+
+    #[inline]
     pub fn error(&self) -> ErrorStatus {
         self.read_reg(LocalAPICReg::ErrorStatus)
     }
 
+    #[allow(dead_code)]
     #[inline]
     pub fn read_icr(&self) -> InterruptCommand {
         (((self.read_reg::<_, u64>(LocalAPICReg::InterruptCommand2)) << 32)
@@ -222,6 +227,7 @@ impl LocalAPIC {
         .into()
     }
 
+    #[allow(dead_code)]
     #[inline]
     pub fn write_icr(&self, val: InterruptCommand) {
         let val: u64 = val.into();
@@ -240,7 +246,7 @@ impl LocalAPIC {
     pub fn enable(&self) {
         self.write_spurious_intr_vec(
             SpuriousIntrVector::new()
-                .with_vector(0xFF)
+                .with_vector(0xFD)
                 .with_apic_soft_enable(true),
         );
     }
@@ -268,17 +274,21 @@ impl LocalAPIC {
 
 unsafe extern "C" fn lapic_error_handler(_state: &mut RegisterState) {
     let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
-    error!("APIC error: {:?}", state.lapic.get().unwrap().error());
+    let lapic = state.lapic.get().unwrap();
+    // Pentium errata 3AP
+    if lapic.read_ver().max_lvt_entry() > 3 {
+        lapic.reset_error();
+    }
+    error!("APIC error: {:?}", lapic.error());
+}
+
+unsafe extern "C" fn spurious_vector_handler(_state: &mut RegisterState) {
+    debug!("Spurious APIC vector");
 }
 
 pub fn setup(state: &mut crate::sys::state::SystemState) {
     let addr = state.madt.get().unwrap().lapic_addr;
-    unsafe {
-        APICBase::read()
-            .with_apic_base(addr)
-            .with_apic_global_enable(true)
-            .write()
-    }
+    unsafe { APICBase::read().with_apic_base(addr).write() }
     let pml4 = state.pml4.get_mut().unwrap();
 
     let virt_addr = addr + amd64::paging::PHYS_VIRT_OFFSET;
@@ -330,8 +340,16 @@ pub fn setup(state: &mut crate::sys::state::SystemState) {
         );
     }
 
-    // Enable LAPIC
     lapic.enable();
+
+    crate::driver::intrs::idt::set_handler(
+        0xFD,
+        0,
+        PrivilegeLevel::Supervisor,
+        spurious_vector_handler,
+        true,
+        true,
+    );
 
     // Set up virtual wire
     lapic.write_lint(

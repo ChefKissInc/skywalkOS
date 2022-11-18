@@ -82,7 +82,6 @@ pub struct ModemControl {
     pub terminal_ready: bool,
 }
 
-#[allow(dead_code)]
 pub struct SerialPort {
     port: super::port::Port<u8, u8>,
 }

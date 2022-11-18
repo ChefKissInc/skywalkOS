@@ -26,7 +26,11 @@ impl MADTData {
         let mut proc_lapics = Vec::new();
         let mut ioapics = Vec::new();
         let mut isos = Vec::new();
-        let mut lapic_addr = madt.local_ic_addr();
+        let mut lapic_addr = if madt.local_ic_addr() != 0 {
+            madt.local_ic_addr()
+        } else {
+            0xFEE0_0000
+        };
 
         for ent in madt.into_iter() {
             match ent {
