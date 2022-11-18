@@ -35,23 +35,19 @@ impl MemoryManager {
             uefi::table::boot::MemoryType::CONVENTIONAL => Some(MemoryEntry::Usable(data)),
             uefi::table::boot::MemoryType::LOADER_CODE
             | uefi::table::boot::MemoryType::LOADER_DATA => {
-                let mut ret = MemoryEntry::BootLoaderReclaimable(data);
+                let Some((base, size)) = self.entries.iter()
+                    .find(|(base, size)| data.base <= base + size) else {
+                    return Some(MemoryEntry::BootLoaderReclaimable(data));
+                };
+                let top = data.base + data.length;
 
-                for (base, size) in &self.entries {
-                    let top = data.base + data.length;
-                    if data.base <= base + size {
-                        if top > base + size {
-                            data.length -= size;
-                            data.base += size;
-                            ret = MemoryEntry::BootLoaderReclaimable(data);
-                        } else {
-                            ret = MemoryEntry::KernelOrModule(data);
-                        }
-
-                        break;
-                    }
+                if top > base + size {
+                    data.length -= size;
+                    data.base += size;
+                    return Some(MemoryEntry::BootLoaderReclaimable(data));
                 }
-                Some(ret)
+
+                Some(MemoryEntry::KernelOrModule(data))
             }
             uefi::table::boot::MemoryType::ACPI_RECLAIM => Some(MemoryEntry::ACPIReclaimable(data)),
             _ => None,

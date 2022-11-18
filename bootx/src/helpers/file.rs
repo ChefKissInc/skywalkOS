@@ -27,14 +27,13 @@ pub fn load(
     mode: FileMode,
     attributes: FileAttribute,
 ) -> Vec<u8> {
-    let mut file = match esp
+    let FileType::Regular(mut file) = esp
         .open(path, mode, attributes)
         .unwrap_or_else(|_| panic!("File {} not found", path))
         .into_type()
         .unwrap()
-    {
-        FileType::Regular(f) => f,
-        FileType::Dir(_) => panic!("How do you expect me to load the {} folder?", path),
+    else {
+        panic!("How do you expect me to load a folder?")
     };
 
     let mut buffer = vec![

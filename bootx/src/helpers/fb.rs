@@ -15,9 +15,7 @@ pub fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Box<FrameBuff
             uefi::proto::console::gop::PixelFormat::Rgb => PixelFormat::RedGreenBlue,
             uefi::proto::console::gop::PixelFormat::Bgr => PixelFormat::BlueGreenRed,
             uefi::proto::console::gop::PixelFormat::Bitmask => PixelFormat::Bitmask,
-            uefi::proto::console::gop::PixelFormat::BltOnly => {
-                panic!("Blt-only mode not supported.")
-            }
+            uefi::proto::console::gop::PixelFormat::BltOnly => panic!(),
         },
         pixel_bitmask: match gop.current_mode_info().pixel_format() {
             uefi::proto::console::gop::PixelFormat::Rgb => PixelBitmask {

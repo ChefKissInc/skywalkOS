@@ -54,7 +54,6 @@ fn efi_main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status
         FileAttribute::empty(),
     )
     .leak();
-    trace!("{:#X?}", drv_buffer.as_ptr());
 
     let mut mem_mgr = helpers::mem::MemoryManager::new();
     mem_mgr.allocate((drv_buffer.as_ptr() as _, drv_buffer.len() as _));
@@ -65,56 +64,55 @@ fn efi_main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status
     let stack_ptr = unsafe { helpers::pa_to_kern_va(stack.as_ptr()).add(stack.len()) };
     mem_mgr.allocate((stack.as_ptr() as _, stack.len() as _));
 
-    let fbinfo = helpers::phys_to_kern_ref(Box::leak(helpers::fb::fbinfo_from_gop(
-        helpers::setup::get_gop(),
-    )));
+    let gop = helpers::setup::get_gop();
+    let fbinfo = helpers::phys_to_kern_ref(Box::leak(helpers::fb::fbinfo_from_gop(gop)));
     let rsdp = helpers::setup::get_rsdp();
 
-    let mut boot_info = Box::new(sulphur_dioxide::BootInfo::new(
+    let mut boot_info = Box::leak(Box::new(sulphur_dioxide::BootInfo::new(
         symbols.leak(),
         sulphur_dioxide::boot_attrs::BootSettings {
             verbose: cfg!(debug_assertions),
         },
         Some(fbinfo),
         rsdp,
-    ));
+    )));
 
-    let modules = vec![sulphur_dioxide::module::Module {
-        name: core::str::from_utf8(helpers::phys_to_kern_slice_ref(b"Text.dcext")).unwrap(),
+    boot_info.modules = vec![sulphur_dioxide::module::Module {
+        name: core::str::from_utf8(helpers::phys_to_kern_slice_ref(
+            b"Test.dcext".to_vec().leak(),
+        ))
+        .unwrap(),
         data: helpers::phys_to_kern_slice_ref(drv_buffer),
-    }];
-    boot_info.modules = modules.leak();
+    }]
+    .leak();
 
-    trace!("{:#X?}", boot_info.as_ref() as *const _);
     trace!("Exiting boot services and jumping to kernel...");
     let sizes = system_table.boot_services().memory_map_size();
     let mut mmap_buf = vec![0; sizes.map_size + 4 * sizes.entry_size];
-    let mut memory_map_entries = Vec::with_capacity(
-        mmap_buf.capacity() / core::mem::size_of::<uefi::table::boot::MemoryDescriptor>() - 2,
-    );
+    let mut memory_map_entries = Vec::with_capacity(sizes.map_size / sizes.entry_size + 2);
 
     system_table
         .exit_boot_services(image_handle, &mut mmap_buf)
-        .expect("Failed to exit boot services.")
+        .unwrap()
         .1
         .for_each(|v| {
             if let Some(v) = mem_mgr.mem_type_from_desc(v) {
                 memory_map_entries.push(v);
             }
         });
-
     boot_info.memory_map = helpers::phys_to_kern_slice_ref(memory_map_entries.leak());
 
     unsafe {
         core::arch::asm!(
             "cli",
+            "cld",
             "mov rsp, {}",
             "xor rbp, rbp",
             "call {}",
             in(reg) stack_ptr,
             in(reg) kernel_main,
-            in("rdi") helpers::phys_to_kern_ref(Box::leak(boot_info)),
+            in("rdi") helpers::phys_to_kern_ref(boot_info),
             options(noreturn)
-        )
+        );
     }
 }

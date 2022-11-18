@@ -5,7 +5,7 @@ use acpi::tables::rsdp::RSDP;
 use amd64::paging::pml4::PML4;
 use uefi::{
     proto::console::{gop::GraphicsOutput, text::Color},
-    table::boot::ScopedProtocol,
+    table::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol},
 };
 
 pub fn init_output() {
@@ -49,10 +49,19 @@ pub fn get_gop<'a>() -> ScopedProtocol<'a, GraphicsOutput<'a>> {
         .boot_services()
         .get_handle_for_protocol::<uefi::proto::console::gop::GraphicsOutput>()
         .unwrap();
-    system_table
-        .boot_services()
-        .open_protocol_exclusive(handle)
-        .expect("Failed to get GOP protocol")
+    unsafe {
+        system_table
+            .boot_services()
+            .open_protocol(
+                OpenProtocolParams {
+                    handle,
+                    agent: system_table.boot_services().image_handle(),
+                    controller: None,
+                },
+                OpenProtocolAttributes::GetProtocol,
+            )
+            .expect("Failed to get GOP protocol")
+    }
 }
 
 pub fn get_rsdp() -> &'static RSDP {
