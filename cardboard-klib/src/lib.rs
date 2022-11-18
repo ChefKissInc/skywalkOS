@@ -4,6 +4,7 @@
 pub mod port;
 
 use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive, IntoPrimitive)]
 #[must_use]
@@ -47,6 +48,7 @@ pub enum SystemCall {
     PortOutByte,
     PortOutWord,
     PortOutDWord,
+    RegisterIRQHandler,
 }
 
 impl SystemCall {
@@ -332,4 +334,25 @@ impl SystemCall {
 
         Err(ret.into())
     }
+
+    /// # Safety
+    ///
+    /// The caller must ensure that this operation has no unsafe side effects.
+    pub unsafe fn register_irq_handler(irq: u8) -> Result<(), SystemCallStatus> {
+        let ty: u64 = Self::RegisterIRQHandler.into();
+        let mut ret: u64;
+        core::arch::asm!("int 249", in("rdi") ty, in("rsi") irq as u64, out("rax") ret);
+
+        if ret == 0 {
+            return Ok(());
+        }
+
+        Err(ret.into())
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[repr(C)]
+pub enum KernelMessage {
+    IRQFired(u8),
 }

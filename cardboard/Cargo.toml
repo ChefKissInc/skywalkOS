@@ -28,6 +28,7 @@ num_enum = { version = "0.5.7", default-features = false, features = [
 ] }
 paper-fb = { path = "../paper-fb" }
 rustc-demangle = "0.1.21"
+postcard = { version = "1.0.2", default-features = false, features = ["alloc"] }
 seq-macro = "0.3.1"
 spin = { version = "0.9.4", default-features = false, features = [
     "barrier",

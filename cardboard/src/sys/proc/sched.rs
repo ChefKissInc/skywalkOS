@@ -17,6 +17,7 @@ pub struct Scheduler {
     pub current_thread_uuid: Option<uuid::Uuid>,
     pub kern_stack: Vec<u8>,
     pub providers: HashMap<uuid::Uuid, uuid::Uuid>,
+    pub irq_handlers: HashMap<u8, uuid::Uuid>,
 }
 
 pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
@@ -80,6 +81,7 @@ impl Scheduler {
             current_thread_uuid: None,
             kern_stack,
             providers: HashMap::new(),
+            irq_handlers: HashMap::new(),
         }
     }
 
