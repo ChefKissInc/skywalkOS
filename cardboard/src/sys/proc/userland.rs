@@ -1,3 +1,6 @@
+// Copyright (c) ChefKiss Inc 2021-2022.
+// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+
 use core::fmt::Write;
 
 use amd64::{
