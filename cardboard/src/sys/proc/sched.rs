@@ -120,7 +120,8 @@ impl Scheduler {
         }
 
         let data = data.leak();
-        let phys_addr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
+        let virt_addr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET
+            + super::userland::USER_PHYS_VIRT_OFFSET;
         for reloc in exec.dynrelas.iter() {
             let ptr = unsafe {
                 ((data.as_ptr() as u64 + reloc.r_offset) as *mut u64)
@@ -128,25 +129,25 @@ impl Scheduler {
                     .unwrap()
             };
             let target = reloc.r_addend.map_or_else(
-                || phys_addr + *ptr,
+                || virt_addr + *ptr,
                 |addend| {
                     if addend.is_negative() {
-                        phys_addr - addend.wrapping_abs() as u64
+                        virt_addr - addend.wrapping_abs() as u64
                     } else {
-                        phys_addr + addend as u64
+                        virt_addr + addend as u64
                     }
                 },
             );
             *ptr = target;
         }
-        let rip = phys_addr + exec.entry;
+        let rip = virt_addr + exec.entry;
         let proc_uuid = uuid::Uuid::new_v4();
         let mut proc = super::Process::new("", "");
         let thread = super::Thread::new(proc_uuid, rip);
         unsafe {
             proc.cr3.map_pages(
-                phys_addr,
-                phys_addr,
+                virt_addr,
+                virt_addr - super::userland::USER_PHYS_VIRT_OFFSET,
                 (data.len() as u64 + 0xFFF) / 0x1000,
                 PageTableEntry::new()
                     .with_user(true)
@@ -155,7 +156,7 @@ impl Scheduler {
             );
             let stack_addr = thread.stack.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
             proc.cr3.map_pages(
-                stack_addr,
+                stack_addr + super::userland::USER_PHYS_VIRT_OFFSET,
                 stack_addr,
                 (thread.stack.len() as u64 + 0xFFF) / 0x1000,
                 PageTableEntry::new()

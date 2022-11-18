@@ -11,6 +11,8 @@ use cardboard_klib::{KernelMessage, SystemCall, SystemCallStatus};
 
 use crate::sys::{gdt::PrivilegeLevel, RegisterState};
 
+pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC0000000;
+
 unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let irq = (state.int_num - 0x20) as u8;
     let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
@@ -23,12 +25,14 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let ptr = s.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
     let len = s.len() as u64;
     process.cr3.map_pages(
-        ptr,
+        ptr + USER_PHYS_VIRT_OFFSET,
         ptr,
         (len + 0xFFF) / 0x1000,
         PageTableEntry::new().with_user(true).with_present(true),
     );
-    process.messages.push_front((uuid::Uuid::nil(), ptr, len));
+    process
+        .messages
+        .push_front((uuid::Uuid::nil(), ptr + USER_PHYS_VIRT_OFFSET, len));
 }
 
 unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
