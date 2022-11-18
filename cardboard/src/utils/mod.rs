@@ -39,6 +39,7 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     unsafe {
         crate::sys::gdt::GDTR.load();
         crate::driver::intrs::idt::IDTR.load();
+        crate::driver::intrs::init_intr_quirks();
         crate::driver::intrs::exc::init();
     }
 
