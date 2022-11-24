@@ -6,31 +6,27 @@
 
 pub mod port;
 
-use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive, IntoPrimitive)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
 #[must_use]
 #[repr(u64)]
 pub enum SystemCallStatus {
-    InvalidRequest = 1,
+    Success,
+    InvalidRequest,
     MalformedData,
     UnknownRequest,
     Unimplemented,
     Failure,
     DoNothing,
-    #[num_enum(catch_all)]
-    Other(u64),
 }
 
 impl SystemCallStatus {
-    /// # Panics
-    ///
-    /// Panics if self not Success
-    pub fn unwrap(self) -> u64 {
+    pub fn as_result(self) -> Result<(), SystemCallStatus> {
         match self {
-            Self::Other(v) => v,
-            v => panic!("called `SystemCallStatus::unwrap()` on an `{v:#X?}` value"),
+            Self::Success => Ok(()),
+            _ => Err(self),
         }
     }
 }
@@ -68,12 +64,7 @@ impl SystemCall {
             in("rdx") s.len() as u64,
             out("rax") ret,
         );
-
-        if ret == 0 {
-            return Ok(());
-        }
-
-        Err(SystemCallStatus::from(ret))
+        SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
     /// # Safety
@@ -83,27 +74,28 @@ impl SystemCall {
     {
         let ty: u64 = Self::ReceiveMessage.into();
         let mut ret: u64;
-        let mut uuid_hi: u64;
-        let mut uuid_lo: u64;
+        let mut id_upper: u64;
+        let mut id_lower: u64;
         let mut ptr: u64;
         let mut len: u64;
         core::arch::asm!(
             "int 249",
             in("rdi") ty,
             out("rax") ret,
-            lateout("rdi") uuid_hi,
-            out("rsi") uuid_lo,
+            lateout("rdi") id_upper,
+            out("rsi") id_lower,
             out("rdx") ptr,
             out("rcx") len,
         );
-
-        match SystemCallStatus::from(ret) {
-            SystemCallStatus::DoNothing => Ok(None),
-            SystemCallStatus::Other(0) => Ok(Some((
-                uuid::Uuid::from_u64_pair(uuid_hi, uuid_lo),
+        let ret = SystemCallStatus::try_from(ret).unwrap();
+        if matches!(ret, SystemCallStatus::DoNothing) {
+            Ok(None)
+        } else {
+            ret.as_result()?;
+            Ok(Some((
+                uuid::Uuid::from_u64_pair(id_upper, id_lower),
                 core::slice::from_raw_parts(ptr as *const u8, len as usize),
-            ))),
-            v => Err(v),
+            )))
         }
     }
 
@@ -112,25 +104,20 @@ impl SystemCall {
     /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn send_message(target: uuid::Uuid, s: &[u8]) -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::SendMessage.into();
-        let (uuid_hi, uuid_lo) = target.as_u64_pair();
+        let (id_upper, id_lower) = target.as_u64_pair();
         let ptr = s.as_ptr() as u64;
         let len = s.len() as u64;
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
             in("rdi") ty,
-            in("rsi") uuid_hi,
-            in("rdx") uuid_lo,
+            in("rsi") id_upper,
+            in("rdx") id_lower,
             in("rcx") ptr,
             in("r8") len,
             out("rax") ret,
         );
-
-        if ret == 0 {
-            return Ok(());
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
     /// # Safety
@@ -140,11 +127,7 @@ impl SystemCall {
         let ty: u64 = Self::Exit.into();
         let mut ret: u64;
         core::arch::asm!("int 249", in("rdi") ty, out("rax") ret);
-        if ret == 0 {
-            return Ok(());
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
     /// # Safety
@@ -154,11 +137,7 @@ impl SystemCall {
         let ty: u64 = Self::Skip.into();
         let mut ret: u64;
         core::arch::asm!("int 249", in("rdi") ty, out("rax") ret);
-        if ret == 0 {
-            return Ok(());
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
     /// # Safety
@@ -166,21 +145,16 @@ impl SystemCall {
     /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn register_provider(provider: uuid::Uuid) -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::RegisterProvider.into();
-        let (uuid_hi, uuid_lo) = provider.as_u64_pair();
+        let (id_upper, id_lower) = provider.as_u64_pair();
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
             in("rdi") ty,
-            in("rsi") uuid_hi,
-            in("rdx") uuid_lo,
+            in("rsi") id_upper,
+            in("rdx") id_lower,
             out("rax") ret,
         );
-
-        if ret == 0 {
-            return Ok(());
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
     /// # Safety
@@ -190,23 +164,19 @@ impl SystemCall {
         provider: uuid::Uuid,
     ) -> Result<uuid::Uuid, SystemCallStatus> {
         let ty: u64 = Self::GetProvidingProcess.into();
-        let (mut uuid_hi, mut uuid_lo) = provider.as_u64_pair();
+        let (mut id_upper, mut id_lower) = provider.as_u64_pair();
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
             in("rdi") ty,
-            in("rsi") uuid_hi,
-            in("rdx") uuid_lo,
-            lateout("rdi") uuid_hi,
-            lateout("rsi") uuid_lo,
+            in("rsi") id_upper,
+            in("rdx") id_lower,
+            lateout("rdi") id_upper,
+            lateout("rsi") id_lower,
             out("rax") ret,
         );
-
-        if ret == 0 {
-            return Ok(uuid::Uuid::from_u64_pair(uuid_hi, uuid_lo));
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()?;
+        Ok(uuid::Uuid::from_u64_pair(id_upper, id_lower))
     }
 
     /// # Safety
@@ -223,12 +193,8 @@ impl SystemCall {
             lateout("rdi") val,
             out("rax") ret,
         );
-
-        if ret == 0 {
-            return Ok(val as u8);
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()?;
+        Ok(val as u8)
     }
 
     /// # Safety
@@ -244,12 +210,7 @@ impl SystemCall {
             in("rdx") val as u64,
             out("rax") ret,
         );
-
-        if ret == 0 {
-            return Ok(());
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
     /// # Safety
@@ -266,12 +227,8 @@ impl SystemCall {
             lateout("rdi") val,
             out("rax") ret,
         );
-
-        if ret == 0 {
-            return Ok(val as u16);
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()?;
+        Ok(val as u16)
     }
 
     /// # Safety
@@ -287,12 +244,7 @@ impl SystemCall {
             in("rdx") val as u64,
             out("rax") ret,
         );
-
-        if ret == 0 {
-            return Ok(());
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
     /// # Safety
@@ -309,12 +261,8 @@ impl SystemCall {
             lateout("rdi") val,
             out("rax") ret,
         );
-
-        if ret == 0 {
-            return Ok(val as u32);
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()?;
+        Ok(val as u32)
     }
 
     /// # Safety
@@ -330,12 +278,7 @@ impl SystemCall {
             in("rdx") val as u64,
             out("rax") ret,
         );
-
-        if ret == 0 {
-            return Ok(());
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
     /// # Safety
@@ -345,12 +288,7 @@ impl SystemCall {
         let ty: u64 = Self::RegisterIRQHandler.into();
         let mut ret: u64;
         core::arch::asm!("int 249", in("rdi") ty, in("rsi") irq as u64, out("rax") ret);
-
-        if ret == 0 {
-            return Ok(());
-        }
-
-        Err(ret.into())
+        SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 }
 
