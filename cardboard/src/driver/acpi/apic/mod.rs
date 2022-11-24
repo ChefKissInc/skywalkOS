@@ -279,7 +279,7 @@ unsafe extern "C" fn lapic_error_handler(_state: &mut RegisterState) {
     if lapic.read_ver().max_lvt_entry() > 3 {
         lapic.reset_error();
     }
-    error!("APIC error: {:?}", lapic.error());
+    error!("APIC error: {:#X?}", lapic.error());
 }
 
 unsafe extern "C" fn spurious_vector_handler(_state: &mut RegisterState) {
