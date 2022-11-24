@@ -20,6 +20,11 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
             })
     }
 
+    unsafe fn alloc_zeroed(&self, layout: core::alloc::Layout) -> *mut u8 {
+        // Memory is already zeroed by the allocator
+        self.alloc(layout)
+    }
+
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
         let state = super::state::SYS_STATE.get().as_mut().unwrap();
         state.pmm.get_mut().unwrap().lock().free(
