@@ -48,6 +48,8 @@ pub enum SystemCall {
     PortOutWord,
     PortOutDWord,
     RegisterIRQHandler,
+    Allocate,
+    Free,
 }
 
 impl SystemCall {
@@ -288,6 +290,39 @@ impl SystemCall {
         let ty: u64 = Self::RegisterIRQHandler.into();
         let mut ret: u64;
         core::arch::asm!("int 249", in("rdi") ty, in("rsi") irq as u64, out("rax") ret);
+        SystemCallStatus::try_from(ret).unwrap().as_result()
+    }
+
+    /// # Safety
+    ///
+    /// The caller must ensure that this operation has no unsafe side effects.
+    pub unsafe fn allocate(size: u64) -> Result<*mut u8, SystemCallStatus> {
+        let ty: u64 = Self::Allocate.into();
+        let mut ret: u64;
+        let mut ptr: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") ty,
+            in("rsi") size,
+            lateout("rdi") ptr,
+            out("rax") ret,
+        );
+        SystemCallStatus::try_from(ret).unwrap().as_result()?;
+        Ok(ptr as *mut u8)
+    }
+
+    /// # Safety
+    ///
+    /// The caller must ensure that this operation has no unsafe side effects.
+    pub unsafe fn free(ptr: *mut u8) -> Result<(), SystemCallStatus> {
+        let ty: u64 = Self::Free.into();
+        let mut ret: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") ty,
+            in("rsi") ptr as u64,
+            out("rax") ret,
+        );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 }

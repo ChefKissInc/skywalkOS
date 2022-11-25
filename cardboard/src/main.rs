@@ -69,17 +69,17 @@ fn real_main(boot_info: &sulphur_dioxide::BootInfo) -> ! {
     driver::acpi::madt::setup(state);
     driver::acpi::apic::setup(state);
 
+    sys::proc::userland::setup();
     let sched = state
         .scheduler
-        .call_once(|| spin::Mutex::new(sys::proc::sched::Scheduler::new(&hpet)));
+        .call_once(|| spin::Mutex::new(sys::proc::scheduler::Scheduler::new(&hpet)));
     for module in state.modules.as_ref().unwrap() {
         debug!("Spawning module {}", module.name);
         sched.lock().spawn_proc(module.data);
     }
 
-    debug!("Kernel out.");
-    sys::proc::userland::setup();
-    sys::proc::sched::Scheduler::unmask();
+    debug!("I'm out of here!");
+    sys::proc::scheduler::Scheduler::unmask();
 
     hlt_loop!();
 }

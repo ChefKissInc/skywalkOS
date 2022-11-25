@@ -1,7 +1,8 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-use core::fmt::Write;
+use alloc::boxed::Box;
+use core::{fmt::Write, mem::size_of};
 
 use amd64::{
     io::port::PortIO,
@@ -11,25 +12,68 @@ use cardboard_klib::{KernelMessage, SystemCall, SystemCallStatus};
 
 use crate::sys::{gdt::PrivilegeLevel, RegisterState};
 
+pub mod allocations;
+
 pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC0000000;
+
+// This isn't meant to be user-accessible.
+// It is meant to track the allocations so that they are deallocated when the process exits.
+#[derive(Debug)]
+pub struct UserPageTableLvl4(uuid::Uuid, amd64::paging::PageTable);
+
+impl UserPageTableLvl4 {
+    pub const fn new(proc_id: uuid::Uuid) -> Self {
+        Self(proc_id, amd64::paging::PageTable::new())
+    }
+}
+
+impl PML4 for UserPageTableLvl4 {
+    const VIRT_OFF: u64 = amd64::paging::PHYS_VIRT_OFFSET;
+
+    #[inline]
+    fn get_entry(&mut self, offset: u64) -> &mut amd64::paging::PageTableEntry {
+        &mut self.1.entries[offset as usize]
+    }
+
+    #[inline]
+    fn alloc_entry(&self) -> u64 {
+        let phys = Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
+            - amd64::paging::PHYS_VIRT_OFFSET;
+        let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+        state.user_allocations.get_mut().unwrap().lock().track(
+            self.0,
+            phys,
+            size_of::<amd64::paging::PageTable>() as _,
+        );
+        phys
+    }
+}
 
 unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let irq = (state.int_num - 0x20) as u8;
     let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
     let mut scheduler = sys_state.scheduler.get_mut().unwrap().lock();
-    let proc_uuid = *scheduler.irq_handlers.get(&irq).unwrap();
-    let process = scheduler.processes.get_mut(&proc_uuid).unwrap();
+    let proc_id = *scheduler.irq_handlers.get(&irq).unwrap();
+    let process = scheduler.processes.get_mut(&proc_id).unwrap();
     let s = postcard::to_allocvec(&KernelMessage::IRQFired(irq))
         .unwrap()
         .leak();
     let ptr = s.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
+    let virt = ptr + USER_PHYS_VIRT_OFFSET;
     let len = s.len() as u64;
+    let count = (len + 0xFFF) / 0x1000;
     process.cr3.map_pages(
-        ptr + USER_PHYS_VIRT_OFFSET,
+        virt,
         ptr,
-        (len + 0xFFF) / 0x1000,
+        count,
         PageTableEntry::new().with_user(true).with_present(true),
     );
+    sys_state
+        .user_allocations
+        .get_mut()
+        .unwrap()
+        .lock()
+        .track(proc_id, virt, count);
     process
         .messages
         .push_front((uuid::Uuid::nil(), ptr + USER_PHYS_VIRT_OFFSET, len));
@@ -60,19 +104,19 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             if let Some(terminal) = &mut sys_state.terminal {
                 write!(terminal, "{s}").unwrap();
             }
-            state.rax = 0;
+            state.rax = SystemCallStatus::Success.into();
         }
         SystemCall::ReceiveMessage => {
-            let proc_uuid = scheduler.current_thread_mut().unwrap().proc_uuid;
-            let process = scheduler.processes.get_mut(&proc_uuid).unwrap();
+            let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
+            let process = scheduler.processes.get_mut(&proc_id).unwrap();
             let Some((source, ptr, len)) = process.messages.pop_back() else {
                 state.rax = SystemCallStatus::DoNothing.into();
                 return;
             };
-            let (uuid_hi, uuid_lo) = source.as_u64_pair();
-            state.rax = 0;
-            state.rdi = uuid_hi;
-            state.rsi = uuid_lo;
+            let (id_upper, id_lower) = source.as_u64_pair();
+            state.rax = SystemCallStatus::Success.into();
+            state.rdi = id_upper;
+            state.rsi = id_lower;
             state.rdx = ptr;
             state.rcx = len;
         }
@@ -80,21 +124,21 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             let index = scheduler
                 .threads
                 .iter()
-                .position(|v| v.uuid == scheduler.current_thread_uuid.unwrap())
+                .position(|v| v.id == scheduler.current_thread_id.unwrap())
                 .unwrap();
             scheduler.threads.remove(index);
-            scheduler.current_thread_uuid = None;
-            state.rax = 0;
+            scheduler.current_thread_id = None;
+            state.rax = SystemCallStatus::Success.into();
             drop(scheduler);
-            super::sched::schedule(state);
+            super::scheduler::schedule(state);
         }
         SystemCall::Skip => {
-            state.rax = 0;
+            state.rax = SystemCallStatus::Success.into();
             drop(scheduler);
-            super::sched::schedule(state);
+            super::scheduler::schedule(state);
         }
         SystemCall::SendMessage => {
-            let src = scheduler.current_thread_mut().unwrap().proc_uuid;
+            let src = scheduler.current_thread_mut().unwrap().proc_id;
             let dest = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
             if dest.is_nil() {
                 state.rax = SystemCallStatus::MalformedData.into();
@@ -105,71 +149,67 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 return;
             };
             process.messages.push_front((src, state.rcx, state.r8));
-            state.rax = 0;
+            state.rax = SystemCallStatus::Success.into();
         }
         SystemCall::RegisterProvider => {
-            let provider_uuid = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
-            if provider_uuid.is_nil() {
+            let provider = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
+            if provider.is_nil() {
                 state.rax = SystemCallStatus::MalformedData.into();
                 return;
             }
-            let proc_uuid = scheduler.current_thread_mut().unwrap().proc_uuid;
-            if scheduler
-                .providers
-                .try_insert(provider_uuid, proc_uuid)
-                .is_err()
-            {
+            let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
+            if scheduler.providers.try_insert(provider, proc_id).is_err() {
                 state.rax = SystemCallStatus::InvalidRequest.into();
                 return;
             }
-            state.rax = 0;
+            state.rax = SystemCallStatus::Success.into();
         }
         SystemCall::GetProvidingProcess => {
-            let provider_uuid = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
-            if provider_uuid.is_nil() {
+            let provider = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
+            if provider.is_nil() {
                 state.rax = SystemCallStatus::MalformedData.into();
                 return;
             }
-            let Some(proc_uuid) = scheduler.providers.get(&provider_uuid) else {
+            let Some(proc_id) = scheduler.providers.get(&provider) else {
                 state.rax = SystemCallStatus::MalformedData.into();
                 return;
             };
-            let (hi, lo) = proc_uuid.as_u64_pair();
-            state.rax = 0;
+            let (hi, lo) = proc_id.as_u64_pair();
+            state.rax = SystemCallStatus::Success.into();
             state.rdi = hi;
             state.rsi = lo;
         }
         SystemCall::PortInByte => {
             let port = state.rsi as u16;
-            state.rax = 0;
+            state.rax = SystemCallStatus::Success.into();
             state.rdi = u8::read(port) as u64;
         }
         SystemCall::PortInWord => {
             let port = state.rsi as u16;
-            state.rax = 0;
+            state.rax = SystemCallStatus::Success.into();
             state.rdi = u16::read(port) as u64;
         }
         SystemCall::PortInDWord => {
             let port = state.rsi as u16;
-            state.rax = 0;
+            state.rax = SystemCallStatus::Success.into();
             state.rdi = u32::read(port) as u64;
         }
         SystemCall::PortOutByte => {
             let port = state.rsi as u16;
             let value = state.rdx as u8;
-            state.rax = 0;
+            state.rax = SystemCallStatus::Success.into();
             u8::write(port, value);
         }
         SystemCall::PortOutWord => {
             let port = state.rsi as u16;
             let value = state.rdx as u16;
-            state.rax = 0;
+            state.rax = SystemCallStatus::Success.into();
             u16::write(port, value);
         }
         SystemCall::PortOutDWord => {
             let port = state.rsi as u16;
             let value = state.rdx as u32;
-            state.rax = 0;
+            state.rax = SystemCallStatus::Success.into();
             u32::write(port, value);
         }
         SystemCall::RegisterIRQHandler => {
@@ -179,8 +219,8 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 return;
             }
 
-            let proc_uuid = scheduler.current_thread_mut().unwrap().proc_uuid;
-            if scheduler.irq_handlers.try_insert(irq, proc_uuid).is_err() {
+            let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
+            if scheduler.irq_handlers.try_insert(irq, proc_id).is_err() {
                 state.rax = SystemCallStatus::InvalidRequest.into();
                 return;
             }
@@ -195,10 +235,36 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 true,
             )
         }
+        SystemCall::Allocate => {
+            let size = state.rsi;
+            let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
+            let process = scheduler.processes.get_mut(&proc_id).unwrap();
+            state.rdi = sys_state
+                .user_allocations
+                .get_mut()
+                .unwrap()
+                .lock()
+                .allocate(proc_id, &mut process.cr3, size);
+            state.rax = SystemCallStatus::Success.into();
+        }
+        SystemCall::Free => {
+            let ptr = state.rsi;
+            sys_state
+                .user_allocations
+                .get_mut()
+                .unwrap()
+                .lock()
+                .free(ptr);
+            state.rax = SystemCallStatus::Success.into();
+        }
     }
 }
 
 pub fn setup() {
+    let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+    state
+        .user_allocations
+        .call_once(|| spin::Mutex::new(allocations::UserAllocationTracker::new()));
     crate::driver::intrs::idt::set_handler(
         249,
         1,

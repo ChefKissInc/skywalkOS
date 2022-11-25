@@ -8,11 +8,7 @@ use alloc::{
     vec::Vec,
 };
 
-use amd64::paging::pml4::PML4;
-
-use super::vmm::PageTableLvl4;
-
-pub mod sched;
+pub mod scheduler;
 pub mod userland;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,8 +22,8 @@ pub enum ThreadState {
 #[derive(Debug)]
 pub struct Thread {
     pub state: ThreadState,
-    pub uuid: uuid::Uuid,
-    pub proc_uuid: uuid::Uuid,
+    pub id: uuid::Uuid,
+    pub proc_id: uuid::Uuid,
     pub regs: super::RegisterState,
     pub fs_base: usize,
     pub gs_base: usize,
@@ -35,12 +31,12 @@ pub struct Thread {
 }
 
 impl Thread {
-    pub fn new(proc_uuid: uuid::Uuid, rip: u64) -> Self {
+    pub fn new(proc_id: uuid::Uuid, rip: u64) -> Self {
         let stack = vec![0; 0x14000];
         Self {
             state: ThreadState::Inactive,
-            uuid: uuid::Uuid::new_v4(),
-            proc_uuid,
+            id: uuid::Uuid::new_v4(),
+            proc_id,
             regs: super::RegisterState {
                 rip,
                 cs: super::gdt::SegmentSelector::new(3, super::gdt::PrivilegeLevel::User)
@@ -66,21 +62,16 @@ impl Thread {
 pub struct Process {
     pub path: String,
     pub cwd: String,
-    pub cr3: Box<PageTableLvl4>,
+    pub cr3: Box<userland::UserPageTableLvl4>,
     pub messages: VecDeque<(uuid::Uuid, u64, u64)>,
 }
 
 impl Process {
-    pub fn new(path: &str, cwd: &str) -> Self {
-        let mut cr3 = Box::new(PageTableLvl4::new());
-        unsafe {
-            cr3.map_higher_half();
-        }
-
+    pub fn new(proc_id: uuid::Uuid, path: &str, cwd: &str) -> Self {
         Self {
             path: path.to_string(),
             cwd: cwd.to_string(),
-            cr3,
+            cr3: Box::new(userland::UserPageTableLvl4::new(proc_id)),
             messages: VecDeque::new(),
         }
     }

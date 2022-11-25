@@ -6,7 +6,12 @@ use core::cell::SyncUnsafeCell;
 
 use sulphur_dioxide::{boot_attrs::BootSettings, module::Module};
 
-use super::{pmm::BitmapAllocator, proc::sched::Scheduler, terminal::Terminal, vmm::PageTableLvl4};
+use super::{
+    pmm::BitmapAllocator,
+    proc::{scheduler::Scheduler, userland::allocations::UserAllocationTracker},
+    terminal::Terminal,
+    vmm::PageTableLvl4,
+};
 use crate::driver::acpi::{apic::LocalAPIC, madt::MADTData, ACPIPlatform};
 
 pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemState::new());
@@ -24,6 +29,7 @@ pub struct SystemState {
     pub scheduler: spin::Once<spin::Mutex<Scheduler>>,
     pub interrupt_context: Option<super::RegisterState>,
     pub in_panic: bool,
+    pub user_allocations: spin::Once<spin::Mutex<UserAllocationTracker>>,
 }
 
 impl SystemState {
@@ -41,6 +47,7 @@ impl SystemState {
             scheduler: spin::Once::new(),
             interrupt_context: None,
             in_panic: false,
+            user_allocations: spin::Once::new(),
         }
     }
 }

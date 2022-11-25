@@ -17,7 +17,7 @@ static TSS: SyncUnsafeCell<TaskSegmentSelector> = SyncUnsafeCell::new(TaskSegmen
 pub struct Scheduler {
     pub processes: HashMap<uuid::Uuid, super::Process>,
     pub threads: Vec<super::Thread>,
-    pub current_thread_uuid: Option<uuid::Uuid>,
+    pub current_thread_id: Option<uuid::Uuid>,
     pub kern_stack: Vec<u8>,
     pub providers: HashMap<uuid::Uuid, uuid::Uuid>,
     pub irq_handlers: HashMap<u8, uuid::Uuid>,
@@ -35,11 +35,11 @@ pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
     let thread = this.next_thread_mut().unwrap();
     *state = thread.regs;
     thread.state = super::ThreadState::Active;
-    let proc_uuid = thread.proc_uuid;
-    let new = Some(thread.uuid);
-    this.processes.get_mut(&proc_uuid).unwrap().cr3.set();
+    let proc_id = thread.proc_id;
+    let new = Some(thread.id);
+    this.processes.get_mut(&proc_id).unwrap().cr3.set();
 
-    this.current_thread_uuid = new;
+    this.current_thread_id = new;
 }
 
 impl Scheduler {
@@ -81,7 +81,7 @@ impl Scheduler {
         Self {
             processes: HashMap::new(),
             threads: Vec::new(),
-            current_thread_uuid: None,
+            current_thread_id: None,
             kern_stack,
             providers: HashMap::new(),
             irq_handlers: HashMap::new(),
@@ -141,14 +141,27 @@ impl Scheduler {
             *ptr = target;
         }
         let rip = virt_addr + exec.entry;
-        let proc_uuid = uuid::Uuid::new_v4();
-        let mut proc = super::Process::new("", "");
-        let thread = super::Thread::new(proc_uuid, rip);
+        let proc_id = uuid::Uuid::new_v4();
+        let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+        let count = (data.len() as u64 + 0xFFF) / 0x1000;
+        state
+            .user_allocations
+            .get_mut()
+            .unwrap()
+            .lock()
+            .track(proc_id, virt_addr, count);
+        self.processes
+            .insert(proc_id, super::Process::new(proc_id, "", ""));
+        let proc = self.processes.get_mut(&proc_id).unwrap();
+        unsafe {
+            proc.cr3.map_higher_half();
+        }
+        let thread = super::Thread::new(proc_id, rip);
         unsafe {
             proc.cr3.map_pages(
                 virt_addr,
                 virt_addr - super::userland::USER_PHYS_VIRT_OFFSET,
-                (data.len() as u64 + 0xFFF) / 0x1000,
+                count,
                 PageTableEntry::new()
                     .with_user(true)
                     .with_writable(true)
@@ -165,24 +178,18 @@ impl Scheduler {
                     .with_present(true),
             );
         }
-        self.processes.insert(proc_uuid, proc);
         self.threads.push(thread);
     }
 
     pub fn current_thread_mut(&mut self) -> Option<&mut super::Thread> {
-        let uuid = self.current_thread_uuid?;
-        self.threads.iter_mut().find(|v| v.uuid == uuid)
+        let id = self.current_thread_id?;
+        self.threads.iter_mut().find(|v| v.id == id)
     }
 
     pub fn next_thread_mut(&mut self) -> Option<&mut super::Thread> {
         let mut i = self
-            .current_thread_uuid
-            .and_then(|uuid| {
-                self.threads
-                    .iter()
-                    .position(|v| v.uuid == uuid)
-                    .map(|i| i + 1)
-            })
+            .current_thread_id
+            .and_then(|id| self.threads.iter().position(|v| v.id == id).map(|i| i + 1))
             .unwrap_or_default();
         if i >= self.threads.len() {
             i = 0;
