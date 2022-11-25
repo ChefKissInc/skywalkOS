@@ -10,3 +10,6 @@ num_enum = { version = "0.5.7", default-features = false, features = [
 ] }
 uuid = { version = "1.2.2", default-features = false }
 serde = { version = "1.0.147", default-features = false, features = ["derive"] }
+
+[features]
+kernel = []

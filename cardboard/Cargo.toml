@@ -7,7 +7,7 @@ version = "0.1.0"
 [dependencies]
 acpi = { path = "../acpi" }
 amd64 = { path = "../amd64" }
-cardboard-klib = { path = "../cardboard-klib" }
+cardboard-klib = { path = "../cardboard-klib", features = ["kernel"] }
 font8x8 = { version = "0.3.1", default-features = false }
 getrandom = { version = "0.2.8", default-features = false, features = [
     "rdrand",

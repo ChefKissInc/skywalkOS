@@ -4,6 +4,7 @@
 #![no_std]
 #![deny(warnings, clippy::cargo, unused_extern_crates)]
 
+#[cfg(not(feature = "kernel"))]
 pub mod port;
 
 use num_enum::{IntoPrimitive, TryFromPrimitive};
@@ -22,6 +23,7 @@ pub enum SystemCallStatus {
     DoNothing,
 }
 
+#[cfg(not(feature = "kernel"))]
 impl SystemCallStatus {
     pub fn as_result(self) -> Result<(), SystemCallStatus> {
         match self {
@@ -52,6 +54,7 @@ pub enum SystemCall {
     Free,
 }
 
+#[cfg(not(feature = "kernel"))]
 impl SystemCall {
     /// # Safety
     ///
