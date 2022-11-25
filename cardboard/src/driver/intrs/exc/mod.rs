@@ -3,6 +3,7 @@
 
 macro_rules! exc_msg {
     ($name:expr, $msg:expr, $regs:expr) => {
+        #[cfg(debug_assertions)]
         while crate::sys::io::serial::SERIAL.is_locked() {
             crate::sys::io::serial::SERIAL.force_unlock()
         }

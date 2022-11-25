@@ -53,10 +53,9 @@ extern "C" fn callback(
 #[panic_handler]
 pub fn panic(info: &core::panic::PanicInfo) -> ! {
     crate::cli!();
-    unsafe {
-        while super::io::serial::SERIAL.is_locked() {
-            super::io::serial::SERIAL.force_unlock();
-        }
+    #[cfg(debug_assertions)]
+    while super::io::serial::SERIAL.is_locked() {
+        unsafe { super::io::serial::SERIAL.force_unlock() }
     }
     let state = unsafe { super::state::SYS_STATE.get().as_mut().unwrap() };
 

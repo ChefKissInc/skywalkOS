@@ -11,10 +11,9 @@ impl log::Log for CardboardLogger {
     }
 
     fn log(&self, record: &log::Record) {
-        let mut serial = crate::sys::io::serial::SERIAL.lock();
-
+        #[cfg(debug_assertions)]
         writeln!(
-            serial,
+            crate::sys::io::serial::SERIAL.lock(),
             "{} [{}] > {}",
             record.level(),
             record.target(),
@@ -44,6 +43,7 @@ impl log::Log for CardboardLogger {
 pub static LOGGER: CardboardLogger = CardboardLogger;
 
 pub fn init() {
+    #[cfg(debug_assertions)]
     crate::sys::io::serial::SERIAL.lock().init();
 
     log::set_logger(&LOGGER)

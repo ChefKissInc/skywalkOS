@@ -99,7 +99,9 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 state.rax = SystemCallStatus::MalformedData.into();
                 return;
             };
+            #[cfg(debug_assertions)]
             let mut serial = crate::sys::io::serial::SERIAL.lock();
+            #[cfg(debug_assertions)]
             write!(serial, "{s}").unwrap();
             if let Some(terminal) = &mut sys_state.terminal {
                 write!(terminal, "{s}").unwrap();
