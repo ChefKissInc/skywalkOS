@@ -10,6 +10,6 @@ pub struct Module {
 
 impl core::fmt::Debug for Module {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_tuple("Module").field(&self.name).finish()
+        f.write_fmt(format_args!("Module({:?})", self.name))
     }
 }

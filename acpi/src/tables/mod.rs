@@ -1,8 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-use core::any::type_name;
-
 pub mod bgrt;
 pub mod hpet;
 pub mod madt;
@@ -66,7 +64,7 @@ impl core::fmt::Debug for SDTHeader {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let rev = self.oem_revision;
         let cr_rev = self.creator_revision;
-        f.debug_struct(type_name::<Self>())
+        f.debug_struct("SDTHeader")
             .field("valid", &self.validate())
             .field("signature", &self.signature())
             .field("length", &self.length())

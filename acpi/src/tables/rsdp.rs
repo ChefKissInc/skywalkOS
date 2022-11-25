@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-use core::{any::type_name, mem::size_of};
+use core::mem::size_of;
 
 use super::{rsdt::RSDT, xsdt::XSDT};
 
@@ -121,7 +121,7 @@ impl RSDP {
 
 impl core::fmt::Debug for RSDP {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct(type_name::<Self>())
+        f.debug_struct("RSDP")
             .field("valid", &self.validate())
             .field("oem_id", &self.oem_id())
             .field("revision", &self.revision)
