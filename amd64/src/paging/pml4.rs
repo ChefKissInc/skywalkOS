@@ -6,7 +6,7 @@ pub trait PML4: Sized {
 
     #[must_use]
     fn get_entry(&mut self, offset: u64) -> &mut super::PageTableEntry;
-    fn alloc_entry() -> u64;
+    fn alloc_entry(&self) -> u64;
 
     /// # Safety
     ///
@@ -37,13 +37,14 @@ pub trait PML4: Sized {
         offset: u64,
         flags: super::PageTableEntry,
     ) -> &mut Self {
-        let entry = self.get_entry(offset);
+        let is_present = self.get_entry(offset).present();
 
-        if !entry.present() {
-            *entry = flags.with_address(Self::alloc_entry() >> 12);
+        if !is_present {
+            let ent = flags.with_address(self.alloc_entry() >> 12);
+            *self.get_entry(offset) = ent;
         }
 
-        (((entry.address() << 12) + Self::VIRT_OFF) as *mut Self)
+        (((self.get_entry(offset).address() << 12) + Self::VIRT_OFF) as *mut Self)
             .as_mut()
             .unwrap()
     }

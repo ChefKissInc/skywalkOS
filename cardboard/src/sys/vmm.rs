@@ -51,7 +51,7 @@ impl PML4Trait for PageTableLvl4 {
     }
 
     #[inline]
-    fn alloc_entry() -> u64 {
+    fn alloc_entry(&self) -> u64 {
         Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
             - amd64::paging::PHYS_VIRT_OFFSET
     }

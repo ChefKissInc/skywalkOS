@@ -20,7 +20,7 @@ impl amd64::paging::pml4::PML4 for PML4 {
         &mut self.0.entries[offset as usize]
     }
 
-    fn alloc_entry() -> u64 {
+    fn alloc_entry(&self) -> u64 {
         Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
     }
 }
