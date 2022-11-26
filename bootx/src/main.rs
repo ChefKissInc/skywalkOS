@@ -43,7 +43,9 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
         .boot_services()
         .set_watchdog_timer(0, 0x10000, None)
         .unwrap();
-    uefi_services::init(&mut system_table).expect("Failed to initialize utilities");
+    system_table.stdout().reset(false).unwrap();
+    system_table.stdin().reset(false).unwrap();
+    uefi_services::init(&mut system_table).unwrap();
     helpers::setup::init_output();
     helpers::setup::setup();
 
@@ -64,18 +66,15 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
                 system_table.stdin().wait_for_key_event().unsafe_clone(),
             ]
         };
-        system_table
+        let index = system_table
             .boot_services()
             .wait_for_event(&mut events)
             .unwrap();
 
-        system_table
-            .boot_services()
-            .set_timer(&timer, TimerTrigger::Cancel)
-            .unwrap();
         system_table.boot_services().close_event(timer).unwrap();
-        system_table.stdin().read_key().unwrap()
-            == Some(Key::Printable(Char16::try_from('v').unwrap()))
+        index != 0
+            && system_table.stdin().read_key().unwrap()
+                == Some(Key::Printable(Char16::try_from('v').unwrap()))
     };
 
     let mut esp = helpers::file::open_esp(image_handle);

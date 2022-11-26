@@ -15,9 +15,9 @@ pub fn open_esp(image: Handle) -> Directory {
             .as_mut()
             .boot_services()
             .get_image_file_system(image)
-            .expect("Failed to get ESP");
+            .unwrap();
 
-        fs.open_volume().expect("Failed to open volume.")
+        fs.open_volume().unwrap()
     }
 }
 

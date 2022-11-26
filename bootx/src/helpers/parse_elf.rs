@@ -10,7 +10,7 @@ pub fn parse_elf(
     sulphur_dioxide::EntryPoint,
     Vec<sulphur_dioxide::kern_sym::KernSymbol>,
 ) {
-    let elf = goblin::elf::Elf::parse(buffer).expect("Failed to parse kernel elf");
+    let elf = goblin::elf::Elf::parse(buffer).unwrap();
 
     trace!("{:X?}", elf.header);
     assert!(elf.is_64, "Only ELF64");
@@ -38,6 +38,7 @@ pub fn parse_elf(
         .collect();
 
     trace!("Parsing program headers: ");
+    let system_table = unsafe { uefi_services::system_table().as_mut() };
     for phdr in elf
         .program_headers
         .iter()
@@ -66,7 +67,7 @@ pub fn parse_elf(
             npages
         );
         assert_eq!(
-            unsafe { uefi_services::system_table().as_mut() }
+            system_table
                 .boot_services()
                 .allocate_pages(
                     uefi::table::boot::AllocateType::Address(
@@ -75,7 +76,7 @@ pub fn parse_elf(
                     uefi::table::boot::MemoryType::LOADER_DATA,
                     npages,
                 )
-                .expect("Failed to load section above. Sections might be misaligned."),
+                .unwrap(),
             phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET
         );
 

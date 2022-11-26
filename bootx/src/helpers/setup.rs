@@ -11,13 +11,11 @@ use uefi::{
 pub fn init_output() {
     unsafe {
         let stdout = uefi_services::system_table().as_mut().stdout();
-        stdout.reset(false).expect("Failed to reset stdout");
+        stdout.reset(false).unwrap();
         let desired_mode = stdout.modes().last().unwrap();
-        stdout.set_mode(desired_mode).expect("Failed to set mode");
-        stdout
-            .set_color(Color::White, Color::Black)
-            .expect("Failed to set color");
-        stdout.clear().expect("Failed to clear console");
+        stdout.set_mode(desired_mode).unwrap();
+        stdout.set_color(Color::White, Color::Black).unwrap();
+        stdout.clear().unwrap();
     }
 }
 
@@ -75,7 +73,7 @@ pub fn get_gop<'a>() -> ScopedProtocol<'a, GraphicsOutput<'a>> {
                 },
                 OpenProtocolAttributes::GetProtocol,
             )
-            .expect("Failed to get GOP protocol")
+            .unwrap()
     }
 }
 
@@ -85,7 +83,7 @@ pub fn get_rsdp() -> &'static RSDP {
         .find(|ent| ent.guid == uefi::table::cfg::ACPI2_GUID)
         .unwrap_or_else(|| {
             iter.find(|ent| ent.guid == uefi::table::cfg::ACPI_GUID)
-                .expect("No ACPI found on the system!")
+                .unwrap()
         })
         .address
         .cast();
