@@ -8,6 +8,8 @@ use alloc::{
     vec::Vec,
 };
 
+use cardboard_klib::Message;
+
 pub mod scheduler;
 pub mod userland;
 
@@ -63,7 +65,7 @@ pub struct Process {
     pub path: String,
     pub cwd: String,
     pub cr3: Box<userland::UserPageTableLvl4>,
-    pub messages: VecDeque<(uuid::Uuid, u64, u64)>,
+    pub messages: VecDeque<Message>,
 }
 
 impl Process {

@@ -5,6 +5,9 @@ publish = false
 version = "0.1.0"
 
 [dependencies]
+getrandom = { version = "0.2.8", default-features = false, optional = true, features = [
+    "rdrand",
+] }
 num_enum = { version = "0.5.7", default-features = false, features = [
     "nightly",
 ] }
@@ -12,4 +15,4 @@ uuid = { version = "1.2.2", default-features = false }
 serde = { version = "1.0.147", default-features = false, features = ["derive"] }
 
 [features]
-kernel = []
+kernel = ["uuid/v4", "getrandom"]

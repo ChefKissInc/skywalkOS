@@ -33,6 +33,24 @@ impl SystemCallStatus {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Message {
+    pub id: uuid::Uuid,
+    pub proc_id: uuid::Uuid,
+    pub data: &'static [u8],
+}
+
+#[cfg(feature = "kernel")]
+impl Message {
+    pub fn new(proc_id: uuid::Uuid, data: &'static [u8]) -> Self {
+        Self {
+            id: uuid::Uuid::new_v4(),
+            proc_id,
+            data,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
 #[repr(u64)]
 pub enum SystemCall {
@@ -52,6 +70,7 @@ pub enum SystemCall {
     RegisterIRQHandler,
     Allocate,
     Free,
+    Ack,
 }
 
 #[cfg(not(feature = "kernel"))]
@@ -75,12 +94,13 @@ impl SystemCall {
     /// # Safety
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
-    pub unsafe fn receive_message() -> Result<Option<(uuid::Uuid, &'static [u8])>, SystemCallStatus>
-    {
+    pub unsafe fn receive_message() -> Result<Option<Message>, SystemCallStatus> {
         let ty: u64 = Self::ReceiveMessage.into();
         let mut ret: u64;
         let mut id_upper: u64;
         let mut id_lower: u64;
+        let mut proc_id_upper: u64;
+        let mut proc_id_lower: u64;
         let mut ptr: u64;
         let mut len: u64;
         core::arch::asm!(
@@ -89,18 +109,21 @@ impl SystemCall {
             out("rax") ret,
             lateout("rdi") id_upper,
             out("rsi") id_lower,
-            out("rdx") ptr,
-            out("rcx") len,
+            out("rdx") proc_id_upper,
+            out("rcx") proc_id_lower,
+            out("r8") ptr,
+            out("r9") len,
         );
         let ret = SystemCallStatus::try_from(ret).unwrap();
         if matches!(ret, SystemCallStatus::DoNothing) {
             Ok(None)
         } else {
             ret.as_result()?;
-            Ok(Some((
-                uuid::Uuid::from_u64_pair(id_upper, id_lower),
-                core::slice::from_raw_parts(ptr as *const u8, len as usize),
-            )))
+            Ok(Some(Message {
+                id: uuid::Uuid::from_u64_pair(id_upper, id_lower),
+                proc_id: uuid::Uuid::from_u64_pair(proc_id_upper, proc_id_lower),
+                data: core::slice::from_raw_parts(ptr as *const u8, len as usize),
+            }))
         }
     }
 
@@ -324,6 +347,22 @@ impl SystemCall {
             "int 249",
             in("rdi") ty,
             in("rsi") ptr as u64,
+            out("rax") ret,
+        );
+        SystemCallStatus::try_from(ret).unwrap().as_result()
+    }
+
+    /// # Safety
+    ///
+    /// The caller must ensure that this operation has no unsafe side effects.
+    pub unsafe fn ack(id: uuid::Uuid) -> Result<(), SystemCallStatus> {
+        let ty: u64 = Self::Ack.into();
+        let mut ret: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") ty,
+            in("rsi") id.as_u64_pair().0,
+            in("rdx") id.as_u64_pair().1,
             out("rax") ret,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()

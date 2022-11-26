@@ -8,7 +8,7 @@ use hashbrown::HashMap;
 
 pub struct UserAllocationTracker {
     pub allocations: HashMap<u64, (uuid::Uuid, u64)>,
-    // message_allocations: HashMap<uuid::Uuid, u64>,
+    message_allocations: HashMap<uuid::Uuid, u64>,
 }
 
 impl UserAllocationTracker {
@@ -16,7 +16,7 @@ impl UserAllocationTracker {
     pub fn new() -> Self {
         Self {
             allocations: HashMap::new(),
-            // message_allocations: HashMap::new(),
+            message_allocations: HashMap::new(),
         }
     }
 
@@ -28,6 +28,17 @@ impl UserAllocationTracker {
             proc_id
         );
         self.allocations.insert(addr, (proc_id, count));
+    }
+
+    pub fn track_message(&mut self, id: uuid::Uuid, addr: u64) {
+        trace!("Marking allocation at {:#X} as message {}", addr, id);
+        self.message_allocations.insert(id, addr);
+    }
+
+    pub fn free_message(&mut self, id: uuid::Uuid) {
+        trace!("Freeing message {}", id);
+        let addr = self.message_allocations.remove(&id).unwrap();
+        self.free(addr);
     }
 
     pub fn free(&mut self, addr: u64) {

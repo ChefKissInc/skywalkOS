@@ -8,7 +8,7 @@ use amd64::{
     io::port::PortIO,
     paging::{pml4::PML4, PageTableEntry},
 };
-use cardboard_klib::{KernelMessage, SystemCall, SystemCallStatus};
+use cardboard_klib::{KernelMessage, Message, SystemCall, SystemCallStatus};
 
 use crate::sys::{gdt::PrivilegeLevel, RegisterState};
 
@@ -74,9 +74,17 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
         .unwrap()
         .lock()
         .track(proc_id, virt, count);
-    process
-        .messages
-        .push_front((uuid::Uuid::nil(), ptr + USER_PHYS_VIRT_OFFSET, len));
+    let msg = Message::new(
+        uuid::Uuid::nil(),
+        core::slice::from_raw_parts((ptr + USER_PHYS_VIRT_OFFSET) as *const _, len as _),
+    );
+    sys_state
+        .user_allocations
+        .get_mut()
+        .unwrap()
+        .lock()
+        .track_message(msg.id, virt);
+    process.messages.push_front(msg);
 }
 
 unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
@@ -111,16 +119,19 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         SystemCall::ReceiveMessage => {
             let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
             let process = scheduler.processes.get_mut(&proc_id).unwrap();
-            let Some((source, ptr, len)) = process.messages.pop_back() else {
+            let Some(msg) = process.messages.pop_back() else {
                 state.rax = SystemCallStatus::DoNothing.into();
                 return;
             };
-            let (id_upper, id_lower) = source.as_u64_pair();
+            let (id_upper, id_lower) = msg.id.as_u64_pair();
+            let (proc_id_upper, proc_id_lower) = msg.proc_id.as_u64_pair();
             state.rax = SystemCallStatus::Success.into();
             state.rdi = id_upper;
             state.rsi = id_lower;
-            state.rdx = ptr;
-            state.rcx = len;
+            state.rdx = proc_id_upper;
+            state.rcx = proc_id_lower;
+            state.r8 = msg.data.as_ptr() as u64;
+            state.r9 = msg.data.len() as u64;
         }
         SystemCall::Exit => {
             let index = scheduler
@@ -150,7 +161,18 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 state.rax = SystemCallStatus::MalformedData.into();
                 return;
             };
-            process.messages.push_front((src, state.rcx, state.r8));
+            let addr = state.rcx + USER_PHYS_VIRT_OFFSET;
+            let msg = Message::new(
+                src,
+                core::slice::from_raw_parts(addr as *const _, state.r8 as _),
+            );
+            sys_state
+                .user_allocations
+                .get_mut()
+                .unwrap()
+                .lock()
+                .track_message(msg.id, addr);
+            process.messages.push_front(msg);
             state.rax = SystemCallStatus::Success.into();
         }
         SystemCall::RegisterProvider => {
@@ -258,6 +280,15 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 .lock()
                 .free(ptr);
             state.rax = SystemCallStatus::Success.into();
+        }
+        SystemCall::Ack => {
+            let id = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
+            sys_state
+                .user_allocations
+                .get_mut()
+                .unwrap()
+                .lock()
+                .free_message(id);
         }
     }
 }
