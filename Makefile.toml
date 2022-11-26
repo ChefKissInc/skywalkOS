@@ -20,10 +20,38 @@ args = [
     "x86_64-unknown-uefi",
     "--out-dir",
     "Drive/EFI/BOOT/",
-    "--release",
 ]
 
 [tasks.build-kernel]
+command = "cargo"
+args = [
+    "build",
+    "-Zbuild-std=core,compiler_builtins,alloc",
+    "-Zbuild-std-features=compiler-builtins-mem",
+    "--bin",
+    "cardboard",
+    "--target",
+    "x86_64-bridgecore-kernel.json",
+    "--out-dir",
+    "Drive/System/",
+]
+
+[tasks.build-bootx-release]
+command = "cargo"
+args = [
+    "build",
+    "-Zbuild-std=core,compiler_builtins,alloc",
+    "-Zbuild-std-features=compiler-builtins-mem",
+    "--bin",
+    "bootx64",
+    "--target",
+    "x86_64-unknown-uefi",
+    "--out-dir",
+    "Drive/EFI/BOOT/",
+    "--release",
+]
+
+[tasks.build-kernel-release]
 command = "cargo"
 args = [
     "build",
@@ -41,7 +69,10 @@ args = [
 [tasks.make]
 dependencies = ["clippy", "build-bootx", "build-kernel"]
 
-[tasks.run]
+[tasks.make-release]
+dependencies = ["clippy", "build-bootx-release", "build-kernel-release"]
+
+[tasks.qemu]
 command = "qemu-system-x86_64"
 args = [
     "-M",
@@ -59,7 +90,14 @@ args = [
     "-serial",
     "stdio",
 ]
-dependencies = ["make"]
+
+[tasks.run]
+dependencies = ["make", "qemu"]
+[tasks.run-release]
+dependencies = ["make-release", "qemu"]
+
+[env.production]
+EXTRA_ARG = "--release"
 
 [config]
 default_to_workspace = false
