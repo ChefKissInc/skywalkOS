@@ -15,7 +15,12 @@ use alloc::{boxed::Box, vec::Vec};
 
 use uefi::{
     prelude::*,
-    proto::media::file::{FileAttribute, FileMode},
+    proto::{
+        console::text::Key,
+        media::file::{FileAttribute, FileMode},
+    },
+    table::boot::{EventType, TimerTrigger, Tpl},
+    Char16,
 };
 
 mod helpers;
@@ -33,9 +38,7 @@ unsafe extern "C" fn __security_check_cookie(cookie: usize) {
 
 #[export_name = "efi_main"]
 extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
-    unsafe {
-        system_table.boot_services().set_image_handle(image_handle);
-    }
+    unsafe { system_table.boot_services().set_image_handle(image_handle) }
     system_table
         .boot_services()
         .set_watchdog_timer(0, 0x10000, None)
@@ -43,6 +46,37 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
     uefi_services::init(&mut system_table).expect("Failed to initialize utilities");
     helpers::setup::init_output();
     helpers::setup::setup();
+
+    let verbose = {
+        let timer = unsafe {
+            system_table
+                .boot_services()
+                .create_event(EventType::TIMER, Tpl::CALLBACK, None, None)
+                .unwrap()
+        };
+        system_table
+            .boot_services()
+            .set_timer(&timer, TimerTrigger::Relative(5 * 1000 * 1000))
+            .unwrap();
+        let mut events = unsafe {
+            [
+                timer.unsafe_clone(),
+                system_table.stdin().wait_for_key_event().unsafe_clone(),
+            ]
+        };
+        system_table
+            .boot_services()
+            .wait_for_event(&mut events)
+            .unwrap();
+
+        system_table
+            .boot_services()
+            .set_timer(&timer, TimerTrigger::Cancel)
+            .unwrap();
+        system_table.boot_services().close_event(timer).unwrap();
+        system_table.stdin().read_key().unwrap()
+            == Some(Key::Printable(Char16::try_from('v').unwrap()))
+    };
 
     let mut esp = helpers::file::open_esp(image_handle);
 
@@ -77,9 +111,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
 
     let mut boot_info = Box::leak(Box::new(sulphur_dioxide::BootInfo::new(
         symbols.leak(),
-        sulphur_dioxide::boot_attrs::BootSettings {
-            verbose: cfg!(debug_assertions),
-        },
+        sulphur_dioxide::boot_attrs::BootSettings { verbose },
         Some(fbinfo),
         rsdp,
     )));
