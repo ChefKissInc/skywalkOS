@@ -72,7 +72,7 @@ dependencies = ["clippy", "build-bootx", "build-kernel"]
 [tasks.make-release]
 dependencies = ["clippy", "build-bootx-release", "build-kernel-release"]
 
-[tasks.qemu]
+[tasks.run]
 command = "qemu-system-x86_64"
 args = [
     "-M",
@@ -90,11 +90,25 @@ args = [
     "-serial",
     "stdio",
 ]
+dependencies = ["make"]
 
-[tasks.run]
-dependencies = ["make", "qemu"]
 [tasks.run-release]
-dependencies = ["make-release", "qemu"]
+command = "qemu-system-x86_64"
+args = [
+    "-M",
+    "q35",
+    "-cpu",
+    "max",
+    "-m",
+    "1G",
+    "-drive",
+    "if=pflash,format=raw,readonly=on,unit=0,file=${@}/OVMF_CODE.fd",
+    "-drive",
+    "if=pflash,format=raw,unit=1,file=${@}/OVMF_VARS.fd",
+    "-hda",
+    "fat:rw:Drive",
+]
+dependencies = ["make-release"]
 
 [env.production]
 EXTRA_ARG = "--release"
