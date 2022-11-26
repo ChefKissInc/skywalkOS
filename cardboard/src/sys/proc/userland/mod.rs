@@ -96,16 +96,14 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         return;
     };
 
-    match v {
-        SystemCall::KPrint => {
+    state.rax = match v {
+        SystemCall::KPrint => 'a: {
             let s = core::slice::from_raw_parts(state.rsi as *const u8, state.rdx as usize);
             if s.as_ptr().is_null() {
-                state.rax = SystemCallStatus::MalformedData.into();
-                return;
+                break 'a SystemCallStatus::MalformedData.into();
             }
             let Ok(s) = core::str::from_utf8(s) else {
-                state.rax = SystemCallStatus::MalformedData.into();
-                return;
+                break 'a SystemCallStatus::MalformedData.into();
             };
             #[cfg(debug_assertions)]
             let mut serial = crate::sys::io::serial::SERIAL.lock();
@@ -114,24 +112,23 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             if let Some(terminal) = &mut sys_state.terminal {
                 write!(terminal, "{s}").unwrap();
             }
-            state.rax = SystemCallStatus::Success.into();
+            SystemCallStatus::Success.into()
         }
-        SystemCall::ReceiveMessage => {
+        SystemCall::ReceiveMessage => 'a: {
             let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
             let process = scheduler.processes.get_mut(&proc_id).unwrap();
             let Some(msg) = process.messages.pop_back() else {
-                state.rax = SystemCallStatus::DoNothing.into();
-                return;
+                break 'a SystemCallStatus::DoNothing.into();
             };
             let (id_upper, id_lower) = msg.id.as_u64_pair();
             let (proc_id_upper, proc_id_lower) = msg.proc_id.as_u64_pair();
-            state.rax = SystemCallStatus::Success.into();
             state.rdi = id_upper;
             state.rsi = id_lower;
             state.rdx = proc_id_upper;
             state.rcx = proc_id_lower;
             state.r8 = msg.data.as_ptr() as u64;
             state.r9 = msg.data.len() as u64;
+            SystemCallStatus::Success.into()
         }
         SystemCall::Exit => {
             let index = scheduler
@@ -144,22 +141,22 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             state.rax = SystemCallStatus::Success.into();
             drop(scheduler);
             super::scheduler::schedule(state);
+            return;
         }
         SystemCall::Skip => {
             state.rax = SystemCallStatus::Success.into();
             drop(scheduler);
             super::scheduler::schedule(state);
+            return;
         }
-        SystemCall::SendMessage => {
+        SystemCall::SendMessage => 'a: {
             let src = scheduler.current_thread_mut().unwrap().proc_id;
             let dest = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
             if dest.is_nil() {
-                state.rax = SystemCallStatus::MalformedData.into();
-                return;
+                break 'a SystemCallStatus::MalformedData.into();
             }
             let Some(process) = scheduler.processes.get_mut(&dest) else {
-                state.rax = SystemCallStatus::MalformedData.into();
-                return;
+                break 'a SystemCallStatus::MalformedData.into();
             };
             let addr = state.rcx + USER_PHYS_VIRT_OFFSET;
             let msg = Message::new(
@@ -173,80 +170,74 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 .lock()
                 .track_message(msg.id, addr);
             process.messages.push_front(msg);
-            state.rax = SystemCallStatus::Success.into();
+            SystemCallStatus::Success.into()
         }
-        SystemCall::RegisterProvider => {
+        SystemCall::RegisterProvider => 'a: {
             let provider = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
             if provider.is_nil() {
-                state.rax = SystemCallStatus::MalformedData.into();
-                return;
+                break 'a SystemCallStatus::MalformedData.into();
             }
             let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
             if scheduler.providers.try_insert(provider, proc_id).is_err() {
-                state.rax = SystemCallStatus::InvalidRequest.into();
-                return;
+                break 'a SystemCallStatus::InvalidRequest.into();
             }
-            state.rax = SystemCallStatus::Success.into();
+            SystemCallStatus::Success.into()
         }
-        SystemCall::GetProvidingProcess => {
+        SystemCall::GetProvidingProcess => 'a: {
             let provider = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
             if provider.is_nil() {
-                state.rax = SystemCallStatus::MalformedData.into();
-                return;
+                break 'a SystemCallStatus::MalformedData.into();
             }
             let Some(proc_id) = scheduler.providers.get(&provider) else {
-                state.rax = SystemCallStatus::MalformedData.into();
-                return;
+                break 'a SystemCallStatus::MalformedData.into();
             };
             let (hi, lo) = proc_id.as_u64_pair();
-            state.rax = SystemCallStatus::Success.into();
             state.rdi = hi;
             state.rsi = lo;
+            SystemCallStatus::Success.into()
         }
         SystemCall::PortInByte => {
             let port = state.rsi as u16;
-            state.rax = SystemCallStatus::Success.into();
             state.rdi = u8::read(port) as u64;
+            SystemCallStatus::Success.into()
         }
         SystemCall::PortInWord => {
             let port = state.rsi as u16;
-            state.rax = SystemCallStatus::Success.into();
             state.rdi = u16::read(port) as u64;
+            SystemCallStatus::Success.into()
         }
         SystemCall::PortInDWord => {
             let port = state.rsi as u16;
-            state.rax = SystemCallStatus::Success.into();
             state.rdi = u32::read(port) as u64;
+            SystemCallStatus::Success.into()
         }
         SystemCall::PortOutByte => {
             let port = state.rsi as u16;
             let value = state.rdx as u8;
-            state.rax = SystemCallStatus::Success.into();
             u8::write(port, value);
+            SystemCallStatus::Success.into()
         }
         SystemCall::PortOutWord => {
             let port = state.rsi as u16;
             let value = state.rdx as u16;
-            state.rax = SystemCallStatus::Success.into();
             u16::write(port, value);
+            SystemCallStatus::Success.into()
         }
         SystemCall::PortOutDWord => {
             let port = state.rsi as u16;
             let value = state.rdx as u32;
-            state.rax = SystemCallStatus::Success.into();
             u32::write(port, value);
+            SystemCallStatus::Success.into()
         }
-        SystemCall::RegisterIRQHandler => {
+        SystemCall::RegisterIRQHandler => 'a: {
             let irq = state.rsi as u8;
             if state.rdx == 0 {
-                state.rax = SystemCallStatus::MalformedData.into();
-                return;
+                break 'a SystemCallStatus::MalformedData.into();
             }
 
             let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
             if scheduler.irq_handlers.try_insert(irq, proc_id).is_err() {
-                state.rax = SystemCallStatus::InvalidRequest.into();
-                return;
+                break 'a SystemCallStatus::InvalidRequest.into();
             }
 
             crate::driver::acpi::ioapic::wire_legacy_irq(irq, false);
@@ -257,7 +248,8 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 irq_handler,
                 true,
                 true,
-            )
+            );
+            SystemCallStatus::Success.into()
         }
         SystemCall::Allocate => {
             let size = state.rsi;
@@ -269,7 +261,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 .unwrap()
                 .lock()
                 .allocate(proc_id, &mut process.cr3, size);
-            state.rax = SystemCallStatus::Success.into();
+            SystemCallStatus::Success.into()
         }
         SystemCall::Free => {
             let ptr = state.rsi;
@@ -279,7 +271,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 .unwrap()
                 .lock()
                 .free(ptr);
-            state.rax = SystemCallStatus::Success.into();
+            SystemCallStatus::Success.into()
         }
         SystemCall::Ack => {
             let id = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
@@ -289,8 +281,9 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 .unwrap()
                 .lock()
                 .free_message(id);
+            SystemCallStatus::Success.into()
         }
-    }
+    };
 }
 
 pub fn setup() {
