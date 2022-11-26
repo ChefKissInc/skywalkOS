@@ -31,8 +31,15 @@ unsafe extern "C" fn __security_check_cookie(cookie: usize) {
     }
 }
 
-#[entry]
-fn efi_main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
+#[export_name = "efi_main"]
+extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
+    unsafe {
+        system_table.boot_services().set_image_handle(image_handle);
+    }
+    system_table
+        .boot_services()
+        .set_watchdog_timer(0, 0x10000, None)
+        .unwrap();
     uefi_services::init(&mut system_table).expect("Failed to initialize utilities");
     helpers::setup::init_output();
     helpers::setup::setup();
