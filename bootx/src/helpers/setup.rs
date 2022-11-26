@@ -24,13 +24,28 @@ pub fn init_output() {
 pub fn setup() {
     trace!("Setting up higher-half paging mappings:");
     trace!("    1. Turning off write protection...");
-
     unsafe {
         core::arch::asm!(
             "mov rax, cr0",
             "and rax, {wp_bit}",
             "mov cr0, rax",
-            wp_bit = const !(1u64 << 16)
+            wp_bit = const !(1u64 << 16),
+        );
+    }
+
+    trace!("    2. Enabling SSE...");
+    unsafe {
+        core::arch::asm!(
+            "mov rax, cr0",
+            "and rax, {em_bit}",
+            "or rax, {mp_bit}",
+            "mov cr0, rax",
+            "mov rax, cr4",
+            "or rax, {osfxsr_osxmmexcpt_bit}",
+            "mov cr4, rax",
+            em_bit = const !(1u64 << 2),
+            mp_bit = const (1u64 << 1),
+            osfxsr_osxmmexcpt_bit = const (1u64 << 9) | (1u64 << 10),
         );
     }
 
