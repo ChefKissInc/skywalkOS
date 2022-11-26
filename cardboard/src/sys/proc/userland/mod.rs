@@ -131,12 +131,8 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             SystemCallStatus::Success.into()
         }
         SystemCall::Exit => {
-            let index = scheduler
-                .threads
-                .iter()
-                .position(|v| v.id == scheduler.current_thread_id.unwrap())
-                .unwrap();
-            scheduler.threads.remove(index);
+            let id = scheduler.current_thread_id.unwrap();
+            scheduler.threads.remove(&id);
             scheduler.current_thread_id = None;
             state.rax = SystemCallStatus::Success.into();
             drop(scheduler);

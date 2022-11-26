@@ -16,7 +16,8 @@ static TSS: SyncUnsafeCell<TaskSegmentSelector> = SyncUnsafeCell::new(TaskSegmen
 
 pub struct Scheduler {
     pub processes: HashMap<uuid::Uuid, super::Process>,
-    pub threads: Vec<super::Thread>,
+    pub thread_ids: Vec<uuid::Uuid>,
+    pub threads: HashMap<uuid::Uuid, super::Thread>,
     pub current_thread_id: Option<uuid::Uuid>,
     pub kern_stack: Vec<u8>,
     pub providers: HashMap<uuid::Uuid, uuid::Uuid>,
@@ -32,11 +33,11 @@ pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
         old_thread.state = super::ThreadState::Inactive;
     }
 
-    let thread = this.next_thread_mut().unwrap();
+    let (id, thread) = this.next_thread_mut().unwrap();
     *state = thread.regs;
     thread.state = super::ThreadState::Active;
     let proc_id = thread.proc_id;
-    let new = Some(thread.id);
+    let new = Some(id);
     this.processes.get_mut(&proc_id).unwrap().cr3.set();
 
     this.current_thread_id = new;
@@ -80,7 +81,8 @@ impl Scheduler {
 
         Self {
             processes: HashMap::new(),
-            threads: Vec::new(),
+            thread_ids: Vec::new(),
+            threads: HashMap::new(),
             current_thread_id: None,
             kern_stack,
             providers: HashMap::new(),
@@ -156,6 +158,7 @@ impl Scheduler {
         unsafe {
             proc.cr3.map_higher_half();
         }
+        let id = uuid::Uuid::new_v4();
         let thread = super::Thread::new(proc_id, rip);
         unsafe {
             proc.cr3.map_pages(
@@ -178,25 +181,26 @@ impl Scheduler {
                     .with_present(true),
             );
         }
-        self.threads.push(thread);
+        self.threads.insert(id, thread);
+        self.thread_ids.push(id);
     }
 
     pub fn current_thread_mut(&mut self) -> Option<&mut super::Thread> {
-        let id = self.current_thread_id?;
-        self.threads.iter_mut().find(|v| v.id == id)
+        self.threads.get_mut(&self.current_thread_id?)
     }
 
-    pub fn next_thread_mut(&mut self) -> Option<&mut super::Thread> {
+    pub fn next_thread_mut(&mut self) -> Option<(uuid::Uuid, &mut super::Thread)> {
         let mut i = self
             .current_thread_id
-            .and_then(|id| self.threads.iter().position(|v| v.id == id).map(|i| i + 1))
+            .and_then(|id| self.thread_ids.iter().position(|v| *v == id).map(|i| i + 1))
             .unwrap_or_default();
         if i >= self.threads.len() {
             i = 0;
         }
 
-        self.threads[i..]
-            .iter_mut()
-            .find(|v| v.state == super::ThreadState::Inactive)
+        let id = *self.thread_ids[i..]
+            .iter()
+            .find(|v| self.threads.get(*v).unwrap().state == super::ThreadState::Inactive)?;
+        Some((id, self.threads.get_mut(&id)?))
     }
 }

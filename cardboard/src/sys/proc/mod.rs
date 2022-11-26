@@ -24,7 +24,6 @@ pub enum ThreadState {
 #[derive(Debug)]
 pub struct Thread {
     pub state: ThreadState,
-    pub id: uuid::Uuid,
     pub proc_id: uuid::Uuid,
     pub regs: super::RegisterState,
     pub fs_base: usize,
@@ -37,7 +36,6 @@ impl Thread {
         let stack = vec![0; 0x14000];
         Self {
             state: ThreadState::Inactive,
-            id: uuid::Uuid::new_v4(),
             proc_id,
             regs: super::RegisterState {
                 rip,
