@@ -60,30 +60,20 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
         .leak();
     let ptr = s.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
     let virt = ptr + USER_PHYS_VIRT_OFFSET;
-    let len = s.len() as u64;
-    let count = (len + 0xFFF) / 0x1000;
+    let count = (s.len() as u64 + 0xFFF) / 0x1000;
     process.cr3.map_pages(
         virt,
         ptr,
         count,
         PageTableEntry::new().with_user(true).with_present(true),
     );
-    sys_state
-        .user_allocations
-        .get_mut()
-        .unwrap()
-        .lock()
-        .track(proc_id, virt, count);
+    let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
+    user_allocations.track(proc_id, virt, count);
     let msg = Message::new(
         uuid::Uuid::nil(),
-        core::slice::from_raw_parts((ptr + USER_PHYS_VIRT_OFFSET) as *const _, len as _),
+        core::slice::from_raw_parts(virt as *const _, s.len() as _),
     );
-    sys_state
-        .user_allocations
-        .get_mut()
-        .unwrap()
-        .lock()
-        .track_message(msg.id, virt);
+    user_allocations.track_message(msg.id, virt);
     process.messages.push_front(msg);
 }
 
@@ -251,12 +241,24 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             let size = state.rsi;
             let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
             let process = scheduler.processes.get_mut(&proc_id).unwrap();
-            state.rdi = sys_state
+            let addr = sys_state
                 .user_allocations
                 .get_mut()
                 .unwrap()
                 .lock()
-                .allocate(proc_id, &mut process.cr3, size);
+                .allocate(proc_id, size);
+
+            process.cr3.map_pages(
+                addr,
+                addr - USER_PHYS_VIRT_OFFSET,
+                (size + 0xFFF) / 0x1000,
+                PageTableEntry::new()
+                    .with_user(true)
+                    .with_writable(true)
+                    .with_present(true),
+            );
+
+            state.rdi = addr;
             SystemCallStatus::Success.into()
         }
         SystemCall::Free => {
