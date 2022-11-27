@@ -22,6 +22,7 @@ pub struct Scheduler {
     pub kern_stack: Vec<u8>,
     pub providers: HashMap<uuid::Uuid, uuid::Uuid>,
     pub irq_handlers: HashMap<u8, uuid::Uuid>,
+    pub message_sources: HashMap<uuid::Uuid, uuid::Uuid>,
 }
 
 pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
@@ -87,6 +88,7 @@ impl Scheduler {
             kern_stack,
             providers: HashMap::new(),
             irq_handlers: HashMap::new(),
+            message_sources: HashMap::new(),
         }
     }
 

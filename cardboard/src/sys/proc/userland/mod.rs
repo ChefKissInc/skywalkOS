@@ -51,27 +51,29 @@ impl PML4 for UserPageTableLvl4 {
 
 unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let irq = (state.int_num - 0x20) as u8;
+    crate::driver::acpi::ioapic::wire_legacy_irq(irq, true);
     let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
     let mut scheduler = sys_state.scheduler.get_mut().unwrap().lock();
     let proc_id = *scheduler.irq_handlers.get(&irq).unwrap();
-    let process = scheduler.processes.get_mut(&proc_id).unwrap();
     let s = postcard::to_allocvec(&KernelMessage::IRQFired(irq))
         .unwrap()
         .leak();
     let ptr = s.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
     let virt = ptr + USER_PHYS_VIRT_OFFSET;
     let count = (s.len() as u64 + 0xFFF) / 0x1000;
-    process.cr3.map_pages(
-        virt,
-        ptr,
-        count,
-        PageTableEntry::new().with_user(true).with_present(true),
-    );
     let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
     user_allocations.track(proc_id, virt, count);
     let msg = Message::new(
         uuid::Uuid::nil(),
         core::slice::from_raw_parts(virt as *const _, s.len() as _),
+    );
+    scheduler.message_sources.insert(msg.id, uuid::Uuid::nil());
+    let process = scheduler.processes.get_mut(&proc_id).unwrap();
+    process.cr3.map_pages(
+        virt,
+        ptr,
+        count,
+        PageTableEntry::new().with_user(true).with_present(true),
     );
     user_allocations.track_message(msg.id, virt);
     process.messages.push_front(msg);
@@ -141,14 +143,15 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             if dest.is_nil() {
                 break 'a SystemCallStatus::MalformedData.into();
             }
-            let Some(process) = scheduler.processes.get_mut(&dest) else {
-                break 'a SystemCallStatus::MalformedData.into();
-            };
             let addr = state.rcx + USER_PHYS_VIRT_OFFSET;
             let msg = Message::new(
                 src,
                 core::slice::from_raw_parts(addr as *const _, state.r8 as _),
             );
+            scheduler.message_sources.insert(msg.id, src);
+            let Some(process) = scheduler.processes.get_mut(&dest) else {
+                break 'a SystemCallStatus::MalformedData.into();
+            };
             sys_state
                 .user_allocations
                 .get_mut()
@@ -271,14 +274,26 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 .free(ptr);
             SystemCallStatus::Success.into()
         }
-        SystemCall::Ack => {
+        SystemCall::Ack => 'a: {
             let id = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
-            sys_state
-                .user_allocations
-                .get_mut()
-                .unwrap()
-                .lock()
-                .free_message(id);
+            if id.is_nil() {
+                break 'a SystemCallStatus::MalformedData.into();
+            }
+            let Some(src) =  scheduler.message_sources.get(&id) else {
+                break 'a SystemCallStatus::MalformedData.into();
+            };
+            let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
+            if src.is_nil() {
+                let addr = *user_allocations.message_allocations.get(&id).unwrap();
+                let size = user_allocations.allocations.get(&addr).unwrap().1;
+                let data = addr as *const u8;
+                let len = size * 0x1000;
+                let msg: KernelMessage =
+                    postcard::from_bytes(core::slice::from_raw_parts(data, len as _)).unwrap();
+                let KernelMessage::IRQFired(irq) = msg;
+                crate::driver::acpi::ioapic::wire_legacy_irq(irq, false);
+            }
+            user_allocations.free_message(id);
             SystemCallStatus::Success.into()
         }
     };

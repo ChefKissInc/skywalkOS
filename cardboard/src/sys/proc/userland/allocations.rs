@@ -7,7 +7,7 @@ use hashbrown::HashMap;
 
 pub struct UserAllocationTracker {
     pub allocations: HashMap<u64, (uuid::Uuid, u64)>,
-    message_allocations: HashMap<uuid::Uuid, u64>,
+    pub message_allocations: HashMap<uuid::Uuid, u64>,
 }
 
 impl UserAllocationTracker {
