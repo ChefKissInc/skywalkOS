@@ -6,10 +6,10 @@ use amd64::spec::mps::{Polarity, TriggerMode};
 
 pub fn wire_legacy_irq(irq: u8, masked: bool) {
     let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
-    let madt = state.madt.get_mut().unwrap();
+    let madt = state.madt.get().unwrap().lock();
     madt.isos.iter().find(|v| v.irq == irq).map_or_else(
         || {
-            let ioapic = find_for_gsi(0).unwrap();
+            let ioapic = find_for_gsi(&madt, 0).unwrap();
             debug!("Setting up legacy irq {} on I/O APIC {}", irq, ioapic.id);
             ioapic.write_redir(
                 u32::from(irq),
@@ -19,7 +19,8 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
             );
         },
         |v| {
-            let ioapic = find_for_gsi(v.gsi).unwrap_or_else(|| find_for_gsi(0).unwrap());
+            let ioapic =
+                find_for_gsi(&madt, v.gsi).unwrap_or_else(|| find_for_gsi(&madt, 0).unwrap());
             let gsi = v.gsi;
             debug!(
                 "Setting up legacy irq {} on I/O APIC {} at gsi {}",
@@ -37,13 +38,8 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
     );
 }
 
-pub fn find_for_gsi(gsi: u32) -> Option<&'static ioapic::IOAPIC> {
-    let state = unsafe { crate::sys::state::SYS_STATE.get().as_ref().unwrap() };
-    state
-        .madt
-        .get()
-        .unwrap()
-        .ioapics
+pub fn find_for_gsi(madt: &super::madt::MADTData, gsi: u32) -> Option<&'static ioapic::IOAPIC> {
+    madt.ioapics
         .iter()
         .find(|ioapic| {
             gsi >= ioapic.gsi_base

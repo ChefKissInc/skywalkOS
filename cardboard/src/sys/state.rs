@@ -24,7 +24,7 @@ pub struct SystemState {
     pub modules: Option<Vec<Module>>,
     pub terminal: Option<Terminal>,
     pub acpi: spin::Once<ACPIPlatform>,
-    pub madt: spin::Once<MADTData>,
+    pub madt: spin::Once<spin::Mutex<MADTData>>,
     pub lapic: spin::Once<LocalAPIC>,
     pub scheduler: spin::Once<spin::Mutex<Scheduler>>,
     pub interrupt_context: Option<super::RegisterState>,

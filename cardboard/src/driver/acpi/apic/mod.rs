@@ -287,7 +287,7 @@ unsafe extern "C" fn spurious_vector_handler(_state: &mut RegisterState) {
 }
 
 pub fn setup(state: &mut crate::sys::state::SystemState) {
-    let addr = state.madt.get().unwrap().lapic_addr;
+    let addr = state.madt.get().unwrap().lock().lapic_addr;
     unsafe { APICBase::read().with_apic_base(addr).write() }
     let pml4 = state.pml4.get_mut().unwrap();
 

@@ -71,5 +71,5 @@ pub fn setup(state: &mut crate::sys::state::SystemState) {
     let acpi = state.acpi.get_mut().unwrap();
     state
         .madt
-        .call_once(|| MADTData::new(acpi.find("APIC").unwrap()));
+        .call_once(|| spin::Mutex::new(MADTData::new(acpi.find("APIC").unwrap())));
 }
