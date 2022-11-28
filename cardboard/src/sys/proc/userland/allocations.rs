@@ -19,14 +19,14 @@ impl UserAllocationTracker {
         }
     }
 
-    pub fn track(&mut self, proc_id: uuid::Uuid, addr: u64, count: u64) {
+    pub fn track(&mut self, proc_id: uuid::Uuid, addr: u64, size: u64) {
         trace!(
-            "Tracking allocation of {} pages at {:#X} from process {}",
-            count,
+            "Tracking allocation of {} bytes at {:#X} from process {}",
+            size,
             addr,
             proc_id
         );
-        self.allocations.insert(addr, (proc_id, count));
+        self.allocations.insert(addr, (proc_id, size));
     }
 
     pub fn track_message(&mut self, id: uuid::Uuid, addr: u64) {
@@ -41,7 +41,8 @@ impl UserAllocationTracker {
     }
 
     pub fn free(&mut self, addr: u64) {
-        let (proc_id, count) = self.allocations.remove(&addr).unwrap();
+        let (proc_id, size) = self.allocations.remove(&addr).unwrap();
+        let count = (size + 0xFFF) / 0x1000;
         trace!(
             "Freeing allocation of {} pages at {:#X} from process {}",
             count,
@@ -74,10 +75,17 @@ impl UserAllocationTracker {
     #[must_use]
     pub fn allocate(&mut self, proc_id: uuid::Uuid, size: u64) -> u64 {
         let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
-        let count = (size + 0xFFF) / 0x1000;
-        let addr = unsafe { state.pmm.get_mut().unwrap().lock().alloc(count).unwrap() as u64 };
+        let addr = unsafe {
+            state
+                .pmm
+                .get_mut()
+                .unwrap()
+                .lock()
+                .alloc((size + 0xFFF) / 0x1000)
+                .unwrap() as u64
+        };
         let virt = addr + super::USER_PHYS_VIRT_OFFSET;
-        self.track(proc_id, virt, count);
+        self.track(proc_id, virt, size);
         virt
     }
 }

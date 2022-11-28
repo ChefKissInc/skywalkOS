@@ -2,7 +2,7 @@
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 use alloc::boxed::Box;
-use core::{fmt::Write, mem::size_of};
+use core::fmt::Write;
 
 use amd64::{
     io::port::PortIO,
@@ -40,11 +40,12 @@ impl PML4 for UserPageTableLvl4 {
         let phys = Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
             - amd64::paging::PHYS_VIRT_OFFSET;
         let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
-        state.user_allocations.get_mut().unwrap().lock().track(
-            self.0,
-            phys,
-            size_of::<amd64::paging::PageTable>() as _,
-        );
+        state
+            .user_allocations
+            .get_mut()
+            .unwrap()
+            .lock()
+            .track(self.0, phys, 4096);
         phys
     }
 }
@@ -62,7 +63,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let virt = ptr + USER_PHYS_VIRT_OFFSET;
     let count = (s.len() as u64 + 0xFFF) / 0x1000;
     let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
-    user_allocations.track(proc_id, virt, count);
+    user_allocations.track(proc_id, virt, s.len() as u64);
     let msg = Message::new(
         uuid::Uuid::nil(),
         core::slice::from_raw_parts(virt as *const _, s.len() as _),
@@ -124,7 +125,9 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         }
         SystemCall::Exit => {
             let id = scheduler.current_thread_id.unwrap();
+            let index = scheduler.thread_ids.iter().position(|v| *v == id).unwrap();
             scheduler.threads.remove(&id);
+            scheduler.thread_ids.remove(index);
             scheduler.current_thread_id = None;
             state.rax = SystemCallStatus::Success.into();
             drop(scheduler);
@@ -261,6 +264,8 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                     .with_present(true),
             );
 
+            core::ptr::write_bytes(addr as *mut u8, 0, ((size + 0xFFF) / 0x1000 * 0x1000) as _);
+
             state.rdi = addr;
             SystemCallStatus::Success.into()
         }
@@ -279,7 +284,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             if id.is_nil() {
                 break 'a SystemCallStatus::MalformedData.into();
             }
-            let Some(src) =  scheduler.message_sources.get(&id) else {
+            let Some(&src) = scheduler.message_sources.get(&id) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
             let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
@@ -287,9 +292,8 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 let addr = *user_allocations.message_allocations.get(&id).unwrap();
                 let size = user_allocations.allocations.get(&addr).unwrap().1;
                 let data = addr as *const u8;
-                let len = size * 0x1000;
                 let msg: KernelMessage =
-                    postcard::from_bytes(core::slice::from_raw_parts(data, len as _)).unwrap();
+                    postcard::from_bytes(core::slice::from_raw_parts(data, size as _)).unwrap();
                 let KernelMessage::IRQFired(irq) = msg;
                 crate::driver::acpi::ioapic::wire_legacy_irq(irq, false);
             }

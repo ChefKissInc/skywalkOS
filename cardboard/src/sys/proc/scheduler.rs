@@ -148,12 +148,11 @@ impl Scheduler {
         let proc_id = uuid::Uuid::new_v4();
         let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
         let count = (data.len() as u64 + 0xFFF) / 0x1000;
-        state
-            .user_allocations
-            .get_mut()
-            .unwrap()
-            .lock()
-            .track(proc_id, virt_addr, count);
+        state.user_allocations.get_mut().unwrap().lock().track(
+            proc_id,
+            virt_addr,
+            data.len() as u64,
+        );
         self.processes
             .insert(proc_id, super::Process::new(proc_id, "", ""));
         let proc = self.processes.get_mut(&proc_id).unwrap();
