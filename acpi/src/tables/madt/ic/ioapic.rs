@@ -40,7 +40,7 @@ pub enum DeliveryMode {
     SMI,
     NMI = 4,
     Init,
-    ExtINT,
+    ExtINT = 7,
 }
 
 #[bitfield(bits = 64)]

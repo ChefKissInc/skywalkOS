@@ -281,7 +281,7 @@ unsafe extern "C" fn lapic_error_handler(_state: &mut RegisterState) {
 }
 
 unsafe extern "C" fn spurious_vector_handler(_state: &mut RegisterState) {
-    debug!("Spurious APIC vector");
+    error!("Spurious APIC vector");
 }
 
 pub fn setup(state: &mut crate::sys::state::SystemState) {

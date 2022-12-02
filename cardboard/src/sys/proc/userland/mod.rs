@@ -52,7 +52,7 @@ impl PML4 for UserPageTableLvl4 {
 
 unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let irq = (state.int_num - 0x20) as u8;
-    crate::driver::acpi::ioapic::wire_legacy_irq(irq, true);
+    crate::driver::acpi::ioapic::set_irq_mask(irq, true);
     let sys_state = crate::sys::state::SYS_STATE.get().as_mut().unwrap();
     let mut scheduler = sys_state.scheduler.get_mut().unwrap().lock();
     let proc_id = *scheduler.irq_handlers.get(&irq).unwrap();
@@ -295,7 +295,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 let msg: KernelMessage =
                     postcard::from_bytes(core::slice::from_raw_parts(data, size as _)).unwrap();
                 let KernelMessage::IRQFired(irq) = msg;
-                crate::driver::acpi::ioapic::wire_legacy_irq(irq, false);
+                crate::driver::acpi::ioapic::set_irq_mask(irq, false);
             }
             user_allocations.free_message(id);
             SystemCallStatus::Success.into()
