@@ -80,7 +80,8 @@ impl HPET {
     #[must_use]
     pub fn read_reg<T: Into<u64>>(&self, reg: T) -> u64 {
         unsafe {
-            *((self.address.address() + amd64::paging::PHYS_VIRT_OFFSET + reg.into()) as *const u64)
+            ((self.address.address() + amd64::paging::PHYS_VIRT_OFFSET + reg.into()) as *const u64)
+                .read_volatile()
         }
     }
 

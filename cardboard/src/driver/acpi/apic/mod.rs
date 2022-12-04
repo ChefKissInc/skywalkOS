@@ -143,9 +143,7 @@ impl LocalAPIC {
 
     #[inline]
     pub fn write_reg<T: Into<u64>, V: Into<u32>>(&self, reg: T, value: V) {
-        unsafe {
-            ((self.addr + reg.into()) as *mut u32).write_volatile(value.into());
-        }
+        unsafe { ((self.addr + reg.into()) as *mut u32).write_volatile(value.into()) }
     }
 
     #[inline]
