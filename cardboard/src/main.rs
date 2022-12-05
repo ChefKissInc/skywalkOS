@@ -3,7 +3,7 @@
 
 #![no_std]
 #![no_main]
-#![deny(warnings, clippy::cargo, unused_extern_crates)]
+#![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 #![feature(
     asm_const,
     alloc_error_handler,

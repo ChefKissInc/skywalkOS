@@ -3,7 +3,7 @@
 
 #![no_std]
 #![no_main]
-#![deny(warnings, clippy::cargo, unused_extern_crates)]
+#![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 #![feature(abi_efiapi, asm_const, core_intrinsics)]
 
 #[macro_use]
@@ -87,16 +87,16 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
     )
     .leak();
 
-    let drv_buffer = helpers::file::load(
+    let pci_drv_buf = helpers::file::load(
         &mut esp,
-        cstr16!("\\System\\Drivers\\Test.dcext\\test-drv.exec"),
+        cstr16!("\\System\\BootExtensions\\PCICore.dcext\\pci-core.exec"),
         FileMode::Read,
         FileAttribute::empty(),
     )
     .leak();
 
     let mut mem_mgr = helpers::mem::MemoryManager::new();
-    mem_mgr.allocate((drv_buffer.as_ptr() as _, drv_buffer.len() as _));
+    mem_mgr.allocate((pci_drv_buf.as_ptr() as _, pci_drv_buf.len() as _));
 
     let (kernel_main, symbols) = helpers::parse_elf::parse_elf(&mut mem_mgr, buffer);
 
@@ -117,10 +117,10 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
 
     boot_info.modules = vec![sulphur_dioxide::module::Module {
         name: core::str::from_utf8(helpers::phys_to_kern_slice_ref(
-            b"Test.dcext".to_vec().leak(),
+            b"PCICore.dcext".to_vec().leak(),
         ))
         .unwrap(),
-        data: helpers::phys_to_kern_slice_ref(drv_buffer),
+        data: helpers::phys_to_kern_slice_ref(pci_drv_buf),
     }]
     .leak();
 

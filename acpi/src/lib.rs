@@ -2,6 +2,6 @@
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 #![no_std]
-#![deny(warnings, clippy::cargo, unused_extern_crates)]
+#![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 
 pub mod tables;

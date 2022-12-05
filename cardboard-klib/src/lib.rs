@@ -2,7 +2,7 @@
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 #![no_std]
-#![deny(warnings, clippy::cargo, unused_extern_crates)]
+#![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 
 #[cfg(feature = "user")]
 pub mod port;
@@ -27,7 +27,7 @@ pub enum SystemCallStatus {
 
 #[cfg(feature = "user")]
 impl SystemCallStatus {
-    pub fn as_result(self) -> Result<(), SystemCallStatus> {
+    pub const fn as_result(self) -> Result<(), Self> {
         match self {
             Self::Success => Ok(()),
             _ => Err(self),
