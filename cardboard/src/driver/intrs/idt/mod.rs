@@ -158,8 +158,7 @@ pub fn set_handler(
     let handler = unsafe { &mut HANDLERS.get().as_mut().unwrap()[isr as usize] };
     assert_eq!(
         handler.func as usize, default_handler as usize,
-        "Tried to register already existing ISR #{}. This is most likely a bug!",
-        isr
+        "Tried to register already existing ISR #{isr}. This is most likely a bug!",
     );
 
     unsafe {
