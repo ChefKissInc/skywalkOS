@@ -135,7 +135,6 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             return;
         }
         SystemCall::Skip => {
-            state.rax = SystemCallStatus::Success.into();
             drop(scheduler);
             super::scheduler::schedule(state);
             return;

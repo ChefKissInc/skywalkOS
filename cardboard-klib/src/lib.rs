@@ -4,11 +4,13 @@
 #![no_std]
 #![deny(warnings, clippy::cargo, unused_extern_crates)]
 
-#[cfg(not(feature = "kernel"))]
+#[cfg(feature = "user")]
 pub mod port;
 
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
+
+pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC0000000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
 #[must_use]
@@ -23,7 +25,7 @@ pub enum SystemCallStatus {
     DoNothing,
 }
 
-#[cfg(not(feature = "kernel"))]
+#[cfg(feature = "user")]
 impl SystemCallStatus {
     pub fn as_result(self) -> Result<(), SystemCallStatus> {
         match self {
@@ -73,7 +75,7 @@ pub enum SystemCall {
     Ack,
 }
 
-#[cfg(not(feature = "kernel"))]
+#[cfg(feature = "user")]
 impl SystemCall {
     /// # Safety
     ///
@@ -161,11 +163,9 @@ impl SystemCall {
     /// # Safety
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
-    pub unsafe fn skip() -> Result<(), SystemCallStatus> {
+    pub unsafe fn skip() {
         let ty: u64 = Self::Skip.into();
-        let mut ret: u64;
-        core::arch::asm!("int 249", in("rdi") ty, out("rax") ret);
-        SystemCallStatus::try_from(ret).unwrap().as_result()
+        core::arch::asm!("int 249", in("rdi") ty);
     }
 
     /// # Safety
