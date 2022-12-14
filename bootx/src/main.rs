@@ -81,7 +81,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
 
     let buffer = helpers::file::load(
         &mut esp,
-        cstr16!("\\System\\cardboard.exec"),
+        cstr16!("\\System\\Kernel.exec"),
         FileMode::Read,
         FileAttribute::empty(),
     )
@@ -89,7 +89,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
 
     let pci_drv_buf = helpers::file::load(
         &mut esp,
-        cstr16!("\\System\\BootExtensions\\PCICore.dcext\\pci-core.exec"),
+        cstr16!("\\System\\BootExtensions\\PCICore.exec"),
         FileMode::Read,
         FileAttribute::empty(),
     )
@@ -117,7 +117,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
 
     boot_info.modules = vec![sulphur_dioxide::module::Module {
         name: core::str::from_utf8(helpers::phys_to_kern_slice_ref(
-            b"PCICore.dcext".to_vec().leak(),
+            b"PCICore.exec".to_vec().leak(),
         ))
         .unwrap(),
         data: helpers::phys_to_kern_slice_ref(pci_drv_buf),
