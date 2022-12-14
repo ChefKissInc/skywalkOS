@@ -19,7 +19,7 @@ args = [
     "--target",
     "x86_64-unknown-uefi",
     "--out-dir",
-    "Drive/EFI/BOOT/",
+    "Drive/EFI/BOOT",
 ]
 
 [tasks.build-kernel]
@@ -33,7 +33,7 @@ args = [
     "--target",
     "x86_64-bridgecore-kernel.json",
     "--out-dir",
-    "Drive/System/",
+    "Drive/System",
 ]
 
 [tasks.build-bootx-release]
@@ -47,7 +47,7 @@ args = [
     "--target",
     "x86_64-unknown-uefi",
     "--out-dir",
-    "Drive/EFI/BOOT/",
+    "Drive/EFI/BOOT",
     "--release",
 ]
 
@@ -62,7 +62,7 @@ args = [
     "--target",
     "x86_64-bridgecore-kernel.json",
     "--out-dir",
-    "Drive/System/",
+    "Drive/System",
     "--release",
 ]
 

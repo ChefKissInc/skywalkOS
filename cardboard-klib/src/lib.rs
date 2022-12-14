@@ -37,16 +37,18 @@ impl SystemCallStatus {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Message {
-    pub id: uuid::Uuid,
-    pub proc_id: uuid::Uuid,
+    pub id: u64,
+    pub proc_id: u64,
     pub data: &'static [u8],
 }
 
 #[cfg(feature = "kernel")]
 impl Message {
-    pub fn new(proc_id: uuid::Uuid, data: &'static [u8]) -> Self {
+    pub fn new(proc_id: u64, data: &'static [u8]) -> Self {
+        let mut bytes = [0; 8];
+        getrandom::getrandom(&mut bytes).unwrap();
         Self {
-            id: uuid::Uuid::new_v4(),
+            id: u64::from_le_bytes(bytes),
             proc_id,
             data,
         }
@@ -99,22 +101,18 @@ impl SystemCall {
     pub unsafe fn receive_message() -> Result<Option<Message>, SystemCallStatus> {
         let ty: u64 = Self::ReceiveMessage.into();
         let mut ret: u64;
-        let mut id_upper: u64;
-        let mut id_lower: u64;
-        let mut proc_id_upper: u64;
-        let mut proc_id_lower: u64;
+        let mut id: u64;
+        let mut proc_id: u64;
         let mut ptr: u64;
         let mut len: u64;
         core::arch::asm!(
             "int 249",
             in("rdi") ty,
             out("rax") ret,
-            lateout("rdi") id_upper,
-            out("rsi") id_lower,
-            out("rdx") proc_id_upper,
-            out("rcx") proc_id_lower,
-            out("r8") ptr,
-            out("r9") len,
+            lateout("rdi") id,
+            out("rsi") proc_id,
+            out("rdx") ptr,
+            out("rcx") len,
         );
         let ret = SystemCallStatus::try_from(ret).unwrap();
         if matches!(ret, SystemCallStatus::DoNothing) {
@@ -122,8 +120,8 @@ impl SystemCall {
         } else {
             ret.as_result()?;
             Ok(Some(Message {
-                id: uuid::Uuid::from_u64_pair(id_upper, id_lower),
-                proc_id: uuid::Uuid::from_u64_pair(proc_id_upper, proc_id_lower),
+                id,
+                proc_id,
                 data: core::slice::from_raw_parts(ptr as *const u8, len as usize),
             }))
         }
@@ -132,19 +130,17 @@ impl SystemCall {
     /// # Safety
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
-    pub unsafe fn send_message(target: uuid::Uuid, s: &[u8]) -> Result<(), SystemCallStatus> {
+    pub unsafe fn send_message(target: u64, s: &[u8]) -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::SendMessage.into();
-        let (id_upper, id_lower) = target.as_u64_pair();
         let ptr = s.as_ptr() as u64;
         let len = s.len() as u64;
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
             in("rdi") ty,
-            in("rsi") id_upper,
-            in("rdx") id_lower,
-            in("rcx") ptr,
-            in("r8") len,
+            in("rsi") target,
+            in("rdx") ptr,
+            in("rcx") len,
             out("rax") ret,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
@@ -171,15 +167,13 @@ impl SystemCall {
     /// # Safety
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
-    pub unsafe fn register_provider(provider: uuid::Uuid) -> Result<(), SystemCallStatus> {
+    pub unsafe fn register_provider(provider: u64) -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::RegisterProvider.into();
-        let (id_upper, id_lower) = provider.as_u64_pair();
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
             in("rdi") ty,
-            in("rsi") id_upper,
-            in("rdx") id_lower,
+            in("rsi") provider,
             out("rax") ret,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
@@ -188,23 +182,19 @@ impl SystemCall {
     /// # Safety
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
-    pub unsafe fn get_providing_process(
-        provider: uuid::Uuid,
-    ) -> Result<uuid::Uuid, SystemCallStatus> {
+    pub unsafe fn get_providing_process(provider: u64) -> Result<u64, SystemCallStatus> {
         let ty: u64 = Self::GetProvidingProcess.into();
-        let (mut id_upper, mut id_lower) = provider.as_u64_pair();
+        let mut id;
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
             in("rdi") ty,
-            in("rsi") id_upper,
-            in("rdx") id_lower,
-            lateout("rdi") id_upper,
-            lateout("rsi") id_lower,
+            in("rsi") provider,
+            lateout("rdi") id,
             out("rax") ret,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
-        Ok(uuid::Uuid::from_u64_pair(id_upper, id_lower))
+        Ok(id)
     }
 
     /// # Safety
@@ -355,14 +345,13 @@ impl SystemCall {
     /// # Safety
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
-    pub unsafe fn ack(id: uuid::Uuid) -> Result<(), SystemCallStatus> {
+    pub unsafe fn ack(id: u64) -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::Ack.into();
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
             in("rdi") ty,
-            in("rsi") id.as_u64_pair().0,
-            in("rdx") id.as_u64_pair().1,
+            in("rsi") id,
             out("rax") ret,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()

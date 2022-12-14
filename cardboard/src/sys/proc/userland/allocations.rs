@@ -6,8 +6,8 @@
 use hashbrown::HashMap;
 
 pub struct UserAllocationTracker {
-    pub allocations: HashMap<u64, (uuid::Uuid, u64)>,
-    pub message_allocations: HashMap<uuid::Uuid, u64>,
+    pub allocations: HashMap<u64, (u64, u64)>,
+    pub message_allocations: HashMap<u64, u64>,
 }
 
 impl UserAllocationTracker {
@@ -19,7 +19,7 @@ impl UserAllocationTracker {
         }
     }
 
-    pub fn track(&mut self, proc_id: uuid::Uuid, addr: u64, size: u64) {
+    pub fn track(&mut self, proc_id: u64, addr: u64, size: u64) {
         trace!(
             "Tracking allocation of {} bytes at {:#X} from process {}",
             size,
@@ -29,12 +29,12 @@ impl UserAllocationTracker {
         self.allocations.insert(addr, (proc_id, size));
     }
 
-    pub fn track_message(&mut self, id: uuid::Uuid, addr: u64) {
+    pub fn track_message(&mut self, id: u64, addr: u64) {
         trace!("Marking allocation at {:#X} as message {}", addr, id);
         self.message_allocations.insert(id, addr);
     }
 
-    pub fn free_message(&mut self, id: uuid::Uuid) {
+    pub fn free_message(&mut self, id: u64) {
         trace!("Freeing message {}", id);
         let addr = self.message_allocations.remove(&id).unwrap();
         self.free(addr);
@@ -60,7 +60,7 @@ impl UserAllocationTracker {
         }
     }
 
-    // pub fn free_proc(&mut self, proc_id: uuid::Uuid) {
+    // pub fn free_proc(&mut self, proc_id: u64) {
     //     for addr in self
     //         .allocations
     //         .iter()
@@ -73,7 +73,7 @@ impl UserAllocationTracker {
     // }
 
     #[must_use]
-    pub fn allocate(&mut self, proc_id: uuid::Uuid, size: u64) -> u64 {
+    pub fn allocate(&mut self, proc_id: u64, size: u64) -> u64 {
         let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
         let addr = unsafe {
             state

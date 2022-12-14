@@ -83,3 +83,9 @@ pub fn init_paging(state: &mut crate::sys::state::SystemState) {
         terminal.map_fb();
     }
 }
+
+pub fn random_u64() -> u64 {
+    let mut bytes = [0; 8];
+    getrandom::getrandom(&mut bytes).unwrap();
+    u64::from_le_bytes(bytes)
+}

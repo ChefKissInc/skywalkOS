@@ -19,10 +19,10 @@ pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC0000000;
 // This isn't meant to be user-accessible.
 // It is meant to track the allocations so that they are deallocated when the process exits.
 #[derive(Debug)]
-pub struct UserPageTableLvl4(uuid::Uuid, amd64::paging::PageTable);
+pub struct UserPageTableLvl4(u64, amd64::paging::PageTable);
 
 impl UserPageTableLvl4 {
-    pub const fn new(proc_id: uuid::Uuid) -> Self {
+    pub const fn new(proc_id: u64) -> Self {
         Self(proc_id, amd64::paging::PageTable::new())
     }
 }
@@ -65,10 +65,10 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
     user_allocations.track(proc_id, virt, s.len() as u64);
     let msg = Message::new(
-        uuid::Uuid::nil(),
+        0,
         core::slice::from_raw_parts(virt as *const _, s.len() as _),
     );
-    scheduler.message_sources.insert(msg.id, uuid::Uuid::nil());
+    scheduler.message_sources.insert(msg.id, 0);
     let process = scheduler.processes.get_mut(&proc_id).unwrap();
     process.cr3.map_pages(
         virt,
@@ -113,14 +113,10 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             let Some(msg) = process.messages.pop_back() else {
                 break 'a SystemCallStatus::DoNothing.into();
             };
-            let (id_upper, id_lower) = msg.id.as_u64_pair();
-            let (proc_id_upper, proc_id_lower) = msg.proc_id.as_u64_pair();
-            state.rdi = id_upper;
-            state.rsi = id_lower;
-            state.rdx = proc_id_upper;
-            state.rcx = proc_id_lower;
-            state.r8 = msg.data.as_ptr() as u64;
-            state.r9 = msg.data.len() as u64;
+            state.rdi = msg.id;
+            state.rsi = msg.proc_id;
+            state.rdx = msg.data.as_ptr() as u64;
+            state.rcx = msg.data.len() as u64;
             SystemCallStatus::Success.into()
         }
         SystemCall::Exit => {
@@ -141,8 +137,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         }
         SystemCall::SendMessage => 'a: {
             let src = scheduler.current_thread_mut().unwrap().proc_id;
-            let dest = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
-            if dest.is_nil() {
+            if !scheduler.processes.contains_key(&state.rsi) {
                 break 'a SystemCallStatus::MalformedData.into();
             }
             let addr = state.rcx + USER_PHYS_VIRT_OFFSET;
@@ -151,7 +146,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 core::slice::from_raw_parts(addr as *const _, state.r8 as _),
             );
             scheduler.message_sources.insert(msg.id, src);
-            let Some(process) = scheduler.processes.get_mut(&dest) else {
+            let Some(process) = scheduler.processes.get_mut(&state.rsi) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
             sys_state
@@ -164,27 +159,23 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             SystemCallStatus::Success.into()
         }
         SystemCall::RegisterProvider => 'a: {
-            let provider = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
-            if provider.is_nil() {
+            if scheduler.providers.contains_key(&state.rsi) {
                 break 'a SystemCallStatus::MalformedData.into();
             }
             let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
-            if scheduler.providers.try_insert(provider, proc_id).is_err() {
+            if scheduler.providers.try_insert(state.rsi, proc_id).is_err() {
                 break 'a SystemCallStatus::InvalidRequest.into();
             }
             SystemCallStatus::Success.into()
         }
         SystemCall::GetProvidingProcess => 'a: {
-            let provider = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
-            if provider.is_nil() {
+            if !scheduler.providers.contains_key(&state.rsi) {
                 break 'a SystemCallStatus::MalformedData.into();
             }
-            let Some(proc_id) = scheduler.providers.get(&provider) else {
+            let Some(&proc_id) = scheduler.providers.get(&state.rsi) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
-            let (hi, lo) = proc_id.as_u64_pair();
-            state.rdi = hi;
-            state.rsi = lo;
+            state.rdi = proc_id;
             SystemCallStatus::Success.into()
         }
         SystemCall::PortInByte => {
@@ -279,16 +270,18 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             SystemCallStatus::Success.into()
         }
         SystemCall::Ack => 'a: {
-            let id = uuid::Uuid::from_u64_pair(state.rsi, state.rdx);
-            if id.is_nil() {
+            if state.rsi == 0 {
                 break 'a SystemCallStatus::MalformedData.into();
             }
-            let Some(&src) = scheduler.message_sources.get(&id) else {
+            let Some(&src) = scheduler.message_sources.get(&state.rsi) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
             let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
-            if src.is_nil() {
-                let addr = *user_allocations.message_allocations.get(&id).unwrap();
+            if src == 0 {
+                let addr = *user_allocations
+                    .message_allocations
+                    .get(&state.rsi)
+                    .unwrap();
                 let size = user_allocations.allocations.get(&addr).unwrap().1;
                 let data = addr as *const u8;
                 let msg: KernelMessage =
@@ -296,7 +289,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 let KernelMessage::IRQFired(irq) = msg;
                 crate::driver::acpi::ioapic::set_irq_mask(irq, false);
             }
-            user_allocations.free_message(id);
+            user_allocations.free_message(state.rsi);
             SystemCallStatus::Success.into()
         }
     };

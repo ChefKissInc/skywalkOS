@@ -24,7 +24,7 @@ pub enum ThreadState {
 #[derive(Debug)]
 pub struct Thread {
     pub state: ThreadState,
-    pub proc_id: uuid::Uuid,
+    pub proc_id: u64,
     pub regs: super::RegisterState,
     pub fs_base: usize,
     pub gs_base: usize,
@@ -32,7 +32,7 @@ pub struct Thread {
 }
 
 impl Thread {
-    pub fn new(proc_id: uuid::Uuid, rip: u64) -> Self {
+    pub fn new(proc_id: u64, rip: u64) -> Self {
         let stack = vec![0; 0x14000];
         Self {
             state: ThreadState::Inactive,
@@ -67,7 +67,7 @@ pub struct Process {
 }
 
 impl Process {
-    pub fn new(proc_id: uuid::Uuid, path: &str, cwd: &str) -> Self {
+    pub fn new(proc_id: u64, path: &str, cwd: &str) -> Self {
         Self {
             path: path.to_string(),
             cwd: cwd.to_string(),

@@ -15,14 +15,14 @@ use crate::{
 static TSS: SyncUnsafeCell<TaskSegmentSelector> = SyncUnsafeCell::new(TaskSegmentSelector::new(0));
 
 pub struct Scheduler {
-    pub processes: HashMap<uuid::Uuid, super::Process>,
-    pub thread_ids: Vec<uuid::Uuid>,
-    pub threads: HashMap<uuid::Uuid, super::Thread>,
-    pub current_thread_id: Option<uuid::Uuid>,
+    pub processes: HashMap<u64, super::Process>,
+    pub thread_ids: Vec<u64>,
+    pub threads: HashMap<u64, super::Thread>,
+    pub current_thread_id: Option<u64>,
     pub kern_stack: Vec<u8>,
-    pub providers: HashMap<uuid::Uuid, uuid::Uuid>,
-    pub irq_handlers: HashMap<u8, uuid::Uuid>,
-    pub message_sources: HashMap<uuid::Uuid, uuid::Uuid>,
+    pub providers: HashMap<u64, u64>,
+    pub irq_handlers: HashMap<u8, u64>,
+    pub message_sources: HashMap<u64, u64>,
 }
 
 pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
@@ -145,7 +145,7 @@ impl Scheduler {
             *ptr = target;
         }
         let rip = virt_addr + exec.entry;
-        let proc_id = uuid::Uuid::new_v4();
+        let proc_id = crate::utils::random_u64();
         let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
         let count = (data.len() as u64 + 0xFFF) / 0x1000;
         state.user_allocations.get_mut().unwrap().lock().track(
@@ -159,7 +159,7 @@ impl Scheduler {
         unsafe {
             proc.cr3.map_higher_half();
         }
-        let id = uuid::Uuid::new_v4();
+        let id = crate::utils::random_u64();
         let thread = super::Thread::new(proc_id, rip);
         unsafe {
             proc.cr3.map_pages(
@@ -190,7 +190,7 @@ impl Scheduler {
         self.threads.get_mut(&self.current_thread_id?)
     }
 
-    pub fn next_thread_mut(&mut self) -> Option<(uuid::Uuid, &mut super::Thread)> {
+    pub fn next_thread_mut(&mut self) -> Option<(u64, &mut super::Thread)> {
         let mut i = self
             .current_thread_id
             .and_then(|id| self.thread_ids.iter().position(|v| *v == id).map(|i| i + 1))
