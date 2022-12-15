@@ -8,7 +8,7 @@
     "emit-debug-gdb-scripts": false,
     "exe-suffix": ".exec",
     "executables": true,
-    "features": "+sse,+sse2",
+    "features": "-mmx,-sse,+soft-float",
     "linker": "rust-lld",
     "linker-flavor": "ld.lld",
     "llvm-target": "x86_64-unknown-none-elf",
