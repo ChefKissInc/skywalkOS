@@ -110,8 +110,5 @@ args = [
 ]
 dependencies = ["make-release"]
 
-[env.production]
-EXTRA_ARG = "--release"
-
 [config]
 default_to_workspace = false
