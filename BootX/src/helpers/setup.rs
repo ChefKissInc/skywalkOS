@@ -31,22 +31,6 @@ pub fn setup() {
         );
     }
 
-    trace!("    2. Enabling SSE...");
-    unsafe {
-        core::arch::asm!(
-            "mov rax, cr0",
-            "and rax, {em_bit}",
-            "or rax, {mp_bit}",
-            "mov cr0, rax",
-            "mov rax, cr4",
-            "or rax, {osfxsr_osxmmexcpt_bit}",
-            "mov cr4, rax",
-            em_bit = const !(1u64 << 2),
-            mp_bit = const (1u64 << 1),
-            osfxsr_osxmmexcpt_bit = const (1u64 << 9) | (1u64 << 10),
-        );
-    }
-
     trace!("    2. Modifying paging mappings to map higher-half...");
 
     unsafe {
