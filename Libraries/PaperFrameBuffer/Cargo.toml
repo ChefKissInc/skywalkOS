@@ -1,5 +1,4 @@
 [package]
-description = "The BridgeCore frame-buffer implementation"
 edition = "2021"
 name = "paper-fb"
 publish = false

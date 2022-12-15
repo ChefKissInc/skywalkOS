@@ -1,5 +1,4 @@
 [package]
-description = "The BridgeCore AMD64 implementation"
 edition = "2021"
 name = "amd64"
 publish = false
