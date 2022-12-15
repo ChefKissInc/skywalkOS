@@ -1,4 +1,4 @@
-# BridgeCore ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/BridgeCore-OS/BridgeCore/Run%20cargo%20clippy%20and%20cargo%20test)
+# BridgeCore ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/BridgeCore-OS/BridgeCore/main.yml?branch=master)
 
 The BridgeCore Operating System.
 
