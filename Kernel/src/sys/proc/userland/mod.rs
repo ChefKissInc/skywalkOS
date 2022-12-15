@@ -121,11 +121,19 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         }
         SystemCall::Exit => {
             let id = scheduler.current_thread_id.unwrap();
+            let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
             let index = scheduler.thread_ids.iter().position(|v| *v == id).unwrap();
             scheduler.threads.remove(&id);
             scheduler.thread_ids.remove(index);
             scheduler.current_thread_id = None;
-            state.rax = SystemCallStatus::Success.into();
+            if !scheduler.threads.iter().any(|(_, v)| v.proc_id == proc_id) {
+                sys_state
+                    .user_allocations
+                    .get_mut()
+                    .unwrap()
+                    .lock()
+                    .free_proc(proc_id);
+            }
             drop(scheduler);
             super::scheduler::schedule(state);
             return;

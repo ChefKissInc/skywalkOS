@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2022.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-// use alloc::vec::Vec;
+use alloc::vec::Vec;
 
 use hashbrown::HashMap;
 
@@ -60,17 +60,17 @@ impl UserAllocationTracker {
         }
     }
 
-    // pub fn free_proc(&mut self, proc_id: u64) {
-    //     for addr in self
-    //         .allocations
-    //         .iter()
-    //         .filter(|(_, (p, _))| *p == proc_id)
-    //         .map(|(k, _)| *k)
-    //         .collect::<Vec<_>>()
-    //     {
-    //         self.free(addr);
-    //     }
-    // }
+    pub fn free_proc(&mut self, proc_id: u64) {
+        for addr in self
+            .allocations
+            .iter()
+            .filter(|(_, (p, _))| *p == proc_id)
+            .map(|(k, _)| *k)
+            .collect::<Vec<_>>()
+        {
+            self.free(addr);
+        }
+    }
 
     #[must_use]
     pub fn allocate(&mut self, proc_id: u64, size: u64) -> u64 {
