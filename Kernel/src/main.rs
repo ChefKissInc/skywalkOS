@@ -33,10 +33,6 @@ extern "C" fn __stack_chk_fail() {
 
 #[no_mangle]
 extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
-    unwinding::panic::catch_unwind(move || real_main(boot_info)).unwrap()
-}
-
-fn real_main(boot_info: &sulphur_dioxide::BootInfo) -> ! {
     utils::logger::init();
     assert_eq!(boot_info.revision, sulphur_dioxide::CURRENT_REVISION);
     utils::init_core(boot_info);
