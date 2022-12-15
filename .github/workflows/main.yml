@@ -58,4 +58,4 @@ jobs:
         with:
           toolchain: nightly
           command: test
-          args: --workspace --exclude cardboard --exclude bootx
+          args: --workspace --exclude kernel --exclude bootx

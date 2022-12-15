@@ -6,59 +6,52 @@ updates:
       - "Enhancement"
     schedule:
       interval: "daily"
-      
   - package-ecosystem: "cargo"
-    directory: "/acpi"
+    directory: "/Libraries/ACPI"
     labels:
       - "Enhancement"
-      - "Project:acpi"
+      - "Project:ACPI"
     schedule:
       interval: "daily"
- 
   - package-ecosystem: "cargo"
-    directory: "/amd64"
+    directory: "/Libraries/AMD64"
     labels:
       - "Enhancement"
-      - "Project:amd64"
+      - "Project:AMD64"
     schedule:
       interval: "daily"
-      
   - package-ecosystem: "cargo"
-    directory: "/bootx"
+    directory: "/BootX"
     labels:
       - "Enhancement"
-      - "Project:bootx"
+      - "Project:BootX"
     schedule:
       interval: "daily"
-      
   - package-ecosystem: "cargo"
-    directory: "/cardboard"
+    directory: "/Kernel"
     labels:
       - "Enhancement"
-      - "Project:cardboard"
+      - "Project:Kernel"
     schedule:
       interval: "daily"
-      
   - package-ecosystem: "cargo"
-    directory: "/cardboard-klib"
+    directory: "/Libraries/cardboard-klib"
     labels:
       - "Enhancement"
-      - "Project:cardboard"
+      - "Project:Kernel"
     schedule:
       interval: "daily"
-      
   - package-ecosystem: "cargo"
-    directory: "/paper-fb"
+    directory: "/Libraries/PaperFrameBuffer"
     labels:
       - "Enhancement"
-      - "Project:paper-fb"
+      - "Project:PaperFrameBuffer"
     schedule:
       interval: "daily"
-      
   - package-ecosystem: "cargo"
-    directory: "/sulphur-dioxide"
+    directory: "/Libraries/SulphurDioxide"
     labels:
       - "Enhancement"
-      - "Project:sulphur-dioxide"
+      - "Project:SulphurDioxide"
     schedule:
       interval: "daily"

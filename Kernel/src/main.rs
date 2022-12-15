@@ -24,7 +24,7 @@ mod utils;
 
 #[used]
 #[no_mangle]
-static __stack_chk_guard: u64 = 0x595e9fbd94fda766;
+static __stack_chk_guard: u64 = 0x595E9FBD94FDA766;
 
 #[no_mangle]
 extern "C" fn __stack_chk_fail() {

@@ -3,9 +3,9 @@
 
 use core::fmt::Write;
 
-pub struct CardboardLogger;
+pub struct Logger;
 
-impl log::Log for CardboardLogger {
+impl log::Log for Logger {
     fn enabled(&self, _: &log::Metadata) -> bool {
         true
     }
@@ -40,7 +40,7 @@ impl log::Log for CardboardLogger {
     fn flush(&self) {}
 }
 
-pub static LOGGER: CardboardLogger = CardboardLogger;
+pub static LOGGER: Logger = Logger;
 
 pub fn init() {
     #[cfg(debug_assertions)]

@@ -27,7 +27,7 @@ mod helpers;
 
 #[used]
 #[no_mangle]
-static __security_cookie: usize = 0x595e9fbd94fda766;
+static __security_cookie: usize = 0x595E9FBD94FDA766;
 
 #[no_mangle]
 unsafe extern "C" fn __security_check_cookie(cookie: usize) {
