@@ -14,7 +14,6 @@ use kernel::{port::Port, SystemCall};
 mod allocator;
 mod logger;
 mod panic;
-mod regs;
 
 #[macro_use]
 extern crate log;
