@@ -9,7 +9,6 @@ version = "0.1.0"
 [[bin]]
 name = "kernel"
 filename = "Kernel"
-path = "src/main.rs"
 
 [dependencies]
 acpi = { path = "../Libraries/ACPI" }

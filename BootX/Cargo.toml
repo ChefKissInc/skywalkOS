@@ -9,7 +9,6 @@ version = "0.1.0"
 [[bin]]
 name = "bootx"
 filename = "BOOTX64"
-path = "src/main.rs"
 
 [dependencies]
 acpi = { path = "../Libraries/ACPI" }
