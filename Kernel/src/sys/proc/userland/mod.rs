@@ -8,7 +8,7 @@ use amd64::{
     io::port::PortIO,
     paging::{pml4::PML4, PageTableEntry},
 };
-use cardboard_klib::{KernelMessage, Message, SystemCall, SystemCallStatus};
+use kernel::{KernelMessage, Message, SystemCall, SystemCallStatus};
 
 use crate::sys::{gdt::PrivilegeLevel, RegisterState};
 

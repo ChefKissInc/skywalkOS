@@ -4,7 +4,6 @@
 #![no_std]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 
-#[cfg(feature = "user")]
 pub mod port;
 
 use num_enum::{IntoPrimitive, TryFromPrimitive};
@@ -25,7 +24,6 @@ pub enum SystemCallStatus {
     DoNothing,
 }
 
-#[cfg(feature = "user")]
 impl SystemCallStatus {
     pub const fn as_result(self) -> Result<(), Self> {
         match self {
@@ -42,7 +40,6 @@ pub struct Message {
     pub data: &'static [u8],
 }
 
-#[cfg(feature = "kernel")]
 impl Message {
     pub fn new(proc_id: u64, data: &'static [u8]) -> Self {
         let mut bytes = [0; 8];
@@ -77,7 +74,6 @@ pub enum SystemCall {
     Ack,
 }
 
-#[cfg(feature = "user")]
 impl SystemCall {
     /// # Safety
     ///

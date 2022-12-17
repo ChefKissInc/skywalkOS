@@ -8,7 +8,7 @@ use alloc::{
     vec::Vec,
 };
 
-use cardboard_klib::Message;
+use kernel::Message;
 
 pub mod scheduler;
 pub mod userland;

@@ -35,13 +35,6 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Libraries/cardboard-klib"
-    labels:
-      - "Enhancement"
-      - "Project:Kernel"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "cargo"
     directory: "/Libraries/PaperFrameBuffer"
     labels:
       - "Enhancement"
