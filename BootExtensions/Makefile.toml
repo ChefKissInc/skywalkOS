@@ -1,0 +1,48 @@
+[tasks.clippy]
+command = "cargo"
+args = [
+    "clippy",
+    "-Zbuild-std=core,compiler_builtins,alloc",
+    "-Zbuild-std-features=compiler-builtins-mem",
+    "--target",
+    "../../x86_64-pc-bridgecore.json",
+]
+
+[tasks.build]
+command = "cargo"
+args = [
+    "build",
+    "-Zbuild-std=core,compiler_builtins,alloc",
+    "-Zbuild-std-features=compiler-builtins-mem",
+    "--target",
+    "../../x86_64-pc-bridgecore.json",
+    "--out-dir",
+    "../../Drive/System/BootExtensions",
+]
+
+[tasks.build-release]
+command = "cargo"
+args = [
+    "build",
+    "-Zbuild-std=core,compiler_builtins,alloc",
+    "-Zbuild-std-features=compiler-builtins-mem",
+    "--target",
+    "../../x86_64-pc-bridgecore.json",
+    "--out-dir",
+    "../../Drive/System/BootExtensions",
+    "--release",
+]
+
+[tasks.make]
+dependencies = ["clippy", "build"]
+
+[tasks.make-release]
+dependencies = ["clippy", "build-release"]
+
+[config]
+default_to_workspace = true
+
+[env]
+CARGO_MAKE_WORKSPACE_EMULATION = true
+CARGO_MAKE_CRATE_WORKSPACE_MEMBERS = ["PCICore"]
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true

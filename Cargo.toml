@@ -1,5 +1,5 @@
 [workspace]
-members = ["Libraries/*", "BootX", "Kernel"]
+members = ["Libraries/*", "BootX", "Kernel", "BootExtensions/PCICore"]
 resolver = "2"
 
 [profile.release]

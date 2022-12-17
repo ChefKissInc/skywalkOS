@@ -66,11 +66,24 @@ args = [
     "--release",
 ]
 
+[tasks.make-boot-exts]
+command = "cargo"
+args = ["make", "--cwd", "BootExtensions", "make"]
+
+[tasks.make-boot-exts-release]
+command = "cargo"
+args = ["make", "--cwd", "BootExtensions", "make-release"]
+
 [tasks.make]
-dependencies = ["clippy", "build-bootx", "build-kernel"]
+dependencies = ["clippy", "build-bootx", "build-kernel", "make-boot-exts"]
 
 [tasks.make-release]
-dependencies = ["clippy", "build-bootx-release", "build-kernel-release"]
+dependencies = [
+    "clippy",
+    "build-bootx-release",
+    "build-kernel-release",
+    "make-boot-exts-release",
+]
 
 [tasks.run]
 command = "qemu-system-x86_64"
