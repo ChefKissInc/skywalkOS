@@ -58,4 +58,4 @@ jobs:
         with:
           toolchain: nightly
           command: test
-          args: --workspace --exclude kernel --exclude bootx
+          args: --workspace --exclude kernel --exclude bootx --exclude pci-core
