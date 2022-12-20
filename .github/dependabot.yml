@@ -48,3 +48,10 @@ updates:
       - "Project:SulphurDioxide"
     schedule:
       interval: "daily"
+  - package-ecosystem: "cargo"
+    directory: "/BootExtensions/PCICore"
+    labels:
+      - "Enhancement"
+      - "Project:PCICore"
+    schedule:
+      interval: "daily"
