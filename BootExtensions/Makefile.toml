@@ -1,14 +1,4 @@
-[tasks.clippy]
-command = "cargo"
-args = [
-    "clippy",
-    "-Zbuild-std=core,compiler_builtins,alloc",
-    "-Zbuild-std-features=compiler-builtins-mem",
-    "--target",
-    "../../x86_64-pc-bridgecore.json",
-]
-
-[tasks.build]
+[tasks.make]
 command = "cargo"
 args = [
     "build",
@@ -20,7 +10,7 @@ args = [
     "../../Drive/System/BootExtensions",
 ]
 
-[tasks.build-release]
+[tasks.make-release]
 command = "cargo"
 args = [
     "build",
@@ -32,12 +22,6 @@ args = [
     "../../Drive/System/BootExtensions",
     "--release",
 ]
-
-[tasks.make]
-dependencies = ["clippy", "build"]
-
-[tasks.make-release]
-dependencies = ["clippy", "build-release"]
 
 [config]
 default_to_workspace = true
