@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss Inc 2021-2022.
+// Copyright (c) ChefKiss Inc 2021-2023.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 #![no_std]
@@ -36,7 +36,7 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     utils::logger::init();
     assert_eq!(boot_info.revision, sulphur_dioxide::CURRENT_REVISION);
     utils::init_core(boot_info);
-    debug!("Copyright ChefKiss Inc 2021-2022.");
+    debug!("Copyright ChefKiss Inc 2021-2023.");
 
     let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
     state.terminal = boot_info.frame_buffer.map(|fb_info| {
