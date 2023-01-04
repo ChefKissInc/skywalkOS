@@ -23,9 +23,9 @@ pub struct Scheduler {
     pub providers: HashMap<u64, u64>,
     pub irq_handlers: HashMap<u8, u64>,
     pub message_sources: HashMap<u64, u64>,
-    pub proc_id_gen: crate::utils::incremental_num::IncrementalNumGenerator,
-    pub thread_id_gen: crate::utils::incremental_num::IncrementalNumGenerator,
-    pub message_id_gen: crate::utils::incremental_num::IncrementalNumGenerator,
+    pub proc_id_gen: crate::utils::incr_id::IncrIDGen,
+    pub thread_id_gen: crate::utils::incr_id::IncrIDGen,
+    pub message_id_gen: crate::utils::incr_id::IncrIDGen,
 }
 
 pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
@@ -93,9 +93,9 @@ impl Scheduler {
             providers: HashMap::new(),
             irq_handlers: HashMap::new(),
             message_sources: HashMap::new(),
-            proc_id_gen: crate::utils::incremental_num::IncrementalNumGenerator::new(),
-            thread_id_gen: crate::utils::incremental_num::IncrementalNumGenerator::new(),
-            message_id_gen: crate::utils::incremental_num::IncrementalNumGenerator::new(),
+            proc_id_gen: crate::utils::incr_id::IncrIDGen::new(),
+            thread_id_gen: crate::utils::incr_id::IncrIDGen::new(),
+            message_id_gen: crate::utils::incr_id::IncrIDGen::new(),
         }
     }
 

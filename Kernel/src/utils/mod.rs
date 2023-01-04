@@ -6,7 +6,7 @@ use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 use crate::{driver::acpi::ACPIPlatform, sys::pmm::BitmapAllocator};
 
 pub mod bitmap;
-pub mod incremental_num;
+pub mod incr_id;
 pub mod logger;
 
 #[macro_export]

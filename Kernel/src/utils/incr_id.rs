@@ -1,11 +1,11 @@
 use alloc::vec::Vec;
 
-pub struct IncrementalNumGenerator {
+pub struct IncrIDGen {
     last_used: u64,
     freed: Vec<u64>,
 }
 
-impl IncrementalNumGenerator {
+impl IncrIDGen {
     #[must_use]
     pub const fn new() -> Self {
         Self {
