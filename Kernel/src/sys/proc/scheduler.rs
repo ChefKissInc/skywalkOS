@@ -117,7 +117,7 @@ impl Scheduler {
             .iter()
             .map(|v| v.p_vaddr + v.p_memsz)
             .max()
-            .unwrap_or_default();
+            .unwrap();
         let mut data = vec![0; max_vaddr as usize];
         for hdr in exec
             .program_headers
