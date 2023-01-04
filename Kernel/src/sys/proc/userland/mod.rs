@@ -151,7 +151,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             if !scheduler.processes.contains_key(&state.rsi) {
                 break 'a SystemCallStatus::MalformedData.into();
             }
-            let addr = state.rcx + USER_PHYS_VIRT_OFFSET;
+            let addr = state.rcx;
             let msg = Message::new(
                 scheduler.message_id_gen.next(),
                 src,
