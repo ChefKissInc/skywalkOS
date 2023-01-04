@@ -66,6 +66,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
     user_allocations.track(proc_id, virt, s.len() as u64);
     let msg = Message::new(
+        scheduler.message_id_gen.next(),
         0,
         core::slice::from_raw_parts(virt as *const _, s.len() as _),
     );
@@ -124,6 +125,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             let index = scheduler.thread_ids.iter().position(|v| *v == id).unwrap();
             scheduler.threads.remove(&id);
             scheduler.thread_ids.remove(index);
+            scheduler.thread_id_gen.free(id);
             scheduler.current_thread_id = None;
             if !scheduler.threads.iter().any(|(_, v)| v.proc_id == proc_id) {
                 sys_state
@@ -132,6 +134,8 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                     .unwrap()
                     .lock()
                     .free_proc(proc_id);
+                scheduler.processes.remove(&proc_id);
+                scheduler.proc_id_gen.free(proc_id);
             }
             drop(scheduler);
             super::scheduler::schedule(state);
@@ -149,6 +153,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             }
             let addr = state.rcx + USER_PHYS_VIRT_OFFSET;
             let msg = Message::new(
+                scheduler.message_id_gen.next(),
                 src,
                 core::slice::from_raw_parts(addr as *const _, state.r8 as _),
             );
@@ -297,6 +302,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 crate::driver::acpi::ioapic::set_irq_mask(irq, false);
             }
             user_allocations.free_message(state.rsi);
+            scheduler.message_id_gen.free(state.rsi);
             SystemCallStatus::Success.into()
         }
     };

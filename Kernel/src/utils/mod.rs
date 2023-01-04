@@ -7,6 +7,7 @@ use crate::{driver::acpi::ACPIPlatform, sys::pmm::BitmapAllocator};
 
 pub mod bitmap;
 pub mod logger;
+pub mod incremental_num;
 
 #[macro_export]
 macro_rules! hlt_loop {
@@ -82,10 +83,4 @@ pub fn init_paging(state: &mut crate::sys::state::SystemState) {
     if let Some(terminal) = &mut state.terminal {
         terminal.map_fb();
     }
-}
-
-pub fn random_u64() -> u64 {
-    let mut bytes = [0; 8];
-    getrandom::getrandom(&mut bytes).unwrap();
-    u64::from_le_bytes(bytes)
 }

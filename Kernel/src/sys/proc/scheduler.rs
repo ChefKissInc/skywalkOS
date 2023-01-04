@@ -23,6 +23,9 @@ pub struct Scheduler {
     pub providers: HashMap<u64, u64>,
     pub irq_handlers: HashMap<u8, u64>,
     pub message_sources: HashMap<u64, u64>,
+    pub proc_id_gen: crate::utils::incremental_num::IncrementalNumGenerator,
+    pub thread_id_gen: crate::utils::incremental_num::IncrementalNumGenerator,
+    pub message_id_gen: crate::utils::incremental_num::IncrementalNumGenerator,
 }
 
 pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
@@ -90,6 +93,9 @@ impl Scheduler {
             providers: HashMap::new(),
             irq_handlers: HashMap::new(),
             message_sources: HashMap::new(),
+            proc_id_gen: crate::utils::incremental_num::IncrementalNumGenerator::new(),
+            thread_id_gen: crate::utils::incremental_num::IncrementalNumGenerator::new(),
+            message_id_gen: crate::utils::incremental_num::IncrementalNumGenerator::new(),
         }
     }
 
@@ -146,7 +152,7 @@ impl Scheduler {
             *ptr = target;
         }
         let rip = virt_addr + exec.entry;
-        let proc_id = crate::utils::random_u64();
+        let proc_id = self.proc_id_gen.next();
         let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
         let count = (data.len() as u64 + 0xFFF) / 0x1000;
         state.user_allocations.get_mut().unwrap().lock().track(
@@ -160,7 +166,7 @@ impl Scheduler {
         unsafe {
             proc.cr3.map_higher_half();
         }
-        let id = crate::utils::random_u64();
+        let id = self.thread_id_gen.next();
         let thread = super::Thread::new(proc_id, rip);
         unsafe {
             proc.cr3.map_pages(

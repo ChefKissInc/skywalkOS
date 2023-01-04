@@ -41,14 +41,9 @@ pub struct Message {
 }
 
 impl Message {
-    pub fn new(proc_id: u64, data: &'static [u8]) -> Self {
-        let mut bytes = [0; 8];
-        getrandom::getrandom(&mut bytes).unwrap();
-        Self {
-            id: u64::from_le_bytes(bytes),
-            proc_id,
-            data,
-        }
+    #[must_use]
+    pub const fn new(id: u64, proc_id: u64, data: &'static [u8]) -> Self {
+        Self { id, proc_id, data }
     }
 }
 
