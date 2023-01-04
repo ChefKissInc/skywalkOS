@@ -57,16 +57,20 @@ pub enum SystemCall {
     Skip,
     RegisterProvider,
     GetProvidingProcess,
-    PortInByte,
-    PortInWord,
-    PortInDWord,
-    PortOutByte,
-    PortOutWord,
-    PortOutDWord,
+    PortIn,
+    PortOut,
     RegisterIRQHandler,
     Allocate,
     Free,
     Ack,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
+#[repr(u64)]
+pub enum AccessSize {
+    Byte,
+    Word,
+    DWord,
 }
 
 impl SystemCall {
@@ -192,13 +196,13 @@ impl SystemCall {
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_in_byte(port: u16) -> Result<u8, SystemCallStatus> {
-        let ty: u64 = Self::PortInByte.into();
         let mut ret: u64;
         let mut val: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::PortIn as u64,
             in("rsi") port as u64,
+            in("rdx") AccessSize::Byte as u64,
             lateout("rdi") val,
             out("rax") ret,
         );
@@ -210,13 +214,13 @@ impl SystemCall {
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_out_byte(port: u16, val: u8) -> Result<(), SystemCallStatus> {
-        let ty: u64 = Self::PortOutByte.into();
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::PortOut as u64,
             in("rsi") port as u64,
             in("rdx") val as u64,
+            in("rcx") AccessSize::Byte as u64,
             out("rax") ret,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
@@ -226,13 +230,13 @@ impl SystemCall {
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_in_word(port: u16) -> Result<u16, SystemCallStatus> {
-        let ty: u64 = Self::PortInWord.into();
         let mut ret: u64;
         let mut val: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::PortIn as u64,
             in("rsi") port as u64,
+            in("rdx") AccessSize::Word as u64,
             lateout("rdi") val,
             out("rax") ret,
         );
@@ -244,13 +248,13 @@ impl SystemCall {
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_out_word(port: u16, val: u16) -> Result<(), SystemCallStatus> {
-        let ty: u64 = Self::PortOutWord.into();
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::PortOut as u64,
             in("rsi") port as u64,
             in("rdx") val as u64,
+            in("rcx") AccessSize::Word as u64,
             out("rax") ret,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
@@ -260,13 +264,13 @@ impl SystemCall {
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_in_dword(port: u16) -> Result<u32, SystemCallStatus> {
-        let ty: u64 = Self::PortInDWord.into();
         let mut ret: u64;
         let mut val: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::PortIn as u64,
             in("rsi") port as u64,
+            in("rdx") AccessSize::DWord as u64,
             lateout("rdi") val,
             out("rax") ret,
         );
@@ -278,13 +282,13 @@ impl SystemCall {
     ///
     /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_out_dword(port: u16, val: u32) -> Result<(), SystemCallStatus> {
-        let ty: u64 = Self::PortOutDWord.into();
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::PortOut as u64,
             in("rsi") port as u64,
             in("rdx") val as u64,
+            in("rcx") AccessSize::DWord as u64,
             out("rax") ret,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()

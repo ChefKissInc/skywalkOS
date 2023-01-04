@@ -190,37 +190,29 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             state.rdi = proc_id;
             SystemCallStatus::Success.into()
         }
-        SystemCall::PortInByte => {
+        SystemCall::PortIn => 'a: {
             let port = state.rsi as u16;
-            state.rdi = u8::read(port) as u64;
+            let Ok(access_size) = kernel::AccessSize::try_from(state.rdx) else {
+                break 'a SystemCallStatus::MalformedData.into();
+            };
+            state.rdi = match access_size {
+                kernel::AccessSize::Byte => u8::read(port) as u64,
+                kernel::AccessSize::Word => u16::read(port) as u64,
+                kernel::AccessSize::DWord => u32::read(port) as u64,
+            };
             SystemCallStatus::Success.into()
         }
-        SystemCall::PortInWord => {
-            let port = state.rsi as u16;
-            state.rdi = u16::read(port) as u64;
-            SystemCallStatus::Success.into()
-        }
-        SystemCall::PortInDWord => {
-            let port = state.rsi as u16;
-            state.rdi = u32::read(port) as u64;
-            SystemCallStatus::Success.into()
-        }
-        SystemCall::PortOutByte => {
+        SystemCall::PortOut => 'a: {
             let port = state.rsi as u16;
             let value = state.rdx as u8;
-            u8::write(port, value);
-            SystemCallStatus::Success.into()
-        }
-        SystemCall::PortOutWord => {
-            let port = state.rsi as u16;
-            let value = state.rdx as u16;
-            u16::write(port, value);
-            SystemCallStatus::Success.into()
-        }
-        SystemCall::PortOutDWord => {
-            let port = state.rsi as u16;
-            let value = state.rdx as u32;
-            u32::write(port, value);
+            let Ok(access_size) = kernel::AccessSize::try_from(state.rcx) else {
+                break 'a SystemCallStatus::MalformedData.into();
+            };
+            match access_size {
+                kernel::AccessSize::Byte => u8::write(port, value),
+                kernel::AccessSize::Word => u16::write(port, value as u16),
+                kernel::AccessSize::DWord => u32::write(port, value as u32),
+            };
             SystemCallStatus::Success.into()
         }
         SystemCall::RegisterIRQHandler => 'a: {
