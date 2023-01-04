@@ -3,6 +3,7 @@
 
 impl crate::framebuffer::Framebuffer {
     /// # Errors
+    ///
     /// This operation errors if the X and Y coordinates or, depending on the `horizontal` argument,
     /// the X or Y coordinate plus the length of the line are larger than the screen bounds
     #[inline]
