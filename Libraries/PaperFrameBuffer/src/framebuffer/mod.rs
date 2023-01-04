@@ -20,9 +20,6 @@ pub enum FramebufferError {
 pub type Result<T> = core::result::Result<T, FramebufferError>;
 
 impl Framebuffer {
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[must_use]
     pub unsafe fn new(
         data: *mut u32,

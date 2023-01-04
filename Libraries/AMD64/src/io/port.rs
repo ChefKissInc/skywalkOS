@@ -2,13 +2,7 @@
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
 pub trait PortIO: Sized {
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     unsafe fn read(port: u16) -> Self;
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     unsafe fn write(port: u16, value: Self);
 }
 
@@ -71,35 +65,23 @@ impl<T: PortIO, R: From<T> + Into<T>> Port<T, R> {
         }
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[must_use]
     #[inline]
     pub unsafe fn read(&self) -> R {
         T::read(self.port).into()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[must_use]
     #[inline]
     pub unsafe fn read_off<A: Into<u16>, R2: From<T> + Into<T>>(&self, off: A) -> R2 {
         T::read(self.port + off.into()).into()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     pub unsafe fn write(&self, value: R) {
         T::write(self.port, value.into());
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     pub unsafe fn write_off<A: Into<u16>, R2: From<T> + Into<T>>(&self, value: R2, off: A) {
         T::write(self.port + off.into(), value.into());

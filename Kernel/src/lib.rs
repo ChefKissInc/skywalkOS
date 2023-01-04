@@ -3,6 +3,7 @@
 
 #![no_std]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
+#![allow(clippy::missing_safety_doc)]
 
 pub mod port;
 
@@ -74,9 +75,6 @@ pub enum AccessSize {
 }
 
 impl SystemCall {
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn kprint(s: &str) -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::KPrint.into();
         let mut ret: u64;
@@ -90,9 +88,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn receive_message() -> Result<Option<Message>, SystemCallStatus> {
         let ty: u64 = Self::ReceiveMessage.into();
         let mut ret: u64;
@@ -122,9 +117,6 @@ impl SystemCall {
         }
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn send_message(target: u64, s: &[u8]) -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::SendMessage.into();
         let ptr = s.as_ptr() as u64;
@@ -141,9 +133,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn exit() -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::Exit.into();
         let mut ret: u64;
@@ -151,17 +140,11 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn skip() {
         let ty: u64 = Self::Skip.into();
         core::arch::asm!("int 249", in("rdi") ty);
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn register_provider(provider: u64) -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::RegisterProvider.into();
         let mut ret: u64;
@@ -174,9 +157,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn get_providing_process(provider: u64) -> Result<u64, SystemCallStatus> {
         let ty: u64 = Self::GetProvidingProcess.into();
         let mut id;
@@ -192,9 +172,6 @@ impl SystemCall {
         Ok(id)
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_in_byte(port: u16) -> Result<u8, SystemCallStatus> {
         let mut ret: u64;
         let mut val: u64;
@@ -210,9 +187,6 @@ impl SystemCall {
         Ok(val as u8)
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_out_byte(port: u16, val: u8) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -226,9 +200,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_in_word(port: u16) -> Result<u16, SystemCallStatus> {
         let mut ret: u64;
         let mut val: u64;
@@ -244,9 +215,6 @@ impl SystemCall {
         Ok(val as u16)
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_out_word(port: u16, val: u16) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -260,9 +228,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_in_dword(port: u16) -> Result<u32, SystemCallStatus> {
         let mut ret: u64;
         let mut val: u64;
@@ -278,9 +243,6 @@ impl SystemCall {
         Ok(val as u32)
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn port_out_dword(port: u16, val: u32) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -294,9 +256,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn register_irq_handler(irq: u8) -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::RegisterIRQHandler.into();
         let mut ret: u64;
@@ -304,9 +263,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn allocate(size: u64) -> Result<*mut u8, SystemCallStatus> {
         let ty: u64 = Self::Allocate.into();
         let mut ret: u64;
@@ -322,9 +278,6 @@ impl SystemCall {
         Ok(ptr as *mut u8)
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn free(ptr: *mut u8) -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::Free.into();
         let mut ret: u64;
@@ -337,9 +290,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     pub unsafe fn ack(id: u64) -> Result<(), SystemCallStatus> {
         let ty: u64 = Self::Ack.into();
         let mut ret: u64;

@@ -8,17 +8,11 @@ pub trait PML4: Sized {
     fn get_entry(&mut self, offset: u64) -> &mut super::PageTableEntry;
     fn alloc_entry(&self) -> u64;
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn set(&mut self) {
         core::arch::asm!("mov cr3, {}", in(reg) self as *mut _ as u64 - Self::VIRT_OFF, options(nostack, preserves_flags));
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     #[must_use]
     unsafe fn get() -> &'static mut Self {
@@ -27,9 +21,6 @@ pub trait PML4: Sized {
         pml4.as_mut().unwrap()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     #[must_use]
     unsafe fn get_or_alloc_entry(
@@ -49,9 +40,6 @@ pub trait PML4: Sized {
             .unwrap()
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn get_or_null_entry(&mut self, offset: u64) -> Option<&mut Self> {
         let entry = self.get_entry(offset);
@@ -67,9 +55,6 @@ pub trait PML4: Sized {
         }
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn virt_to_phys(&mut self, virt: u64) -> Option<u64> {
         let offs = super::PageTableOffsets::new(virt);
@@ -89,9 +74,6 @@ pub trait PML4: Sized {
         }
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn map_pages(&mut self, virt: u64, phys: u64, count: u64, flags: super::PageTableEntry) {
         for i in 0..count {
@@ -107,9 +89,6 @@ pub trait PML4: Sized {
         }
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn map_huge_pages(
         &mut self,
@@ -131,9 +110,6 @@ pub trait PML4: Sized {
         }
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[inline]
     unsafe fn map_higher_half(&mut self) {
         self.map_huge_pages(

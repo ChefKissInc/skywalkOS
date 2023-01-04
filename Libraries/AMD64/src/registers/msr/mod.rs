@@ -9,9 +9,6 @@ pub mod vm_cr;
 pub trait ModelSpecificReg: Sized {
     const MSR_NUM: u32;
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     #[must_use]
     unsafe fn read() -> Self
     where
@@ -22,9 +19,6 @@ pub trait ModelSpecificReg: Sized {
         Self::from((u64::from(high) << 32) | u64::from(low))
     }
 
-    /// # Safety
-    ///
-    /// The caller must ensure that this operation has no unsafe side effects.
     unsafe fn write(self)
     where
         u64: From<Self>,
