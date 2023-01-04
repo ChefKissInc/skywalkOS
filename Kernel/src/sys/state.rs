@@ -33,6 +33,7 @@ pub struct SystemState {
 }
 
 impl SystemState {
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             kern_symbols: spin::Once::new(),

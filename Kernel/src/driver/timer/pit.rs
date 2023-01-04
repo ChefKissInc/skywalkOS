@@ -52,6 +52,7 @@ pub struct ProgrammableIntervalTimer {
 }
 #[allow(dead_code)]
 impl ProgrammableIntervalTimer {
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             channel0: Port::new(0x40),

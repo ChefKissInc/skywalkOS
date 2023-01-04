@@ -16,6 +16,7 @@ pub struct ACPIPlatform {
 }
 
 impl ACPIPlatform {
+    #[must_use]
     pub fn new(rsdp: &'static acpi::tables::rsdp::RSDP) -> Self {
         let mut tables = Vec::new();
 

@@ -22,6 +22,7 @@ pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC0000000;
 pub struct UserPageTableLvl4(u64, amd64::paging::PageTable);
 
 impl UserPageTableLvl4 {
+    #[must_use]
     pub const fn new(proc_id: u64) -> Self {
         Self(proc_id, amd64::paging::PageTable::new())
     }

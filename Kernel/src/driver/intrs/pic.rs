@@ -16,6 +16,7 @@ pub struct ProgrammableInterruptController {
 }
 
 impl ProgrammableInterruptController {
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             master_cmd: Port::new(0x20),

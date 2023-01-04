@@ -15,6 +15,7 @@ pub struct TaskSegmentSelector {
 }
 
 impl TaskSegmentSelector {
+    #[must_use]
     pub const fn new(kern_rsp: u64) -> Self {
         Self {
             __: 0,

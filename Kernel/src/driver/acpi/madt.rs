@@ -17,6 +17,7 @@ pub struct MADTData {
 }
 
 impl MADTData {
+    #[must_use]
     pub fn new(madt: &'static acpi::tables::madt::MADT) -> Self {
         // Disable PIC
         if madt.flags.pcat_compat() {

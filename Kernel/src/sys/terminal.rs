@@ -18,6 +18,7 @@ unsafe impl Send for Terminal {}
 unsafe impl Sync for Terminal {}
 
 impl Terminal {
+    #[must_use]
     pub const fn new(fb: Framebuffer) -> Self {
         let width = fb.width / 8;
         let height = fb.height / 8;
@@ -70,7 +71,7 @@ impl Terminal {
         }
     }
 
-    pub fn handle_scrollback(&mut self) {
+    fn handle_scrollback(&mut self) {
         if self.y >= self.height {
             self.fb
                 .base

@@ -17,6 +17,7 @@ pub struct BitmapAllocator {
 }
 
 impl BitmapAllocator {
+    #[must_use]
     pub fn new(mmap: &'static [MemoryEntry]) -> Self {
         let alloc_base =
             unsafe { &__kernel_top } as *const _ as u64 - amd64::paging::KERNEL_VIRT_OFFSET;

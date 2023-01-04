@@ -32,6 +32,7 @@ pub struct Thread {
 }
 
 impl Thread {
+    #[must_use]
     pub fn new(proc_id: u64, rip: u64) -> Self {
         let stack = vec![0; 0x14000];
         Self {
@@ -67,6 +68,7 @@ pub struct Process {
 }
 
 impl Process {
+    #[must_use]
     pub fn new(proc_id: u64, path: &str, cwd: &str) -> Self {
         Self {
             path: path.to_string(),
