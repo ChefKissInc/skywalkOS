@@ -6,8 +6,8 @@ use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 use crate::{driver::acpi::ACPIPlatform, sys::pmm::BitmapAllocator};
 
 pub mod bitmap;
-pub mod logger;
 pub mod incremental_num;
+pub mod logger;
 
 #[macro_export]
 macro_rules! hlt_loop {
