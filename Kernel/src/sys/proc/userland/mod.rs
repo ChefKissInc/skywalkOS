@@ -204,14 +204,13 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         }
         SystemCall::PortOut => 'a: {
             let port = state.rsi as u16;
-            let value = state.rdx as u8;
             let Ok(access_size) = kernel::AccessSize::try_from(state.rcx) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
             match access_size {
-                kernel::AccessSize::Byte => u8::write(port, value),
-                kernel::AccessSize::Word => u16::write(port, value as u16),
-                kernel::AccessSize::DWord => u32::write(port, value as u32),
+                kernel::AccessSize::Byte => u8::write(port, state.rdx as u8),
+                kernel::AccessSize::Word => u16::write(port, state.rdx as u16),
+                kernel::AccessSize::DWord => u32::write(port, state.rdx as u32),
             };
             SystemCallStatus::Success.into()
         }
