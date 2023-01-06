@@ -186,7 +186,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 break 'a SystemCallStatus::MalformedData.into();
             }
             let Some(&proc_id) = scheduler.providers.get(&state.rsi) else {
-                break 'a SystemCallStatus::MalformedData.into();
+                break 'a SystemCallStatus::NotFound.into();
             };
             state.rdi = proc_id;
             SystemCallStatus::Success.into()

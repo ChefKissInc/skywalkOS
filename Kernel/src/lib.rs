@@ -19,8 +19,7 @@ pub enum SystemCallStatus {
     InvalidRequest,
     MalformedData,
     UnknownRequest,
-    Unimplemented,
-    Failure,
+    NotFound
 }
 
 impl SystemCallStatus {
