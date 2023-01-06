@@ -159,9 +159,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 core::slice::from_raw_parts(addr as *const _, state.r8 as _),
             );
             scheduler.message_sources.insert(msg.id, src);
-            let Some(process) = scheduler.processes.get_mut(&state.rsi) else {
-                break 'a SystemCallStatus::MalformedData.into();
-            };
+            let process = scheduler.processes.get_mut(&state.rsi).unwrap();
             sys_state
                 .user_allocations
                 .get_mut()
