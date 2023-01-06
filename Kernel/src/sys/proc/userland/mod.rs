@@ -271,18 +271,14 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             SystemCallStatus::Success.into()
         }
         SystemCall::Ack => 'a: {
-            if state.rsi == 0 {
-                break 'a SystemCallStatus::MalformedData.into();
-            }
-            let Some(&src) = scheduler.message_sources.get(&state.rsi) else {
+            let id = state.rsi;
+
+            let Some(&src) = scheduler.message_sources.get(&id) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
             let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
             if src == 0 {
-                let addr = *user_allocations
-                    .message_allocations
-                    .get(&state.rsi)
-                    .unwrap();
+                let addr = *user_allocations.message_allocations.get(&id).unwrap();
                 let size = user_allocations.allocations.get(&addr).unwrap().1;
                 let data = addr as *const u8;
                 let msg: KernelMessage =
@@ -290,8 +286,8 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 let KernelMessage::IRQFired(irq) = msg;
                 crate::driver::acpi::ioapic::set_irq_mask(irq, false);
             }
-            user_allocations.free_message(state.rsi);
-            scheduler.message_id_gen.free(state.rsi);
+            user_allocations.free_message(id);
+            scheduler.message_id_gen.free(id);
             SystemCallStatus::Success.into()
         }
     };
