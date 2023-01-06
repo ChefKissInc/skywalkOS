@@ -41,12 +41,12 @@ impl Iterator for RSDTTypeIter {
         } else {
             unsafe {
                 let addr = if self.is_xsdt {
-                    *(self.ptr as *const u64).add(self.curr)
+                    (self.ptr as *const u64).add(self.curr).read_unaligned()
                 } else {
-                    u64::from(*(self.ptr as *const u32).add(self.curr))
-                };
+                    u64::from((self.ptr as *const u32).add(self.curr).read_unaligned())
+                } + amd64::paging::PHYS_VIRT_OFFSET;
                 self.curr += 1;
-                ((addr + amd64::paging::PHYS_VIRT_OFFSET) as *const super::SDTHeader).as_ref()
+                Some(&*(addr as *const super::SDTHeader))
             }
         }
     }
@@ -75,13 +75,10 @@ impl RSDTType {
 impl RSDP {
     #[must_use]
     pub fn validate(&self) -> bool {
-        let sum = unsafe {
-            let bytes =
-                core::slice::from_raw_parts((self as *const Self).cast::<u8>(), self.length());
-            bytes.iter().fold(0u8, |sum, &byte| sum.wrapping_add(byte))
+        let bytes = unsafe {
+            core::slice::from_raw_parts((self as *const Self).cast::<u8>(), self.length())
         };
-
-        sum == 0
+        bytes.iter().fold(0u8, |sum, &byte| sum.wrapping_add(byte)) == 0
     }
 
     #[must_use]
@@ -94,7 +91,6 @@ impl RSDP {
         unsafe { core::str::from_utf8_unchecked(&self.oem_id).trim() }
     }
 
-    /// If ACPI 1.0, return fixed size, else return length field
     #[must_use]
     pub const fn length(&self) -> usize {
         if self.revision == 0 {
@@ -105,16 +101,13 @@ impl RSDP {
     }
 
     #[must_use]
-    pub const fn as_type(&self) -> RSDTType {
-        // This is fine.
-        unsafe {
-            if self.revision == 0 {
-                let addr = self.rsdt_addr as u64 + amd64::paging::PHYS_VIRT_OFFSET;
-                RSDTType::Rsdt(&*(addr as *const RSDT))
-            } else {
-                let addr = self.xsdt_addr + amd64::paging::PHYS_VIRT_OFFSET;
-                RSDTType::Xsdt(&*(addr as *const XSDT))
-            }
+    pub fn as_type(&self) -> RSDTType {
+        if self.revision == 0 {
+            let addr = self.rsdt_addr as u64 + amd64::paging::PHYS_VIRT_OFFSET;
+            unsafe { RSDTType::Rsdt((addr as *const RSDT).as_ref().unwrap()) }
+        } else {
+            let addr = self.xsdt_addr + amd64::paging::PHYS_VIRT_OFFSET;
+            unsafe { RSDTType::Xsdt((addr as *const XSDT).as_ref().unwrap()) }
         }
     }
 }

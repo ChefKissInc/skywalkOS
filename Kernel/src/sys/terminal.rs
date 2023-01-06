@@ -38,7 +38,7 @@ impl Terminal {
             state.pml4.get_mut().unwrap().map_huge_pages(
                 base,
                 base - amd64::paging::PHYS_VIRT_OFFSET,
-                ((self.fb.height * self.fb.stride + 0x20_0000 - 1) / 0x20_0000) as _,
+                ((self.fb.height * self.fb.stride + 0x1F_FFFF) / 0x20_0000) as _,
                 amd64::paging::PageTableEntry::new()
                     .with_writable(true)
                     .with_present(true)
