@@ -22,7 +22,6 @@ pub enum SystemCallStatus {
     UnknownRequest,
     Unimplemented,
     Failure,
-    DoNothing,
 }
 
 impl SystemCallStatus {
@@ -76,11 +75,10 @@ pub enum AccessSize {
 
 impl SystemCall {
     pub unsafe fn kprint(s: &str) -> Result<(), SystemCallStatus> {
-        let ty: u64 = Self::KPrint.into();
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::KPrint as u64,
             in("rsi") s.as_ptr() as u64,
             in("rdx") s.len() as u64,
             out("rax") ret,
@@ -89,7 +87,6 @@ impl SystemCall {
     }
 
     pub unsafe fn receive_message() -> Result<Option<Message>, SystemCallStatus> {
-        let ty: u64 = Self::ReceiveMessage.into();
         let mut ret: u64;
         let mut id: u64;
         let mut proc_id: u64;
@@ -97,18 +94,17 @@ impl SystemCall {
         let mut len: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::ReceiveMessage as u64,
             out("rax") ret,
             lateout("rdi") id,
             out("rsi") proc_id,
             out("rdx") ptr,
             out("rcx") len,
         );
-        let ret = SystemCallStatus::try_from(ret).unwrap();
-        if matches!(ret, SystemCallStatus::DoNothing) {
+        SystemCallStatus::try_from(ret).unwrap().as_result()?;
+        if id == 0 {
             Ok(None)
         } else {
-            ret.as_result()?;
             Ok(Some(Message {
                 id,
                 proc_id,
@@ -118,39 +114,32 @@ impl SystemCall {
     }
 
     pub unsafe fn send_message(target: u64, s: &[u8]) -> Result<(), SystemCallStatus> {
-        let ty: u64 = Self::SendMessage.into();
-        let ptr = s.as_ptr() as u64;
-        let len = s.len() as u64;
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::SendMessage as u64,
             in("rsi") target,
-            in("rdx") ptr,
-            in("rcx") len,
+            in("rdx") s.as_ptr() as u64,
+            in("rcx") s.len() as u64,
             out("rax") ret,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    pub unsafe fn exit() -> Result<(), SystemCallStatus> {
-        let ty: u64 = Self::Exit.into();
-        let mut ret: u64;
-        core::arch::asm!("int 249", in("rdi") ty, out("rax") ret);
-        SystemCallStatus::try_from(ret).unwrap().as_result()
+    pub unsafe fn exit() -> ! {
+        core::arch::asm!("int 249", in("rdi") Self::Exit as u64);
+        unreachable!()
     }
 
     pub unsafe fn skip() {
-        let ty: u64 = Self::Skip.into();
-        core::arch::asm!("int 249", in("rdi") ty);
+        core::arch::asm!("int 249", in("rdi") Self::Skip as u64);
     }
 
     pub unsafe fn register_provider(provider: u64) -> Result<(), SystemCallStatus> {
-        let ty: u64 = Self::RegisterProvider.into();
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::RegisterProvider as u64,
             in("rsi") provider,
             out("rax") ret,
         );
@@ -158,12 +147,11 @@ impl SystemCall {
     }
 
     pub unsafe fn get_providing_process(provider: u64) -> Result<u64, SystemCallStatus> {
-        let ty: u64 = Self::GetProvidingProcess.into();
         let mut id;
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::GetProvidingProcess as u64,
             in("rsi") provider,
             lateout("rdi") id,
             out("rax") ret,
@@ -257,19 +245,22 @@ impl SystemCall {
     }
 
     pub unsafe fn register_irq_handler(irq: u8) -> Result<(), SystemCallStatus> {
-        let ty: u64 = Self::RegisterIRQHandler.into();
         let mut ret: u64;
-        core::arch::asm!("int 249", in("rdi") ty, in("rsi") irq as u64, out("rax") ret);
+        core::arch::asm!(
+            "int 249",
+            in("rdi") Self::RegisterIRQHandler as u64,
+            in("rsi") irq as u64,
+            out("rax") ret,
+        );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
     pub unsafe fn allocate(size: u64) -> Result<*mut u8, SystemCallStatus> {
-        let ty: u64 = Self::Allocate.into();
         let mut ret: u64;
         let mut ptr: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::Allocate as u64,
             in("rsi") size,
             lateout("rdi") ptr,
             out("rax") ret,
@@ -279,11 +270,10 @@ impl SystemCall {
     }
 
     pub unsafe fn free(ptr: *mut u8) -> Result<(), SystemCallStatus> {
-        let ty: u64 = Self::Free.into();
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::Free as u64,
             in("rsi") ptr as u64,
             out("rax") ret,
         );
@@ -291,11 +281,10 @@ impl SystemCall {
     }
 
     pub unsafe fn ack(id: u64) -> Result<(), SystemCallStatus> {
-        let ty: u64 = Self::Ack.into();
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") ty,
+            in("rdi") Self::Ack as u64,
             in("rsi") id,
             out("rax") ret,
         );

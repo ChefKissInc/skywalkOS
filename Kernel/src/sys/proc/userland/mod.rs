@@ -107,16 +107,17 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             }
             SystemCallStatus::Success.into()
         }
-        SystemCall::ReceiveMessage => 'a: {
+        SystemCall::ReceiveMessage => {
             let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
             let process = scheduler.processes.get_mut(&proc_id).unwrap();
-            let Some(msg) = process.messages.pop_back() else {
-                break 'a SystemCallStatus::DoNothing.into();
-            };
-            state.rdi = msg.id;
-            state.rsi = msg.proc_id;
-            state.rdx = msg.data.as_ptr() as u64;
-            state.rcx = msg.data.len() as u64;
+            if let Some(msg) = process.messages.pop_back() {
+                state.rdi = msg.id;
+                state.rsi = msg.proc_id;
+                state.rdx = msg.data.as_ptr() as u64;
+                state.rcx = msg.data.len() as u64;
+            } else {
+                state.rdi = 0;
+            }
             SystemCallStatus::Success.into()
         }
         SystemCall::Exit => {
