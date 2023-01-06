@@ -217,10 +217,9 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         }
         SystemCall::RegisterIRQHandler => 'a: {
             let irq = state.rsi as u8;
-            if state.rdx == 0 {
+            if irq > 0xDF {
                 break 'a SystemCallStatus::MalformedData.into();
             }
-
             let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
             if scheduler.irq_handlers.try_insert(irq, proc_id).is_err() {
                 break 'a SystemCallStatus::InvalidRequest.into();
