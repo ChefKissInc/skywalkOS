@@ -46,7 +46,7 @@ impl Message {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u64)]
 pub enum SystemCall {
     KPrint,
@@ -64,7 +64,7 @@ pub enum SystemCall {
     Ack,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u64)]
 pub enum AccessSize {
     Byte,
