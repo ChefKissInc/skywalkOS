@@ -19,7 +19,7 @@ pub enum SystemCallStatus {
     InvalidRequest,
     MalformedData,
     UnknownRequest,
-    NotFound
+    NotFound,
 }
 
 impl SystemCallStatus {
@@ -144,7 +144,7 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    pub unsafe fn get_providing_process(provider: u64) -> Result<u64, SystemCallStatus> {
+    pub unsafe fn get_providing_process(provider: u64) -> Result<Option<u64>, SystemCallStatus> {
         let mut id;
         let mut ret: u64;
         core::arch::asm!(
@@ -155,7 +155,7 @@ impl SystemCall {
             out("rax") ret,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
-        Ok(id)
+        Ok(if id == 0 { None } else { Some(id) })
     }
 
     pub unsafe fn port_in_byte(port: u16) -> Result<u8, SystemCallStatus> {

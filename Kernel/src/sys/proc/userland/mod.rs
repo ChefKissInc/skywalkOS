@@ -183,10 +183,11 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             if !scheduler.providers.contains_key(&state.rsi) {
                 break 'a SystemCallStatus::MalformedData.into();
             }
-            let Some(&proc_id) = scheduler.providers.get(&state.rsi) else {
-                break 'a SystemCallStatus::NotFound.into();
+            state.rdi = if let Some(&proc_id) = scheduler.providers.get(&state.rsi) {
+                proc_id
+            } else {
+                0
             };
-            state.rdi = proc_id;
             SystemCallStatus::Success.into()
         }
         SystemCall::PortIn => 'a: {
