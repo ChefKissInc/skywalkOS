@@ -13,7 +13,6 @@ use serde::{Deserialize, Serialize};
 pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC0000000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
-#[must_use]
 #[repr(u64)]
 pub enum SystemCallStatus {
     Success,
