@@ -4,7 +4,7 @@
 #![no_std]
 #![no_main]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
-#![feature(abi_efiapi, asm_const, core_intrinsics)]
+#![feature(asm_const, core_intrinsics)]
 
 #[macro_use]
 extern crate alloc;
