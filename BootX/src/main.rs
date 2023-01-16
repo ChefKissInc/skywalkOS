@@ -79,7 +79,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
 
     let mut esp = helpers::file::open_esp(image_handle);
 
-    let buffer = helpers::file::load(
+    let kernel_buffer = helpers::file::load(
         &mut esp,
         cstr16!("\\System\\Kernel.exec"),
         FileMode::Read,
@@ -87,18 +87,18 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
     )
     .leak();
 
-    let pci_drv_buf = helpers::file::load(
+    let dc_ext_buffer = helpers::file::load(
         &mut esp,
-        cstr16!("\\System\\BootExtensions\\PCICore.exec"),
+        cstr16!("\\System\\DCExtensions.dccache"),
         FileMode::Read,
         FileAttribute::empty(),
     )
     .leak();
 
     let mut mem_mgr = helpers::mem::MemoryManager::new();
-    mem_mgr.allocate((pci_drv_buf.as_ptr() as _, pci_drv_buf.len() as _));
+    mem_mgr.allocate((dc_ext_buffer.as_ptr() as _, dc_ext_buffer.len() as _));
 
-    let (kernel_main, symbols) = helpers::parse_elf::parse_elf(&mut mem_mgr, buffer);
+    let (kernel_main, symbols) = helpers::parse_elf::parse_elf(&mut mem_mgr, kernel_buffer);
 
     let stack = vec![0u8; 0x14000].leak();
     let stack_ptr = unsafe { helpers::pa_to_kern_va(stack.as_ptr()).add(stack.len()) };
@@ -113,16 +113,8 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
         sulphur_dioxide::boot_attrs::BootSettings { verbose },
         Some(fbinfo),
         rsdp,
+        helpers::phys_to_kern_slice_ref(dc_ext_buffer),
     )));
-
-    boot_info.modules = vec![sulphur_dioxide::module::Module {
-        name: core::str::from_utf8(helpers::phys_to_kern_slice_ref(
-            b"PCICore.exec".to_vec().leak(),
-        ))
-        .unwrap(),
-        data: helpers::phys_to_kern_slice_ref(pci_drv_buf),
-    }]
-    .leak();
 
     trace!("Exiting boot services and jumping to kernel...");
     let sizes = system_table.boot_services().memory_map_size();

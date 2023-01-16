@@ -14,8 +14,7 @@ impl log::Log for Logger {
         #[cfg(debug_assertions)]
         writeln!(
             crate::sys::io::serial::SERIAL.lock(),
-            "{} [{}] > {}",
-            record.level(),
+            "{}: {}",
             record.target(),
             record.args()
         )
@@ -25,14 +24,7 @@ impl log::Log for Logger {
         let verbose = state.boot_settings.verbose;
         if record.metadata().level() <= log::Level::Info || verbose {
             if let Some(terminal) = &mut state.terminal {
-                writeln!(
-                    terminal,
-                    "{} [{}] > {}",
-                    record.level(),
-                    record.target(),
-                    record.args()
-                )
-                .unwrap();
+                writeln!(terminal, "{}: {}", record.target(), record.args()).unwrap();
             }
         }
     }

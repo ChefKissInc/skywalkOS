@@ -6,6 +6,11 @@
 #![allow(clippy::missing_safety_doc)]
 
 pub mod port;
+pub mod registry_tree;
+
+extern crate alloc;
+
+use alloc::vec::Vec;
 
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
@@ -61,6 +66,7 @@ pub enum SystemCall {
     Allocate,
     Free,
     Ack,
+    GetRegistryEntryInfo,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
@@ -69,6 +75,13 @@ pub enum AccessSize {
     Byte,
     Word,
     DWord,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+#[repr(u64)]
+pub enum BCRegistryEntryInfoType {
+    Parent,
+    PropertyNamed,
 }
 
 impl SystemCall {
@@ -100,15 +113,15 @@ impl SystemCall {
             out("rcx") len,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
-        if id == 0 {
-            Ok(None)
+        Ok(if id == 0 {
+            None
         } else {
-            Ok(Some(Message {
+            Some(Message {
                 id,
                 proc_id,
                 data: core::slice::from_raw_parts(ptr as *const u8, len as usize),
-            }))
-        }
+            })
+        })
     }
 
     pub unsafe fn send_message(target: u64, s: &[u8]) -> Result<(), SystemCallStatus> {
@@ -151,8 +164,8 @@ impl SystemCall {
             "int 249",
             in("rdi") Self::GetProvidingProcess as u64,
             in("rsi") provider,
-            lateout("rdi") id,
             out("rax") ret,
+            lateout("rdi") id,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         Ok(if id == 0 { None } else { Some(id) })
@@ -166,8 +179,8 @@ impl SystemCall {
             in("rdi") Self::PortIn as u64,
             in("rsi") port as u64,
             in("rdx") AccessSize::Byte as u64,
-            lateout("rdi") val,
             out("rax") ret,
+            lateout("rdi") val,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         Ok(val as u8)
@@ -194,8 +207,8 @@ impl SystemCall {
             in("rdi") Self::PortIn as u64,
             in("rsi") port as u64,
             in("rdx") AccessSize::Word as u64,
-            lateout("rdi") val,
             out("rax") ret,
+            lateout("rdi") val,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         Ok(val as u16)
@@ -222,8 +235,8 @@ impl SystemCall {
             in("rdi") Self::PortIn as u64,
             in("rsi") port as u64,
             in("rdx") AccessSize::DWord as u64,
-            lateout("rdi") val,
             out("rax") ret,
+            lateout("rdi") val,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         Ok(val as u32)
@@ -260,8 +273,8 @@ impl SystemCall {
             "int 249",
             in("rdi") Self::Allocate as u64,
             in("rsi") size,
-            lateout("rdi") ptr,
             out("rax") ret,
+            lateout("rdi") ptr,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         Ok(ptr as *mut u8)
@@ -287,6 +300,33 @@ impl SystemCall {
             out("rax") ret,
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
+    }
+
+    pub unsafe fn get_registry_entry_info(
+        id: u64,
+        ty: BCRegistryEntryInfoType,
+        k: Option<&str>,
+    ) -> Result<Vec<u8>, SystemCallStatus> {
+        let mut ret: u64;
+        let mut ptr: u64;
+        let mut len: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") Self::GetRegistryEntryInfo as u64,
+            in("rsi") id,
+            in("rdx") ty as u64,
+            in("rcx") k.map(|s| s.as_ptr() as u64).unwrap_or(0),
+            in("r8") k.map(|s| s.len() as u64).unwrap_or(0),
+            out("rax") ret,
+            lateout("rdi") ptr,
+            lateout("rsi") len,
+        );
+        SystemCallStatus::try_from(ret).unwrap().as_result()?;
+        Ok(Vec::from_raw_parts(
+            ptr as *mut u8,
+            len as usize,
+            len as usize,
+        ))
     }
 }
 

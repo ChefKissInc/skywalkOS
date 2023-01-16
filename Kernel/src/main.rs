@@ -60,6 +60,7 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     });
 
     utils::init_paging(state);
+
     let hpet = driver::acpi::get_hpet(state);
 
     driver::acpi::madt::setup(state);
@@ -69,9 +70,20 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     let sched = state
         .scheduler
         .call_once(|| spin::Mutex::new(sys::proc::scheduler::Scheduler::new(&hpet)));
-    for module in state.modules.as_ref().unwrap() {
-        debug!("Spawning module {}", module.name);
-        sched.lock().spawn_proc(module.data);
+    let cache: dc_cache::DCCache = postcard::from_bytes(state.dc_cache.as_ref().unwrap()).unwrap();
+    info!("{} v{}", cache.branding, cache.version);
+    let len = cache.infos.len();
+    info!(
+        "Got {} DriverCore extension{}",
+        len,
+        if len == 1 { "" } else { "s" }
+    );
+    for info in cache.infos {
+        info!(
+            "Spawning DriverCore extension {} <{}>",
+            info.name, info.identifier
+        );
+        sched.lock().spawn_proc(cache.payloads[info.identifier]);
     }
 
     debug!("I'm out of here!");

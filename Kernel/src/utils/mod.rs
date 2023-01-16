@@ -3,7 +3,13 @@
 
 use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 
-use crate::{driver::acpi::ACPIPlatform, sys::pmm::BitmapAllocator};
+use hashbrown::HashMap;
+
+use crate::{
+    driver::acpi::ACPIPlatform,
+    sys::{pmm::BitmapAllocator, state::BCRegistryEntry},
+    utils::incr_id::IncrIDGen,
+};
 
 pub mod bitmap;
 pub mod incr_id;
@@ -61,15 +67,40 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
             .leak()
     });
 
-    debug!(
-        "ACPI v{}",
-        state
-            .acpi
-            .call_once(|| ACPIPlatform::new(boot_info.acpi_rsdp))
-            .version
-    );
+    let mut root = BCRegistryEntry {
+        id: 0,
+        properties: HashMap::from([
+            ("Name".to_owned(), "Root".into()),
+            ("Version".to_owned(), "0.0.1".into()),
+        ]),
+        ..Default::default()
+    };
+    let mut registry_tree_id_gen = IncrIDGen::new();
+    let product = BCRegistryEntry {
+        id: registry_tree_id_gen.next(),
+        parent: Some(root.id),
+        properties: HashMap::from([
+            ("Name".to_owned(), "Product".into()),
+            ("CPUType".to_owned(), "x86_64".into()),
+            ("Vendor".to_owned(), "Generic".into()),
+        ]),
+        ..Default::default()
+    };
+    root.children.push(product.id);
 
-    state.modules = Some(boot_info.modules.to_vec());
+    state
+        .registry_tree_index
+        .call_once(|| spin::Mutex::new(HashMap::from([(root.id, root), (product.id, product)])));
+
+    state
+        .registry_tree_id_gen
+        .call_once(|| spin::Mutex::new(registry_tree_id_gen));
+
+    state
+        .acpi
+        .call_once(|| ACPIPlatform::new(boot_info.acpi_rsdp));
+
+    state.dc_cache = Some(boot_info.dc_cache.to_vec());
 }
 
 pub fn init_paging(state: &mut crate::sys::state::SystemState) {

@@ -7,7 +7,7 @@ args = [
     "--target",
     "../../x86_64-pc-bridgecore.json",
     "--out-dir",
-    "../../Drive/System/BootExtensions",
+    "../../target/DCExtensions",
 ]
 
 [tasks.make-release]
@@ -19,7 +19,7 @@ args = [
     "--target",
     "../../x86_64-pc-bridgecore.json",
     "--out-dir",
-    "../../Drive/System/BootExtensions",
+    "../../target/DCExtensions",
     "--release",
 ]
 

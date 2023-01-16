@@ -8,7 +8,6 @@ pub mod boot_attrs;
 pub mod fb;
 pub mod kern_sym;
 pub mod mmap;
-pub mod module;
 
 pub const CURRENT_REVISION: u64 = 0x17;
 
@@ -23,7 +22,7 @@ pub struct BootInfo {
     pub memory_map: &'static [mmap::MemoryEntry],
     pub frame_buffer: Option<&'static fb::FrameBufferInfo>,
     pub acpi_rsdp: &'static acpi::tables::rsdp::RSDP,
-    pub modules: &'static [module::Module],
+    pub dc_cache: &'static [u8],
 }
 
 impl BootInfo {
@@ -33,6 +32,7 @@ impl BootInfo {
         settings: boot_attrs::BootSettings,
         frame_buffer: Option<&'static fb::FrameBufferInfo>,
         acpi_rsdp: &'static acpi::tables::rsdp::RSDP,
+        dc_cache: &'static [u8],
     ) -> Self {
         Self {
             revision: CURRENT_REVISION,
@@ -41,7 +41,7 @@ impl BootInfo {
             memory_map: Default::default(),
             frame_buffer,
             acpi_rsdp,
-            modules: Default::default(),
+            dc_cache,
         }
     }
 }

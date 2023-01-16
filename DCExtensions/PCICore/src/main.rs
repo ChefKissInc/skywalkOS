@@ -9,7 +9,7 @@
 use alloc::boxed::Box;
 
 use hashbrown::HashMap;
-use kernel::{port::Port, SystemCall};
+use kernel::{port::Port, registry_tree::BCObject, SystemCall};
 
 mod allocator;
 mod logger;
@@ -151,6 +151,17 @@ extern "C" fn _start() -> ! {
             }
         }
     }
+
+    let root: Option<BCObject> = postcard::from_bytes(&unsafe {
+        SystemCall::get_registry_entry_info(
+            0,
+            kernel::BCRegistryEntryInfoType::PropertyNamed,
+            Some("Name"),
+        )
+        .unwrap()
+    })
+    .unwrap();
+    info!("{:#X?}", root);
 
     let mut device_owners = HashMap::new();
 

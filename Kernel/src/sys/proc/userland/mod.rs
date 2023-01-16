@@ -291,6 +291,48 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             scheduler.message_id_gen.free(id);
             SystemCallStatus::Success.into()
         }
+        SystemCall::GetRegistryEntryInfo => 'a: {
+            let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
+            let registry_tree_index = sys_state.registry_tree_index.get().unwrap().lock();
+            let Some(registry_entry) = registry_tree_index.get(&state.rsi) else {
+                break 'a SystemCallStatus::MalformedData.into();
+            };
+            let Ok(info_type) = kernel::BCRegistryEntryInfoType::try_from(state.rdx) else {
+                break 'a SystemCallStatus::MalformedData.into();
+            };
+            let data = match info_type {
+                kernel::BCRegistryEntryInfoType::Parent => {
+                    postcard::to_allocvec(&registry_entry.parent)
+                }
+                kernel::BCRegistryEntryInfoType::PropertyNamed => {
+                    let Ok(k) = core::str::from_utf8(core::slice::from_raw_parts(
+                        state.rcx as *const u8,
+                        state.r8 as usize,
+                    )) else {
+                        break 'a SystemCallStatus::MalformedData.into();
+                    };
+                    postcard::to_allocvec(&registry_entry.properties.get(k))
+                }
+            }
+            .unwrap()
+            .leak();
+            let ptr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
+            let virt = ptr + USER_PHYS_VIRT_OFFSET;
+            let count = (data.len() as u64 + 0xFFF) / 0x1000;
+            let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
+            user_allocations.track(proc_id, virt, data.len() as u64);
+
+            let process = scheduler.processes.get_mut(&proc_id).unwrap();
+            process.cr3.map_pages(
+                virt,
+                ptr,
+                count,
+                PageTableEntry::new().with_user(true).with_present(true),
+            );
+            state.rdi = virt;
+            state.rsi = data.len() as u64;
+            SystemCallStatus::Success.into()
+        }
     };
 }
 

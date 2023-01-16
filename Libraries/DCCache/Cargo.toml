@@ -1,0 +1,13 @@
+[package]
+edition = "2021"
+name = "dc-cache"
+publish = false
+version = "0.1.0"
+
+[dependencies]
+postcard = { version = "1.0.2", default-features = false, features = ["alloc"] }
+hashbrown = { version = "0.13.2", features = ["nightly", "serde"] }
+serde = { version = "1.0.152", default-features = false, features = ["derive"] }
+
+[dev-dependencies]
+ron = { version = "0.8.0" }

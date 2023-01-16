@@ -1,13 +1,3 @@
-[tasks.clippy]
-command = "cargo"
-args = [
-    "clippy",
-    "-Zbuild-std=core,compiler_builtins,alloc",
-    "-Zbuild-std-features=compiler-builtins-mem",
-    "--target",
-    "x86_64-unknown-uefi",
-]
-
 [tasks.build-bootx]
 command = "cargo"
 args = [
@@ -66,23 +56,27 @@ args = [
     "--release",
 ]
 
+[tasks.make-dccache]
+command = "cargo"
+args = ["run", "--example", "dc_cache_builder", "--release"]
+
 [tasks.make-boot-exts]
 command = "cargo"
-args = ["make", "--cwd", "BootExtensions", "make"]
+args = ["make", "--cwd", "DCExtensions", "make"]
 
 [tasks.make-boot-exts-release]
 command = "cargo"
-args = ["make", "--cwd", "BootExtensions", "make-release"]
+args = ["make", "--cwd", "DCExtensions", "make-release"]
 
 [tasks.make]
-dependencies = ["clippy", "build-bootx", "build-kernel", "make-boot-exts"]
+dependencies = ["build-bootx", "build-kernel", "make-boot-exts", "make-dccache"]
 
 [tasks.make-release]
 dependencies = [
-    "clippy",
     "build-bootx-release",
     "build-kernel-release",
     "make-boot-exts-release",
+    "make-dccache",
 ]
 
 [tasks.run]

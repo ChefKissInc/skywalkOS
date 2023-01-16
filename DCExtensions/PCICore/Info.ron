@@ -1,0 +1,11 @@
+DCInfo(
+    identifier: "com.ChefKiss.PCICore",
+    name: "PCICore",
+    version: "0.1.0",
+    description: "PCI driver",
+    personalities: {
+        "com.ChefKiss.PCICore": DCPersonality(
+            match_: "idk",
+        ),
+    },
+)

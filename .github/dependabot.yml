@@ -49,7 +49,7 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/BootExtensions/PCICore"
+    directory: "/DCExtensions/PCICore"
     labels:
       - "Enhancement"
       - "Project:PCICore"
