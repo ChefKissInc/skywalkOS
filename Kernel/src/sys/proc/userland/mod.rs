@@ -8,7 +8,7 @@ use amd64::{
     io::port::PortIO,
     paging::{pml4::PML4, PageTableEntry},
 };
-use kernel::{KernelMessage, Message, SystemCall, SystemCallStatus};
+use driver_core::system_call::{KernelMessage, Message, SystemCall, SystemCallStatus};
 
 use crate::sys::{gdt::PrivilegeLevel, RegisterState};
 
@@ -192,25 +192,25 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         }
         SystemCall::PortIn => 'a: {
             let port = state.rsi as u16;
-            let Ok(access_size) = kernel::AccessSize::try_from(state.rdx) else {
+            let Ok(access_size) = driver_core::system_call::AccessSize::try_from(state.rdx) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
             state.rdi = match access_size {
-                kernel::AccessSize::Byte => u8::read(port) as u64,
-                kernel::AccessSize::Word => u16::read(port) as u64,
-                kernel::AccessSize::DWord => u32::read(port) as u64,
+                driver_core::system_call::AccessSize::Byte => u8::read(port) as u64,
+                driver_core::system_call::AccessSize::Word => u16::read(port) as u64,
+                driver_core::system_call::AccessSize::DWord => u32::read(port) as u64,
             };
             SystemCallStatus::Success.into()
         }
         SystemCall::PortOut => 'a: {
             let port = state.rsi as u16;
-            let Ok(access_size) = kernel::AccessSize::try_from(state.rcx) else {
+            let Ok(access_size) = driver_core::system_call::AccessSize::try_from(state.rcx) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
             match access_size {
-                kernel::AccessSize::Byte => u8::write(port, state.rdx as u8),
-                kernel::AccessSize::Word => u16::write(port, state.rdx as u16),
-                kernel::AccessSize::DWord => u32::write(port, state.rdx as u32),
+                driver_core::system_call::AccessSize::Byte => u8::write(port, state.rdx as u8),
+                driver_core::system_call::AccessSize::Word => u16::write(port, state.rdx as u16),
+                driver_core::system_call::AccessSize::DWord => u32::write(port, state.rdx as u32),
             };
             SystemCallStatus::Success.into()
         }
@@ -297,14 +297,14 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             let Some(registry_entry) = registry_tree_index.get(&state.rsi) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
-            let Ok(info_type) = kernel::BCRegistryEntryInfoType::try_from(state.rdx) else {
+            let Ok(info_type) = driver_core::system_call::BCRegistryEntryInfoType::try_from(state.rdx) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
             let data = match info_type {
-                kernel::BCRegistryEntryInfoType::Parent => {
+                driver_core::system_call::BCRegistryEntryInfoType::Parent => {
                     postcard::to_allocvec(&registry_entry.parent)
                 }
-                kernel::BCRegistryEntryInfoType::PropertyNamed => {
+                driver_core::system_call::BCRegistryEntryInfoType::PropertyNamed => {
                     let Ok(k) = core::str::from_utf8(core::slice::from_raw_parts(
                         state.rcx as *const u8,
                         state.r8 as usize,

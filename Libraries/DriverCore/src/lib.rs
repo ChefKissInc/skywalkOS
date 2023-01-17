@@ -3,13 +3,23 @@
 
 #![no_std]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
+#![allow(clippy::missing_safety_doc)]
 
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 
 use hashbrown::HashMap;
-use serde::{Deserialize, Serialize};
 
 extern crate alloc;
+
+#[cfg(target_arch = "x86_64")]
+pub mod port;
+pub mod registry_tree;
+#[cfg(target_arch = "x86_64")]
+pub mod system_call;
+
+use serde::{Deserialize, Serialize};
+
+pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC0000000;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DistributionInfo<'a> {
@@ -18,17 +28,12 @@ pub struct DistributionInfo<'a> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DCPersonality<'a> {
-    pub match_: &'a str,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct DCInfo<'a> {
     pub identifier: &'a str,
     pub name: &'a str,
     pub version: &'a str,
     pub description: &'a str,
-    pub personalities: HashMap<&'a str, DCPersonality<'a>>,
+    pub personalities: HashMap<&'a str, HashMap<String, registry_tree::BCObject>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

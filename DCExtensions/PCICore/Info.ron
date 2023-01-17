@@ -4,8 +4,8 @@ DCInfo(
     version: "0.1.0",
     description: "PCI driver",
     personalities: {
-        "com.ChefKiss.PCICore": DCPersonality(
-            match_: "idk",
-        ),
+        "com.ChefKiss.PCICore": {
+            "device_type": String("pci"),
+        },
     },
 )

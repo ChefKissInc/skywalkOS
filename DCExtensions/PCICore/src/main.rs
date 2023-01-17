@@ -8,8 +8,8 @@
 
 use alloc::boxed::Box;
 
+use driver_core::{port::Port, registry_tree::BCObject, system_call::SystemCall};
 use hashbrown::HashMap;
-use kernel::{port::Port, registry_tree::BCObject, SystemCall};
 
 mod allocator;
 mod logger;
@@ -155,7 +155,7 @@ extern "C" fn _start() -> ! {
     let root: Option<BCObject> = postcard::from_bytes(&unsafe {
         SystemCall::get_registry_entry_info(
             0,
-            kernel::BCRegistryEntryInfoType::PropertyNamed,
+            driver_core::system_call::BCRegistryEntryInfoType::PropertyNamed,
             Some("Name"),
         )
         .unwrap()

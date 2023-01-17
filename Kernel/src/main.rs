@@ -70,7 +70,8 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     let sched = state
         .scheduler
         .call_once(|| spin::Mutex::new(sys::proc::scheduler::Scheduler::new(&hpet)));
-    let cache: dc_cache::DCCache = postcard::from_bytes(state.dc_cache.as_ref().unwrap()).unwrap();
+    let cache: driver_core::DCCache =
+        postcard::from_bytes(state.dc_cache.as_ref().unwrap()).unwrap();
     info!("{} v{}", cache.branding, cache.version);
     let len = cache.infos.len();
     info!(

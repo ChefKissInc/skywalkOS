@@ -24,7 +24,7 @@ pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemSt
 pub struct BCRegistryEntry {
     pub parent: Option<u64>,
     pub id: u64,
-    pub properties: HashMap<String, kernel::registry_tree::BCObject>,
+    pub properties: HashMap<String, driver_core::registry_tree::BCObject>,
     pub children: Vec<u64>,
 }
 

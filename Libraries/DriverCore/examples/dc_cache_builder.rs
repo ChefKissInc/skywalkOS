@@ -9,13 +9,13 @@ use hashbrown::HashMap;
 
 fn main() {
     let contents = std::fs::read_to_string("DistributionInfo.ron").unwrap();
-    let dist_info: dc_cache::DistributionInfo = ron::from_str(&contents).unwrap();
+    let dist_info: driver_core::DistributionInfo = ron::from_str(&contents).unwrap();
     println!(
         "Creating DriverCore cache for {} v{}",
         dist_info.branding, dist_info.version
     );
 
-    let mut cache = dc_cache::DCCache {
+    let mut cache = driver_core::DCCache {
         branding: dist_info.branding,
         version: dist_info.version,
         infos: vec![],
@@ -31,7 +31,7 @@ fn main() {
         let contents = unsafe { contents.get().as_mut().unwrap() };
         contents.push(std::fs::read_to_string(ent.path().join("Info.ron")).unwrap());
 
-        let info: dc_cache::DCInfo = ron::from_str(contents.last().unwrap()).unwrap();
+        let info: driver_core::DCInfo = ron::from_str(contents.last().unwrap()).unwrap();
         let payloads = unsafe { payloads.get().as_mut().unwrap() };
         payloads.push(
             std::fs::read(

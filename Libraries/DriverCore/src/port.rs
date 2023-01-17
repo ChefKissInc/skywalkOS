@@ -9,36 +9,36 @@ pub trait PortIO: Sized {
 impl PortIO for u8 {
     #[inline]
     unsafe fn read(port: u16) -> Self {
-        super::SystemCall::port_in_byte(port).unwrap()
+        super::system_call::SystemCall::port_in_byte(port).unwrap()
     }
 
     #[inline]
     unsafe fn write(port: u16, value: Self) {
-        super::SystemCall::port_out_byte(port, value).unwrap();
+        super::system_call::SystemCall::port_out_byte(port, value).unwrap();
     }
 }
 
 impl PortIO for u16 {
     #[inline]
     unsafe fn read(port: u16) -> Self {
-        super::SystemCall::port_in_word(port).unwrap()
+        super::system_call::SystemCall::port_in_word(port).unwrap()
     }
 
     #[inline]
     unsafe fn write(port: u16, value: Self) {
-        super::SystemCall::port_out_word(port, value).unwrap();
+        super::system_call::SystemCall::port_out_word(port, value).unwrap();
     }
 }
 
 impl PortIO for u32 {
     #[inline]
     unsafe fn read(port: u16) -> Self {
-        super::SystemCall::port_in_dword(port).unwrap()
+        super::system_call::SystemCall::port_in_dword(port).unwrap()
     }
 
     #[inline]
     unsafe fn write(port: u16, value: Self) {
-        super::SystemCall::port_out_dword(port, value).unwrap();
+        super::system_call::SystemCall::port_out_dword(port, value).unwrap();
     }
 }
 

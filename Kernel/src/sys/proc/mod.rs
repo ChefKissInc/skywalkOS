@@ -8,7 +8,7 @@ use alloc::{
     vec::Vec,
 };
 
-use kernel::Message;
+use driver_core::system_call::Message;
 
 pub mod scheduler;
 pub mod userland;

@@ -1,21 +1,10 @@
 // Copyright (c) ChefKiss Inc 2021-2023.
 // This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
-#![no_std]
-#![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
-#![allow(clippy::missing_safety_doc)]
-
-pub mod port;
-pub mod registry_tree;
-
-extern crate alloc;
-
 use alloc::vec::Vec;
 
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
-
-pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC0000000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
 #[repr(u64)]
