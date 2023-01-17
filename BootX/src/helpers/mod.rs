@@ -30,7 +30,7 @@ pub fn pa_to_kern_va<T>(v: *const T) -> *const T {
 }
 
 pub fn phys_to_kern_ref<T>(v: &'_ T) -> &'_ T {
-    unsafe { &*pa_to_kern_va(v) }
+    unsafe { pa_to_kern_va(v).as_ref().unwrap() }
 }
 
 pub fn phys_to_kern_slice_ref<T>(v: &'_ [T]) -> &'_ [T] {

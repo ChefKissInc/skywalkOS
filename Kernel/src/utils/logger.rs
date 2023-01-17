@@ -13,14 +13,14 @@ impl log::Log for Logger {
     fn log(&self, record: &log::Record) {
         #[cfg(debug_assertions)]
         writeln!(
-            crate::sys::io::serial::SERIAL.lock(),
+            crate::system::serial::SERIAL.lock(),
             "{}: {}",
             record.target(),
             record.args()
         )
         .unwrap();
 
-        let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+        let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
         let verbose = state.boot_settings.verbose;
         if record.metadata().level() <= log::Level::Info || verbose {
             if let Some(terminal) = &mut state.terminal {
@@ -36,7 +36,7 @@ pub static LOGGER: Logger = Logger;
 
 pub fn init() {
     #[cfg(debug_assertions)]
-    crate::sys::io::serial::SERIAL.lock().init();
+    crate::system::serial::SERIAL.lock().init();
 
     log::set_logger(&LOGGER)
         .map(|()| log::set_max_level(log::LevelFilter::Trace))

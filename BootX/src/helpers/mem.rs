@@ -3,7 +3,7 @@
 
 use alloc::vec::Vec;
 
-use sulphur_dioxide::mmap::{MemoryData, MemoryEntry};
+use sulphur_dioxide::{MemoryData, MemoryEntry};
 
 #[derive(Debug)]
 pub struct MemoryManager {
@@ -11,6 +11,7 @@ pub struct MemoryManager {
 }
 
 impl MemoryManager {
+    #[inline(always)]
     #[must_use]
     pub const fn new() -> Self {
         Self {

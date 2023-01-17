@@ -3,12 +3,13 @@
 
 use alloc::vec::Vec;
 
-pub struct IncrIDGen {
+pub struct IncrementalIDGen {
     last_used: u64,
     freed: Vec<u64>,
 }
 
-impl IncrIDGen {
+impl IncrementalIDGen {
+    #[inline(always)]
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -17,6 +18,7 @@ impl IncrIDGen {
         }
     }
 
+    #[inline(always)]
     #[must_use]
     pub fn next(&mut self) -> u64 {
         if let Some(ret) = self.freed.pop() {
@@ -27,6 +29,7 @@ impl IncrIDGen {
         }
     }
 
+    #[inline(always)]
     pub fn free(&mut self, num: u64) {
         if num == self.last_used {
             self.last_used -= 1;

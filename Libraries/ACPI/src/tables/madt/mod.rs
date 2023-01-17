@@ -44,27 +44,42 @@ impl Iterator for MADTIter {
         if self.curr == self.total {
             None
         } else {
-            let next = unsafe { &*self.ptr.add(self.curr).cast::<ICHeader>() };
+            let next = unsafe { self.ptr.add(self.curr).cast::<ICHeader>().as_ref().unwrap() };
             self.curr += next.length();
             unsafe {
                 Some(match next.type_ {
                     0 => InterruptController::ProcessorLocalAPIC(
-                        &*(next as *const ICHeader).cast::<ProcessorLocalAPIC>(),
+                        (next as *const ICHeader)
+                            .cast::<ProcessorLocalAPIC>()
+                            .as_ref()
+                            .unwrap(),
                     ),
                     1 => InterruptController::InputOutputAPIC(
-                        &*(next as *const ICHeader).cast::<IOAPIC>(),
+                        (next as *const ICHeader).cast::<IOAPIC>().as_ref().unwrap(),
                     ),
                     2 => InterruptController::InterruptSourceOverride(
-                        &*(next as *const ICHeader).cast::<InterruptSourceOverride>(),
+                        (next as *const ICHeader)
+                            .cast::<InterruptSourceOverride>()
+                            .as_ref()
+                            .unwrap(),
                     ),
                     3 => InterruptController::NMISource(
-                        &*(next as *const ICHeader).cast::<NMISource>(),
+                        (next as *const ICHeader)
+                            .cast::<NMISource>()
+                            .as_ref()
+                            .unwrap(),
                     ),
                     4 => InterruptController::LocalApicNMI(
-                        &*(next as *const ICHeader).cast::<LocalAPICNMI>(),
+                        (next as *const ICHeader)
+                            .cast::<LocalAPICNMI>()
+                            .as_ref()
+                            .unwrap(),
                     ),
                     5 => InterruptController::LocalAPICAddrOverride(
-                        &*(next as *const ICHeader).cast::<LocalAPICAddrOverride>(),
+                        (next as *const ICHeader)
+                            .cast::<LocalAPICAddrOverride>()
+                            .as_ref()
+                            .unwrap(),
                     ),
                     6 => InterruptController::InputOutputSAPIC(next),
                     7 => InterruptController::LocalSapic(next),

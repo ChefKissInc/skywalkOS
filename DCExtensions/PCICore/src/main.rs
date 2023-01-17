@@ -8,7 +8,7 @@
 
 use alloc::boxed::Box;
 
-use driver_core::{port::Port, registry_tree::BCObject, system_call::SystemCall};
+use driver_core::{port::Port, registry::BCObject, syscall::SystemCall};
 use hashbrown::HashMap;
 
 mod allocator;
@@ -34,7 +34,7 @@ trait PCIController: Sync {
 struct PCIPIOController;
 
 impl PCIPIOController {
-    #[inline]
+    #[inline(always)]
     unsafe fn send_addr(addr: pci_core::PCIAddress, off: u8) -> Result<()> {
         if addr.segment != 0 {
             return Err(());
@@ -155,7 +155,7 @@ extern "C" fn _start() -> ! {
     let root: Option<BCObject> = postcard::from_bytes(&unsafe {
         SystemCall::get_registry_entry_info(
             0,
-            driver_core::system_call::BCRegistryEntryInfoType::PropertyNamed,
+            driver_core::syscall::BCRegistryEntryInfoType::PropertyNamed,
             Some("Name"),
         )
         .unwrap()

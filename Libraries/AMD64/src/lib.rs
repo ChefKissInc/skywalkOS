@@ -7,6 +7,6 @@
 
 pub mod cpuid;
 pub mod io;
+pub mod msr;
 pub mod paging;
-pub mod registers;
 pub mod spec;

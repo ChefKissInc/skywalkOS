@@ -17,6 +17,7 @@ pub struct PCIAddress {
 }
 
 impl PCIAddress {
+    #[inline(always)]
     #[must_use]
     pub const fn new(segment: u16, bus: u8, slot: u8, func: u8) -> Self {
         Self {

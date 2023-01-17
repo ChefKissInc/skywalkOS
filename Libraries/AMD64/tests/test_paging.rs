@@ -17,6 +17,7 @@ use amd64::paging::pml4::PML4 as PML4Trait;
 pub struct PML4(amd64::paging::PageTable);
 
 impl PML4 {
+    #[inline(always)]
     #[must_use]
     pub fn new() -> Self {
         Self(amd64::paging::PageTable {

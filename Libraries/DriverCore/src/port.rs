@@ -7,38 +7,38 @@ pub trait PortIO: Sized {
 }
 
 impl PortIO for u8 {
-    #[inline]
+    #[inline(always)]
     unsafe fn read(port: u16) -> Self {
-        super::system_call::SystemCall::port_in_byte(port).unwrap()
+        super::syscall::SystemCall::port_in_byte(port).unwrap()
     }
 
-    #[inline]
+    #[inline(always)]
     unsafe fn write(port: u16, value: Self) {
-        super::system_call::SystemCall::port_out_byte(port, value).unwrap();
+        super::syscall::SystemCall::port_out_byte(port, value).unwrap();
     }
 }
 
 impl PortIO for u16 {
-    #[inline]
+    #[inline(always)]
     unsafe fn read(port: u16) -> Self {
-        super::system_call::SystemCall::port_in_word(port).unwrap()
+        super::syscall::SystemCall::port_in_word(port).unwrap()
     }
 
-    #[inline]
+    #[inline(always)]
     unsafe fn write(port: u16, value: Self) {
-        super::system_call::SystemCall::port_out_word(port, value).unwrap();
+        super::syscall::SystemCall::port_out_word(port, value).unwrap();
     }
 }
 
 impl PortIO for u32 {
-    #[inline]
+    #[inline(always)]
     unsafe fn read(port: u16) -> Self {
-        super::system_call::SystemCall::port_in_dword(port).unwrap()
+        super::syscall::SystemCall::port_in_dword(port).unwrap()
     }
 
-    #[inline]
+    #[inline(always)]
     unsafe fn write(port: u16, value: Self) {
-        super::system_call::SystemCall::port_out_dword(port, value).unwrap();
+        super::syscall::SystemCall::port_out_dword(port, value).unwrap();
     }
 }
 
@@ -50,6 +50,7 @@ pub struct Port<T: PortIO, R: From<T> + Into<T>> {
 }
 
 impl<T: PortIO, R: From<T> + Into<T>> Port<T, R> {
+    #[inline(always)]
     #[must_use]
     pub const fn new(port: u16) -> Self {
         Self {
@@ -59,24 +60,24 @@ impl<T: PortIO, R: From<T> + Into<T>> Port<T, R> {
         }
     }
 
+    #[inline(always)]
     #[must_use]
-    #[inline]
     pub unsafe fn read(&self) -> R {
         T::read(self.port).into()
     }
 
+    #[inline(always)]
     #[must_use]
-    #[inline]
     pub unsafe fn read_off<A: Into<u16>, R2: From<T> + Into<T>>(&self, off: A) -> R2 {
         T::read(self.port + off.into()).into()
     }
 
-    #[inline]
+    #[inline(always)]
     pub unsafe fn write(&self, value: R) {
         T::write(self.port, value.into());
     }
 
-    #[inline]
+    #[inline(always)]
     pub unsafe fn write_off<A: Into<u16>, R2: From<T> + Into<T>>(&self, value: R2, off: A) {
         T::write(self.port + off.into(), value.into());
     }

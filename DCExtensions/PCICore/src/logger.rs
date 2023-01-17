@@ -3,7 +3,7 @@
 
 use core::fmt::Write;
 
-use driver_core::system_call::SystemCall;
+use driver_core::syscall::SystemCall;
 
 pub struct KWriter;
 

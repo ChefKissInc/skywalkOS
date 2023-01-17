@@ -13,9 +13,9 @@ extern crate alloc;
 
 #[cfg(target_arch = "x86_64")]
 pub mod port;
-pub mod registry_tree;
+pub mod registry;
 #[cfg(target_arch = "x86_64")]
-pub mod system_call;
+pub mod syscall;
 
 use serde::{Deserialize, Serialize};
 
@@ -33,7 +33,7 @@ pub struct DCInfo<'a> {
     pub name: &'a str,
     pub version: &'a str,
     pub description: &'a str,
-    pub personalities: HashMap<&'a str, HashMap<String, registry_tree::BCObject>>,
+    pub personalities: HashMap<&'a str, HashMap<String, registry::BCObject>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

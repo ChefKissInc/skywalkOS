@@ -3,7 +3,7 @@
 
 use alloc::boxed::Box;
 
-use sulphur_dioxide::fb::{FrameBufferInfo, PixelBitmask, PixelFormat, ScreenRes};
+use sulphur_dioxide::{FrameBufferInfo, PixelBitmask, PixelFormat, ScreenRes};
 use uefi::{proto::console::gop::GraphicsOutput, table::boot::ScopedProtocol};
 
 pub fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Box<FrameBufferInfo> {

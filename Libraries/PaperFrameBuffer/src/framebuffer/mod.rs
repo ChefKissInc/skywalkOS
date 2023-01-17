@@ -20,6 +20,7 @@ pub enum FramebufferError {
 pub type Result<T> = core::result::Result<T, FramebufferError>;
 
 impl Framebuffer {
+    #[inline(always)]
     #[must_use]
     pub unsafe fn new(
         data: *mut u32,
@@ -38,7 +39,7 @@ impl Framebuffer {
     }
 
     /// Clears the entire frame-buffer contents with the specified colour
-    #[inline]
+    #[inline(always)]
     pub fn clear(&mut self, colour: u32) {
         self.base.fill(colour);
     }
@@ -47,7 +48,7 @@ impl Framebuffer {
     /// # Errors
     ///
     /// This operation errors when X and Y coordinates are outside the screen boundaries
-    #[inline]
+    #[inline(always)]
     pub fn plot_pixel(&mut self, x: usize, y: usize, colour: u32) -> Result<()> {
         if x >= self.width || y >= self.height {
             Err(FramebufferError::OutOfBounds)

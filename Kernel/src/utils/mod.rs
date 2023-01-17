@@ -6,9 +6,9 @@ use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 use hashbrown::HashMap;
 
 use crate::{
-    driver::acpi::ACPIPlatform,
-    sys::{pmm::BitmapAllocator, state::BCRegistryEntry},
-    utils::incr_id::IncrIDGen,
+    acpi::ACPIPlatform,
+    system::{pmm::BitmapAllocator, state::BCRegistryEntry},
+    utils::incr_id::IncrementalIDGen,
 };
 
 pub mod bitmap;
@@ -39,15 +39,15 @@ macro_rules! cli {
 }
 
 pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
-    let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+    let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
     state.kern_symbols.call_once(|| boot_info.kern_symbols);
     state.boot_settings = boot_info.settings;
 
     unsafe {
-        crate::sys::gdt::GDTR.load();
-        crate::driver::intrs::idt::IDTR.load();
-        crate::driver::intrs::init_intr_quirks();
-        crate::driver::intrs::exc::init();
+        crate::system::gdt::GDTR.load();
+        crate::intrs::idt::IDTR.load();
+        crate::intrs::init_intr_quirks();
+        crate::system::exc::init();
     }
 
     state
@@ -59,7 +59,7 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
         boot_info
             .kern_symbols
             .iter()
-            .map(|v| sulphur_dioxide::kern_sym::KernSymbol {
+            .map(|v| sulphur_dioxide::KernSymbol {
                 name: Box::leak(v.name.to_owned().into_boxed_str()),
                 ..*v
             })
@@ -75,7 +75,7 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
         ]),
         ..Default::default()
     };
-    let mut registry_tree_id_gen = IncrIDGen::new();
+    let mut registry_tree_id_gen = IncrementalIDGen::new();
     let product = BCRegistryEntry {
         id: registry_tree_id_gen.next(),
         parent: Some(root.id),
@@ -103,10 +103,10 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     state.dc_cache = Some(boot_info.dc_cache.to_vec());
 }
 
-pub fn init_paging(state: &mut crate::sys::state::SystemState) {
+pub fn init_paging(state: &mut crate::system::state::SystemState) {
     debug!("Initialising paging");
 
-    let pml4 = Box::leak(Box::new(crate::sys::vmm::PageTableLvl4::new()));
+    let pml4 = Box::leak(Box::new(crate::system::vmm::PageTableLvl4::new()));
     unsafe { pml4.init() }
 
     state.pml4.call_once(|| pml4);

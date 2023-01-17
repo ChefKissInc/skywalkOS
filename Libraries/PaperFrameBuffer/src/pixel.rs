@@ -18,6 +18,7 @@ pub struct Colour {
 }
 
 impl Colour {
+    #[inline(always)]
     #[must_use]
     pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
@@ -25,7 +26,7 @@ impl Colour {
 
     /// Turns this Colour into raw pixel data.
     /// This operation is expensive, as it turns the bit-mask into a bit offset
-    #[inline]
+    #[inline(always)]
     #[must_use]
     pub const fn to_u32(&self, bitmask: Bitmask) -> u32 {
         let red_pixel = bitmask.r.leading_zeros();

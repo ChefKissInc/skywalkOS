@@ -8,7 +8,7 @@ pub fn parse_elf(
     buffer: &[u8],
 ) -> (
     sulphur_dioxide::EntryPoint,
-    Vec<sulphur_dioxide::kern_sym::KernSymbol>,
+    Vec<sulphur_dioxide::KernSymbol>,
 ) {
     let elf = goblin::elf::Elf::parse(buffer).unwrap();
 
@@ -24,7 +24,7 @@ pub fn parse_elf(
     let symbols = elf
         .syms
         .iter()
-        .map(|v| sulphur_dioxide::kern_sym::KernSymbol {
+        .map(|v| sulphur_dioxide::KernSymbol {
             start: v.st_value,
             end: v.st_value + v.st_size,
             name: Box::leak(

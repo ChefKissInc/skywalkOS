@@ -46,7 +46,7 @@ impl Iterator for RSDTTypeIter {
                     u64::from((self.ptr as *const u32).add(self.curr).read_unaligned())
                 } + amd64::paging::PHYS_VIRT_OFFSET;
                 self.curr += 1;
-                Some(&*(addr as *const super::SDTHeader))
+                Some((addr as *const super::SDTHeader).as_ref().unwrap())
             }
         }
     }

@@ -71,5 +71,5 @@ pub fn get_rsdp() -> &'static RSDP {
         })
         .address
         .cast();
-    super::phys_to_kern_ref(unsafe { &*rsdp })
+    super::phys_to_kern_ref(unsafe { rsdp.as_ref().unwrap() })
 }

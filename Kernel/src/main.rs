@@ -18,8 +18,10 @@ extern crate alloc;
 #[macro_use]
 extern crate log;
 
-mod driver;
-mod sys;
+mod acpi;
+mod intrs;
+mod system;
+mod timer;
 mod utils;
 
 #[used]
@@ -38,10 +40,10 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     utils::init_core(boot_info);
     debug!("Copyright ChefKiss Inc 2021-2023.");
 
-    let state = unsafe { crate::sys::state::SYS_STATE.get().as_mut().unwrap() };
+    let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
     state.terminal = boot_info.frame_buffer.map(|fb_info| {
         debug!("Got boot display: {:X?}", fb_info);
-        let mut terminal = crate::sys::terminal::Terminal::new(unsafe {
+        let mut terminal = crate::system::terminal::Terminal::new(unsafe {
             paper_fb::framebuffer::Framebuffer::new(
                 fb_info.base,
                 fb_info.resolution.width,
@@ -61,15 +63,15 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
 
     utils::init_paging(state);
 
-    let hpet = driver::acpi::get_hpet(state);
+    let hpet = acpi::get_hpet(state);
 
-    driver::acpi::madt::setup(state);
-    driver::acpi::apic::setup(state);
+    acpi::madt::setup(state);
+    acpi::apic::setup(state);
 
-    sys::proc::userland::setup();
+    system::proc::userland::setup();
     let sched = state
         .scheduler
-        .call_once(|| spin::Mutex::new(sys::proc::scheduler::Scheduler::new(&hpet)));
+        .call_once(|| spin::Mutex::new(system::proc::scheduler::Scheduler::new(&hpet)));
     let cache: driver_core::DCCache =
         postcard::from_bytes(state.dc_cache.as_ref().unwrap()).unwrap();
     info!("{} v{}", cache.branding, cache.version);
@@ -88,7 +90,7 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     }
 
     debug!("I'm out of here!");
-    sys::proc::scheduler::Scheduler::unmask();
+    system::proc::scheduler::Scheduler::unmask();
 
     hlt_loop!();
 }
