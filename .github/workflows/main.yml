@@ -39,8 +39,8 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           toolchain: nightly
-          command: make
-          args: clippy
+          command: clippy
+          args: -Zbuild-std=core,compiler_builtins,alloc -Zbuild-std-features=compiler-builtins-mem --target x86_64-unknown-uefi
   test:
     name: Test suite
     runs-on: ubuntu-latest
