@@ -203,6 +203,7 @@ impl GDTReg {
             in(reg) u64::from(SegmentSelector::new(1, PrivilegeLevel::Supervisor).0),
             lateout(reg) _,
             in(reg) u64::from(SegmentSelector::new(2, PrivilegeLevel::Supervisor).0),
+            options(preserves_flags)
         );
     }
 }

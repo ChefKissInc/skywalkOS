@@ -43,7 +43,7 @@ macro_rules! isr_stub {
             "iretq",
             const $i,
             sym isr_handler,
-            options(noreturn)
+            options(noreturn),
         )
     };
 }

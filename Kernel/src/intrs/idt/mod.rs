@@ -143,7 +143,7 @@ impl IDTReg {
             entry.offset_high = (base >> 32) as u32;
         });
 
-        core::arch::asm!("lidt [{}]", in(reg) self);
+        core::arch::asm!("lidt [{}]", in(reg) self, options(readonly, preserves_flags));
     }
 }
 

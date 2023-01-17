@@ -19,7 +19,7 @@ pub mod logger;
 macro_rules! hlt_loop {
     () => {
         loop {
-            unsafe { core::arch::asm!("hlt") }
+            unsafe { core::arch::asm!("hlt", options(nostack, nomem, preserves_flags)) }
         }
     };
 }
@@ -27,14 +27,14 @@ macro_rules! hlt_loop {
 #[macro_export]
 macro_rules! sti {
     () => {
-        unsafe { core::arch::asm!("sti") }
+        unsafe { core::arch::asm!("sti", options(nostack, nomem, preserves_flags)) }
     };
 }
 
 #[macro_export]
 macro_rules! cli {
     () => {
-        unsafe { core::arch::asm!("cli") }
+        unsafe { core::arch::asm!("cli", options(nostack, nomem, preserves_flags)) }
     };
 }
 
