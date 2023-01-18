@@ -18,7 +18,7 @@ unsafe impl Send for Terminal {}
 unsafe impl Sync for Terminal {}
 
 impl Terminal {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new(fb: Framebuffer) -> Self {
         let width = fb.width / 8;
@@ -32,7 +32,6 @@ impl Terminal {
         }
     }
 
-    #[inline(always)]
     pub fn map_fb(&self) {
         unsafe {
             let state = super::state::SYS_STATE.get().as_mut().unwrap();
@@ -49,14 +48,12 @@ impl Terminal {
         }
     }
 
-    #[inline(always)]
     pub fn clear(&mut self) {
         self.fb.clear(0);
         self.x = 0;
         self.y = 0;
     }
 
-    #[inline(always)]
     pub fn draw_char(&mut self, c: char, colour: Colour) {
         let x = self.x * 8;
         let mut y = self.y * 8;
@@ -75,7 +72,6 @@ impl Terminal {
         }
     }
 
-    #[inline(always)]
     fn handle_scrollback(&mut self) {
         if self.y >= self.height {
             self.fb
@@ -89,7 +85,6 @@ impl Terminal {
 }
 
 impl Write for Terminal {
-    #[inline(always)]
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         for c in s.chars() {
             if c == '\n' {

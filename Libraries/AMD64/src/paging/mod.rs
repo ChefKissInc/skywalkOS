@@ -17,7 +17,7 @@ pub struct PageTableOffsets {
 }
 
 impl PageTableOffsets {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new(virtual_address: u64) -> Self {
         Self {
@@ -63,7 +63,7 @@ impl Default for PageTable {
 }
 
 impl PageTable {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new() -> Self {
         Self {

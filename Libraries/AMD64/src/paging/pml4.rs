@@ -9,12 +9,10 @@ pub trait PML4: Sized {
     #[must_use]
     fn alloc_entry(&self) -> u64;
 
-    #[inline(always)]
     unsafe fn set(&mut self) {
         core::arch::asm!("mov cr3, {}", in(reg) self as *mut _ as u64 - Self::VIRT_OFF, options(nomem, nostack, preserves_flags));
     }
 
-    #[inline(always)]
     #[must_use]
     unsafe fn get() -> &'static mut Self {
         let pml4: *mut Self;
@@ -22,7 +20,6 @@ pub trait PML4: Sized {
         pml4.as_mut().unwrap()
     }
 
-    #[inline(always)]
     #[must_use]
     unsafe fn get_or_alloc_entry(
         &mut self,
@@ -41,7 +38,6 @@ pub trait PML4: Sized {
             .unwrap()
     }
 
-    #[inline(always)]
     unsafe fn get_or_null_entry(&mut self, offset: u64) -> Option<&mut Self> {
         let entry = self.get_entry(offset);
 
@@ -56,7 +52,6 @@ pub trait PML4: Sized {
         }
     }
 
-    #[inline(always)]
     unsafe fn virt_to_phys(&mut self, virt: u64) -> Option<u64> {
         let offs = super::PageTableOffsets::new(virt);
         let pdp = self.get_or_null_entry(offs.pml4)?;
@@ -75,7 +70,6 @@ pub trait PML4: Sized {
         }
     }
 
-    #[inline(always)]
     unsafe fn map_pages(&mut self, virt: u64, phys: u64, count: u64, flags: super::PageTableEntry) {
         for i in 0..count {
             let physical_address = phys + 0x1000 * i;
@@ -90,7 +84,6 @@ pub trait PML4: Sized {
         }
     }
 
-    #[inline(always)]
     unsafe fn map_huge_pages(
         &mut self,
         virt: u64,
@@ -111,7 +104,6 @@ pub trait PML4: Sized {
         }
     }
 
-    #[inline(always)]
     unsafe fn map_higher_half(&mut self) {
         self.map_huge_pages(
             super::PHYS_VIRT_OFFSET,

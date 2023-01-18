@@ -15,7 +15,7 @@ pub struct ProgrammableInterruptController {
 }
 
 impl ProgrammableInterruptController {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new() -> Self {
         Self {

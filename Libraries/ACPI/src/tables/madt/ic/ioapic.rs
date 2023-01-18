@@ -80,6 +80,7 @@ impl IOAPIC {
         (self.address as u64 + off as u64 + amd64::paging::PHYS_VIRT_OFFSET) as *mut u32
     }
 
+    #[inline]
     #[must_use]
     pub fn read<T: Into<u32>>(&self, reg: T) -> u32 {
         unsafe {
@@ -99,6 +100,7 @@ impl IOAPIC {
         IOAPICVer::from(self.read(IOAPICReg::Ver))
     }
 
+    #[inline]
     pub fn write(&self, reg: u32, val: u32) {
         unsafe {
             self.base(0).write_volatile(reg);

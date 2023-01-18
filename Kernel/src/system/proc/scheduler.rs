@@ -48,7 +48,7 @@ pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
 }
 
 impl Scheduler {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn new(timer: &impl Timer) -> Self {
         let kern_stack = vec![0; 0x14000];
@@ -94,7 +94,6 @@ impl Scheduler {
         }
     }
 
-    #[inline(always)]
     pub fn unmask() {
         crate::sti!();
         let state = unsafe { crate::system::state::SYS_STATE.get().as_ref().unwrap() };
@@ -190,12 +189,10 @@ impl Scheduler {
         self.thread_ids.push(id);
     }
 
-    #[inline(always)]
     pub fn current_thread_mut(&mut self) -> Option<&mut super::Thread> {
         self.threads.get_mut(&self.current_thread_id?)
     }
 
-    #[inline(always)]
     pub fn next_thread_mut(&mut self) -> Option<(u64, &mut super::Thread)> {
         let mut i = self
             .current_thread_id

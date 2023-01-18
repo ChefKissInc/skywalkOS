@@ -17,7 +17,7 @@ pub struct GDTData {
 }
 
 impl GDTData {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -64,7 +64,7 @@ pub enum PrivilegeLevel {
 pub struct SegmentSelector(pub u16);
 
 impl SegmentSelector {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new(index: u16, dpl: PrivilegeLevel) -> Self {
         Self((index << 3) | (dpl as u16))
@@ -109,7 +109,7 @@ pub struct SegmentDescriptor {
 }
 
 impl SegmentDescriptor {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn null() -> Self {
         Self::new(
@@ -121,7 +121,7 @@ impl SegmentDescriptor {
         )
     }
 
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new(
         limit_low: u16,
@@ -142,7 +142,7 @@ impl SegmentDescriptor {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new_from_ty(ty: DescriptorType, dpl: PrivilegeLevel) -> Self {
         match ty {
@@ -165,6 +165,8 @@ pub struct TaskSegmentDescriptor {
 }
 
 impl TaskSegmentDescriptor {
+    #[inline]
+    #[must_use]
     pub const fn null() -> Self {
         Self {
             length: 104,

@@ -17,7 +17,6 @@ pub enum SystemCallStatus {
 }
 
 impl SystemCallStatus {
-    #[inline(always)]
     pub const fn as_result(self) -> Result<(), Self> {
         match self {
             Self::Success => Ok(()),
@@ -34,7 +33,7 @@ pub struct Message {
 }
 
 impl Message {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new(id: u64, proc_id: u64, data: &'static [u8]) -> Self {
         Self { id, proc_id, data }
@@ -76,7 +75,6 @@ pub enum BCRegistryEntryInfoType {
 }
 
 impl SystemCall {
-    #[inline(always)]
     pub unsafe fn kprint(s: &str) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -90,7 +88,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    #[inline(always)]
     pub unsafe fn receive_message() -> Result<Option<Message>, SystemCallStatus> {
         let mut ret: u64;
         let mut id: u64;
@@ -118,7 +115,6 @@ impl SystemCall {
         }))
     }
 
-    #[inline(always)]
     pub unsafe fn send_message(target: u64, s: &[u8]) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -133,17 +129,14 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    #[inline(always)]
     pub unsafe fn exit() -> ! {
         core::arch::asm!("int 249", in("rdi") Self::Exit as u64, options(nomem, nostack, preserves_flags, noreturn));
     }
 
-    #[inline(always)]
     pub unsafe fn skip() {
         core::arch::asm!("int 249", in("rdi") Self::Skip as u64, options(nomem, nostack, preserves_flags));
     }
 
-    #[inline(always)]
     pub unsafe fn register_provider(provider: u64) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -156,7 +149,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    #[inline(always)]
     pub unsafe fn get_providing_process(provider: u64) -> Result<Option<u64>, SystemCallStatus> {
         let (mut ret, mut id): (u64, u64);
         core::arch::asm!(
@@ -174,7 +166,6 @@ impl SystemCall {
         Ok(Some(id))
     }
 
-    #[inline(always)]
     pub unsafe fn port_in_byte(port: u16) -> Result<u8, SystemCallStatus> {
         let (mut ret, mut val): (u64, u64);
         core::arch::asm!(
@@ -190,7 +181,6 @@ impl SystemCall {
         Ok(val as u8)
     }
 
-    #[inline(always)]
     pub unsafe fn port_out_byte(port: u16, val: u8) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -205,7 +195,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    #[inline(always)]
     pub unsafe fn port_in_word(port: u16) -> Result<u16, SystemCallStatus> {
         let (mut ret, mut val): (u64, u64);
         core::arch::asm!(
@@ -221,7 +210,6 @@ impl SystemCall {
         Ok(val as u16)
     }
 
-    #[inline(always)]
     pub unsafe fn port_out_word(port: u16, val: u16) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -236,7 +224,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    #[inline(always)]
     pub unsafe fn port_in_dword(port: u16) -> Result<u32, SystemCallStatus> {
         let (mut ret, mut val): (u64, u64);
         core::arch::asm!(
@@ -252,7 +239,6 @@ impl SystemCall {
         Ok(val as u32)
     }
 
-    #[inline(always)]
     pub unsafe fn port_out_dword(port: u16, val: u32) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -267,7 +253,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    #[inline(always)]
     pub unsafe fn register_irq_handler(irq: u8) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -280,7 +265,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    #[inline(always)]
     pub unsafe fn allocate(size: u64) -> Result<*mut u8, SystemCallStatus> {
         let (mut ret, mut ptr): (u64, u64);
         core::arch::asm!(
@@ -295,7 +279,6 @@ impl SystemCall {
         Ok(ptr as *mut u8)
     }
 
-    #[inline(always)]
     pub unsafe fn free(ptr: *mut u8) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -308,7 +291,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    #[inline(always)]
     pub unsafe fn ack(id: u64) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
@@ -321,7 +303,6 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    #[inline(always)]
     pub unsafe fn get_registry_entry_info(
         id: u64,
         ty: BCRegistryEntryInfoType,

@@ -136,58 +136,48 @@ pub struct LocalAPICVer {
 }
 
 impl LocalAPIC {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new(addr: u64) -> Self {
         Self { addr }
     }
 
-    #[inline(always)]
     pub fn write_reg<T: Into<u64>, V: Into<u32>>(&self, reg: T, value: V) {
         unsafe { ((self.addr + reg.into()) as *mut u32).write_volatile(value.into()) }
     }
 
-    #[inline(always)]
     pub fn read_reg<T: Into<u64>, R: From<u32>>(&self, reg: T) -> R {
         unsafe { ((self.addr + reg.into()) as *const u32).read_volatile() }.into()
     }
 
-    #[inline(always)]
     pub fn read_ver(&self) -> LocalAPICVer {
         self.read_reg(LocalAPICReg::Ver)
     }
 
-    #[inline(always)]
     pub fn send_eoi(&self) {
         self.write_reg(LocalAPICReg::EndOfInterrupt, 0u32);
     }
 
-    #[inline(always)]
     pub fn set_timer_divide(&self, value: u32) {
         self.write_reg(LocalAPICReg::TimerDivideConfiguration, value);
     }
 
-    #[inline(always)]
     pub fn set_timer_init_count(&self, value: u32) {
         self.write_reg(LocalAPICReg::TimerInitialCount, value);
     }
 
-    #[inline(always)]
     pub fn read_timer_counter(&self) -> u32 {
         self.read_reg(LocalAPICReg::TimerCurrentCount)
     }
 
-    #[inline(always)]
     pub fn read_timer(&self) -> lvt::TimerLVT {
         self.read_reg(LocalAPICReg::LVTTimer)
     }
 
-    #[inline(always)]
     pub fn write_timer(&self, val: lvt::TimerLVT) {
         self.write_reg(LocalAPICReg::LVTTimer, val);
     }
 
-    #[inline(always)]
     pub fn read_lint(&self, lint1: bool) -> lvt::LocalVectorTable {
         self.read_reg(if lint1 {
             LocalAPICReg::LVTLint1
@@ -196,7 +186,6 @@ impl LocalAPIC {
         })
     }
 
-    #[inline(always)]
     pub fn write_lint(&self, lint1: bool, val: lvt::LocalVectorTable) {
         self.write_reg(
             if lint1 {
@@ -208,24 +197,22 @@ impl LocalAPIC {
         );
     }
 
-    #[inline(always)]
     pub fn reset_error(&self) {
         self.write_reg(LocalAPICReg::ErrorStatus, 0u32);
     }
 
-    #[inline(always)]
     pub fn error(&self) -> ErrorStatus {
         self.read_reg(LocalAPICReg::ErrorStatus)
     }
 
-    // #[inline(always)]
+    //
     // pub fn read_icr(&self) -> InterruptCommand {
     //     (((self.read_reg::<_, u64>(LocalAPICReg::InterruptCommand2)) << 32)
     //         | (self.read_reg::<_, u64>(LocalAPICReg::InterruptCommand)))
     //     .into()
     // }
 
-    // #[inline(always)]
+    //
     // pub fn write_icr(&self, val: InterruptCommand) {
     //     let val: u64 = val.into();
     //     let a = val as u32;
@@ -234,12 +221,10 @@ impl LocalAPIC {
     //     self.write_reg(LocalAPICReg::InterruptCommand, a);
     // }
 
-    #[inline(always)]
     pub fn write_spurious_intr_vec(&self, val: SpuriousIntrVector) {
         self.write_reg(LocalAPICReg::SpuriousInterruptVector, val);
     }
 
-    #[inline(always)]
     pub fn enable(&self) {
         self.write_spurious_intr_vec(
             SpuriousIntrVector::new()
@@ -248,7 +233,6 @@ impl LocalAPIC {
         );
     }
 
-    #[inline(always)]
     pub fn setup_timer(&self, timer: &impl crate::timer::Timer) {
         self.set_timer_divide(0x3);
         self.set_timer_init_count(0xFFFF_FFFF);

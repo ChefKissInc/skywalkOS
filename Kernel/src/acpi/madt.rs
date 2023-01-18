@@ -17,7 +17,7 @@ pub struct MADTData {
 }
 
 impl MADTData {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn new(madt: &'static acpi::tables::madt::MADT) -> Self {
         // Disable PIC

@@ -98,7 +98,7 @@ pub enum SerialPortReg {
 }
 
 impl SerialPort {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new(port_num: u16) -> Self {
         Self {
@@ -106,12 +106,10 @@ impl SerialPort {
         }
     }
 
-    #[inline(always)]
     fn line_status(&self) -> LineStatus {
         unsafe { self.port.read_off(SerialPortReg::LineStatus) }
     }
 
-    #[inline(always)]
     pub fn set_intr_enable(&self, val: u8) {
         unsafe {
             self.port
@@ -119,22 +117,18 @@ impl SerialPort {
         }
     }
 
-    #[inline(always)]
     fn can_send_data(&self) -> bool {
         self.line_status().transmitter_empty()
     }
 
-    #[inline(always)]
     fn set_line_ctl(&self, val: LineControl) {
         unsafe { self.port.write_off(val, SerialPortReg::LineControl) }
     }
 
-    #[inline(always)]
     fn set_modem_ctl(&self, val: ModemControl) {
         unsafe { self.port.write_off(val, SerialPortReg::ModemControl) }
     }
 
-    #[inline(always)]
     pub fn init(&self) {
         unsafe {
             self.set_intr_enable(0);

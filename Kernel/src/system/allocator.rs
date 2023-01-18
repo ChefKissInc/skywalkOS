@@ -7,7 +7,6 @@ static GLOBAL_ALLOCATOR: KernAllocator = KernAllocator;
 struct KernAllocator;
 
 unsafe impl core::alloc::GlobalAlloc for KernAllocator {
-    #[inline(always)]
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         let state = super::state::SYS_STATE.get().as_mut().unwrap();
         let count = ((layout.pad_to_align().size() + 0xFFF) / 0x1000) as u64;
@@ -26,12 +25,10 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
         ptr
     }
 
-    #[inline(always)]
     unsafe fn alloc_zeroed(&self, layout: core::alloc::Layout) -> *mut u8 {
         self.alloc(layout) // Memory is already zeroed by the allocator by default
     }
 
-    #[inline(always)]
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
         let state = super::state::SYS_STATE.get().as_mut().unwrap();
         state.pmm.get_mut().unwrap().lock().free(

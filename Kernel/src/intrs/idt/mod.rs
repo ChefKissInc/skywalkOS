@@ -101,7 +101,7 @@ pub struct Entry {
 }
 
 impl Entry {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new(
         base: u64,

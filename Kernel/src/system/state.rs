@@ -47,7 +47,7 @@ pub struct SystemState {
 }
 
 impl SystemState {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new() -> Self {
         Self {

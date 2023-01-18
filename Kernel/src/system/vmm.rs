@@ -16,13 +16,12 @@ use amd64::{
 pub struct PageTableLvl4(amd64::paging::PageTable);
 
 impl PageTableLvl4 {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new() -> Self {
         Self(amd64::paging::PageTable::new())
     }
 
-    #[inline(always)]
     pub unsafe fn init(&mut self) {
         // Fix performance by utilising the PAT mechanism
         PageAttributeTable::new()
@@ -36,7 +35,6 @@ impl PageTableLvl4 {
         self.set();
     }
 
-    #[inline(always)]
     pub unsafe fn map_mmio(&mut self, virt: u64, phys: u64, count: u64, flags: PageTableEntry) {
         debug_assert!(!flags.pwt());
         debug_assert!(!flags.pcd());
@@ -47,12 +45,10 @@ impl PageTableLvl4 {
 impl PML4Trait for PageTableLvl4 {
     const VIRT_OFF: u64 = amd64::paging::PHYS_VIRT_OFFSET;
 
-    #[inline(always)]
     fn get_entry(&mut self, offset: u64) -> &mut amd64::paging::PageTableEntry {
         &mut self.0.entries[offset as usize]
     }
 
-    #[inline(always)]
     fn alloc_entry(&self) -> u64 {
         Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
             - amd64::paging::PHYS_VIRT_OFFSET

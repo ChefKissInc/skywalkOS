@@ -17,7 +17,7 @@ pub struct BitmapAllocator {
 }
 
 impl BitmapAllocator {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn new(mmap: &'static [MemoryEntry]) -> Self {
         let alloc_base =

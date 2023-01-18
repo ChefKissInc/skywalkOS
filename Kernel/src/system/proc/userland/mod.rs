@@ -22,7 +22,7 @@ pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC0000000;
 pub struct UserPageTableLvl4(u64, amd64::paging::PageTable);
 
 impl UserPageTableLvl4 {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new(proc_id: u64) -> Self {
         Self(proc_id, amd64::paging::PageTable::new())
@@ -32,22 +32,19 @@ impl UserPageTableLvl4 {
 impl PML4 for UserPageTableLvl4 {
     const VIRT_OFF: u64 = amd64::paging::PHYS_VIRT_OFFSET;
 
-    #[inline(always)]
     fn get_entry(&mut self, offset: u64) -> &mut amd64::paging::PageTableEntry {
         &mut self.1.entries[offset as usize]
     }
 
-    #[inline(always)]
     fn alloc_entry(&self) -> u64 {
         let phys = Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
             - amd64::paging::PHYS_VIRT_OFFSET;
         let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
-        state
-            .user_allocations
-            .get_mut()
-            .unwrap()
-            .lock()
-            .track(self.0, phys, 4096);
+        state.user_allocations.get_mut().unwrap().lock().track(
+            self.0,
+            phys + USER_PHYS_VIRT_OFFSET,
+            4096,
+        );
         phys
     }
 }

@@ -9,7 +9,7 @@ pub struct HighPrecisionEventTimer {
 }
 
 impl HighPrecisionEventTimer {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn new(hpet: &'static HPET) -> Self {
         let clk = u64::from(hpet.capabilities().clk_period());
@@ -21,7 +21,6 @@ impl HighPrecisionEventTimer {
 }
 
 impl super::Timer for HighPrecisionEventTimer {
-    #[inline(always)]
     fn sleep(&self, ms: u64) {
         let target = self.inner.counter_value() + (ms * 1_000_000_000_000) / self.clk;
 

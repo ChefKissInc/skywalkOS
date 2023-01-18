@@ -52,7 +52,7 @@ pub struct ProgrammableIntervalTimer {
 }
 #[allow(dead_code)]
 impl ProgrammableIntervalTimer {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new() -> Self {
         Self {

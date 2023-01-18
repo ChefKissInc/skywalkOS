@@ -65,7 +65,7 @@ pub struct ScreenRes {
 }
 
 impl ScreenRes {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn new(res: (usize, usize)) -> Self {
         Self {
@@ -98,7 +98,7 @@ pub struct BootInfo {
 }
 
 impl BootInfo {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn new(
         kern_symbols: &'static [KernSymbol],

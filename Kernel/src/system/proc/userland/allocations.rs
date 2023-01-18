@@ -11,7 +11,7 @@ pub struct UserAllocationTracker {
 }
 
 impl UserAllocationTracker {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -20,7 +20,6 @@ impl UserAllocationTracker {
         }
     }
 
-    #[inline(always)]
     pub fn track(&mut self, proc_id: u64, addr: u64, size: u64) {
         trace!(
             "Tracking allocation of {} bytes at {:#X} from process {}",
@@ -31,20 +30,17 @@ impl UserAllocationTracker {
         self.allocations.insert(addr, (proc_id, size));
     }
 
-    #[inline(always)]
     pub fn track_msg(&mut self, id: u64, addr: u64) {
         trace!("Marking allocation at {:#X} as message {}", addr, id);
         self.message_allocations.insert(id, addr);
     }
 
-    #[inline(always)]
     pub fn free_msg(&mut self, id: u64) {
         trace!("Freeing message {}", id);
         let addr = self.message_allocations.remove(&id).unwrap();
         self.free(addr);
     }
 
-    #[inline(always)]
     pub fn free(&mut self, addr: u64) {
         let (proc_id, size) = self.allocations.remove(&addr).unwrap();
         let count = (size + 0xFFF) / 0x1000;
@@ -65,7 +61,6 @@ impl UserAllocationTracker {
         }
     }
 
-    #[inline(always)]
     pub fn free_proc(&mut self, proc_id: u64) {
         for addr in self
             .allocations
@@ -78,7 +73,6 @@ impl UserAllocationTracker {
         }
     }
 
-    #[inline(always)]
     #[must_use]
     pub fn allocate(&mut self, proc_id: u64, size: u64) -> u64 {
         let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
