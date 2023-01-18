@@ -8,6 +8,7 @@ use acpi::tables::madt::ic::{
     proc_lapic::ProcessorLocalAPIC,
     InterruptController,
 };
+use amd64::paging::PageTableEntry;
 
 pub struct MADTData {
     pub proc_lapics: Vec<&'static ProcessorLocalAPIC>,
@@ -46,6 +47,21 @@ impl MADTData {
                         ioapic.read_ver(),
                         ioapic,
                     );
+                    unsafe {
+                        crate::system::state::SYS_STATE
+                            .get()
+                            .as_mut()
+                            .unwrap()
+                            .pml4
+                            .get_mut()
+                            .unwrap()
+                            .map_mmio(
+                                u64::from(ioapic.address) + amd64::paging::PHYS_VIRT_OFFSET,
+                                u64::from(ioapic.address),
+                                1,
+                                PageTableEntry::new().with_present(true).with_writable(true),
+                            )
+                    }
                     ioapics.push(ioapic);
                 }
                 InterruptController::InterruptSourceOverride(iso) => {
