@@ -225,7 +225,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             crate::acpi::ioapic::wire_legacy_irq(irq, false);
             crate::intrs::idt::set_handler(
                 irq + 0x20,
-                0,
+                1,
                 PrivilegeLevel::Supervisor,
                 irq_handler,
                 true,
