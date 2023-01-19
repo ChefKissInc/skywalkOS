@@ -103,7 +103,7 @@ impl RSDP {
     #[must_use]
     pub fn as_type(&self) -> RSDTType {
         if self.revision == 0 {
-            let addr = self.rsdt_addr as u64 + amd64::paging::PHYS_VIRT_OFFSET;
+            let addr = u64::from(self.rsdt_addr) + amd64::paging::PHYS_VIRT_OFFSET;
             unsafe { RSDTType::Rsdt((addr as *const RSDT).as_ref().unwrap()) }
         } else {
             let addr = self.xsdt_addr + amd64::paging::PHYS_VIRT_OFFSET;

@@ -29,10 +29,10 @@ impl MADTData {
         let mut proc_lapics = Vec::new();
         let mut ioapics = Vec::new();
         let mut isos = Vec::new();
-        let mut lapic_addr = if madt.local_ic_addr() != 0 {
-            madt.local_ic_addr()
-        } else {
+        let mut lapic_addr = if madt.local_ic_addr() == 0 {
             0xFEE0_0000
+        } else {
+            madt.local_ic_addr()
         };
 
         for ent in madt.into_iter() {
@@ -60,7 +60,7 @@ impl MADTData {
                                 u64::from(ioapic.address),
                                 1,
                                 PageTableEntry::new().with_present(true).with_writable(true),
-                            )
+                            );
                     }
                     ioapics.push(ioapic);
                 }

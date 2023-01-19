@@ -167,18 +167,18 @@ impl SystemCall {
     }
 
     pub unsafe fn port_in_byte(port: u16) -> Result<u8, SystemCallStatus> {
-        let (mut ret, mut val): (u64, u64);
+        let (mut ret, mut val): (u64, u8);
         core::arch::asm!(
             "int 249",
             in("rdi") Self::PortIn as u64,
-            in("rsi") port as u64,
+            in("rsi") port,
             in("rdx") AccessSize::Byte as u64,
             out("rax") ret,
-            lateout("rdi") val,
+            lateout("dil") val,
             options(nomem, nostack, preserves_flags, pure),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
-        Ok(val as u8)
+        Ok(val)
     }
 
     pub unsafe fn port_out_byte(port: u16, val: u8) -> Result<(), SystemCallStatus> {
@@ -186,8 +186,8 @@ impl SystemCall {
         core::arch::asm!(
             "int 249",
             in("rdi") Self::PortOut as u64,
-            in("rsi") port as u64,
-            in("rdx") val as u64,
+            in("rsi") port,
+            in("dl") val,
             in("rcx") AccessSize::Byte as u64,
             out("rax") ret,
             options(nomem, nostack, preserves_flags, pure),
@@ -196,18 +196,18 @@ impl SystemCall {
     }
 
     pub unsafe fn port_in_word(port: u16) -> Result<u16, SystemCallStatus> {
-        let (mut ret, mut val): (u64, u64);
+        let (mut ret, mut val): (u64, u16);
         core::arch::asm!(
             "int 249",
             in("rdi") Self::PortIn as u64,
-            in("rsi") port as u64,
+            in("rsi") port,
             in("rdx") AccessSize::Word as u64,
             out("rax") ret,
             lateout("rdi") val,
             options(nomem, nostack, preserves_flags, pure),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
-        Ok(val as u16)
+        Ok(val)
     }
 
     pub unsafe fn port_out_word(port: u16, val: u16) -> Result<(), SystemCallStatus> {
@@ -215,8 +215,8 @@ impl SystemCall {
         core::arch::asm!(
             "int 249",
             in("rdi") Self::PortOut as u64,
-            in("rsi") port as u64,
-            in("rdx") val as u64,
+            in("rsi") port,
+            in("rdx") val,
             in("rcx") AccessSize::Word as u64,
             out("rax") ret,
             options(nomem, nostack, preserves_flags, pure),
@@ -225,18 +225,18 @@ impl SystemCall {
     }
 
     pub unsafe fn port_in_dword(port: u16) -> Result<u32, SystemCallStatus> {
-        let (mut ret, mut val): (u64, u64);
+        let (mut ret, mut val): (u64, u32);
         core::arch::asm!(
             "int 249",
             in("rdi") Self::PortIn as u64,
-            in("rsi") port as u64,
+            in("rsi") port,
             in("rdx") AccessSize::DWord as u64,
             out("rax") ret,
-            lateout("rdi") val,
+            lateout("edi") val,
             options(nomem, nostack, preserves_flags, pure),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
-        Ok(val as u32)
+        Ok(val)
     }
 
     pub unsafe fn port_out_dword(port: u16, val: u32) -> Result<(), SystemCallStatus> {
@@ -244,8 +244,8 @@ impl SystemCall {
         core::arch::asm!(
             "int 249",
             in("rdi") Self::PortOut as u64,
-            in("rsi") port as u64,
-            in("rdx") val as u64,
+            in("rsi") port,
+            in("rdx") val,
             in("rcx") AccessSize::DWord as u64,
             out("rax") ret,
             options(nomem, nostack, preserves_flags, pure),
@@ -258,7 +258,7 @@ impl SystemCall {
         core::arch::asm!(
             "int 249",
             in("rdi") Self::RegisterIRQHandler as u64,
-            in("rsi") irq as u64,
+            in("sil") irq,
             out("rax") ret,
             options(nomem, nostack, preserves_flags, pure),
         );
@@ -316,19 +316,15 @@ impl SystemCall {
             in("rdi") Self::GetRegistryEntryInfo as u64,
             in("rsi") id,
             in("rdx") ty as u64,
-            in("rcx") k.map(|s| s.as_ptr() as u64).unwrap_or(0),
-            in("r8") k.map(|s| s.len() as u64).unwrap_or(0),
+            in("rcx") k.map_or(0, |s| s.as_ptr() as u64),
+            in("r8") k.map_or(0, |s| s.len() as u64),
             out("rax") ret,
             lateout("rdi") ptr,
             lateout("rsi") len,
             options(nomem, nostack, preserves_flags, pure),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
-        Ok(Vec::from_raw_parts(
-            ptr as *mut u8,
-            len as usize,
-            len as usize,
-        ))
+        Ok(Vec::from_raw_parts(ptr as *mut u8, len as _, len as _))
     }
 }
 

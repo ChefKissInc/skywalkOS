@@ -128,7 +128,7 @@ impl Scheduler {
 
         let data = data.leak();
         let virt_addr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET
-            + super::userland::USER_PHYS_VIRT_OFFSET;
+            + driver_core::USER_PHYS_VIRT_OFFSET;
         for reloc in exec.dynrelas.iter() {
             let ptr = unsafe {
                 ((data.as_ptr() as u64 + reloc.r_offset) as *mut u64)
@@ -169,7 +169,7 @@ impl Scheduler {
         unsafe {
             proc.cr3.map_pages(
                 virt_addr,
-                virt_addr - super::userland::USER_PHYS_VIRT_OFFSET,
+                virt_addr - driver_core::USER_PHYS_VIRT_OFFSET,
                 count,
                 PageTableEntry::new()
                     .with_user(true)
@@ -178,7 +178,7 @@ impl Scheduler {
             );
             let stack_addr = thread.stack.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
             proc.cr3.map_pages(
-                stack_addr + super::userland::USER_PHYS_VIRT_OFFSET,
+                stack_addr + driver_core::USER_PHYS_VIRT_OFFSET,
                 stack_addr,
                 (thread.stack.len() as u64 + 0xFFF) / 0x1000,
                 PageTableEntry::new()

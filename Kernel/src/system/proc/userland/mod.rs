@@ -14,8 +14,6 @@ use crate::system::{gdt::PrivilegeLevel, RegisterState};
 
 pub mod allocations;
 
-pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC0000000;
-
 // This isn't meant to be user-accessible.
 // It is meant to track the allocations so that they are deallocated when the process exits.
 #[repr(transparent)]
@@ -44,7 +42,7 @@ impl PML4 for UserPageTableLvl4 {
         let scheduler = sys_state.scheduler.get_mut().unwrap().get_mut();
         state.user_allocations.get_mut().unwrap().lock().track(
             scheduler.current_thread_id.unwrap(),
-            phys + USER_PHYS_VIRT_OFFSET,
+            phys + driver_core::USER_PHYS_VIRT_OFFSET,
             4096,
         );
         phys
@@ -61,7 +59,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
         .unwrap()
         .leak();
     let ptr = s.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
-    let virt = ptr + USER_PHYS_VIRT_OFFSET;
+    let virt = ptr + driver_core::USER_PHYS_VIRT_OFFSET;
     let count = (s.len() as u64 + 0xFFF) / 0x1000;
     let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
     user_allocations.track(proc_id, virt, s.len() as u64);
@@ -248,7 +246,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
 
             process.cr3.map_pages(
                 addr,
-                addr - USER_PHYS_VIRT_OFFSET,
+                addr - driver_core::USER_PHYS_VIRT_OFFSET,
                 (size + 0xFFF) / 0x1000,
                 PageTableEntry::new()
                     .with_user(true)
@@ -317,7 +315,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             .unwrap()
             .leak();
             let ptr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
-            let virt = ptr + USER_PHYS_VIRT_OFFSET;
+            let virt = ptr + driver_core::USER_PHYS_VIRT_OFFSET;
             let count = (data.len() as u64 + 0xFFF) / 0x1000;
             let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
             user_allocations.track(proc_id, virt, data.len() as u64);

@@ -183,6 +183,8 @@ impl TryFrom<BCObject> for HashMap<String, BCObject> {
 pub struct BCRegistryEntry(u64);
 
 impl BCRegistryEntry {
+    #[inline]
+    #[must_use]
     pub const fn from_id(id: u64) -> Self {
         Self(id)
     }
