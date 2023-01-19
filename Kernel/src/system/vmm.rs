@@ -12,7 +12,6 @@ use amd64::{
 };
 
 #[repr(transparent)]
-#[derive(Debug)]
 pub struct PageTableLvl4(amd64::paging::PageTable);
 
 impl PageTableLvl4 {

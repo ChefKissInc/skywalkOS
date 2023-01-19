@@ -7,7 +7,6 @@ extern "C" {
     static __kernel_top: u64;
 }
 
-#[derive(Debug)]
 pub struct BitmapAllocator {
     bitmap: &'static mut [u64],
     highest_addr: u64,

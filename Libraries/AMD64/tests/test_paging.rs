@@ -13,7 +13,6 @@
 use amd64::paging::pml4::PML4 as PML4Trait;
 
 #[repr(transparent)]
-#[derive(Debug)]
 pub struct PML4(amd64::paging::PageTable);
 
 impl PML4 {

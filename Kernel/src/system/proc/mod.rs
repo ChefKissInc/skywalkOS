@@ -60,7 +60,6 @@ impl Thread {
     }
 }
 
-#[derive(Debug)]
 pub struct Process {
     pub path: String,
     pub cwd: String,
@@ -71,11 +70,11 @@ pub struct Process {
 impl Process {
     #[inline]
     #[must_use]
-    pub fn new(proc_id: u64, path: &str, cwd: &str) -> Self {
+    pub fn new(path: &str, cwd: &str) -> Self {
         Self {
             path: path.to_string(),
             cwd: cwd.to_string(),
-            cr3: Box::new(userland::UserPageTableLvl4::new(proc_id)),
+            cr3: Box::new(userland::UserPageTableLvl4::new()),
             messages: VecDeque::new(),
         }
     }

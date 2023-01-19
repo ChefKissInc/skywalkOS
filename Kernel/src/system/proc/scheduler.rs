@@ -156,9 +156,11 @@ impl Scheduler {
             virt_addr,
             data.len() as u64,
         );
-        self.processes
-            .insert(proc_id, super::Process::new(proc_id, "", ""));
+        self.processes.insert(proc_id, super::Process::new("", ""));
         let proc = self.processes.get_mut(&proc_id).unwrap();
+        // Workaround for UserPageTableLvl4
+        let prev = self.current_thread_id;
+        self.current_thread_id = Some(proc_id);
         unsafe {
             proc.cr3.map_higher_half();
         }
@@ -185,6 +187,7 @@ impl Scheduler {
                     .with_present(true),
             );
         }
+        self.current_thread_id = prev;
         self.threads.insert(id, thread);
         self.thread_ids.push(id);
     }

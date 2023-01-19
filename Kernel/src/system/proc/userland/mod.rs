@@ -18,14 +18,14 @@ pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC0000000;
 
 // This isn't meant to be user-accessible.
 // It is meant to track the allocations so that they are deallocated when the process exits.
-#[derive(Debug)]
-pub struct UserPageTableLvl4(u64, amd64::paging::PageTable);
+#[repr(transparent)]
+pub struct UserPageTableLvl4(amd64::paging::PageTable);
 
 impl UserPageTableLvl4 {
     #[inline]
     #[must_use]
-    pub const fn new(proc_id: u64) -> Self {
-        Self(proc_id, amd64::paging::PageTable::new())
+    pub const fn new() -> Self {
+        Self(amd64::paging::PageTable::new())
     }
 }
 
@@ -33,15 +33,17 @@ impl PML4 for UserPageTableLvl4 {
     const VIRT_OFF: u64 = amd64::paging::PHYS_VIRT_OFFSET;
 
     fn get_entry(&mut self, offset: u64) -> &mut amd64::paging::PageTableEntry {
-        &mut self.1.entries[offset as usize]
+        &mut self.0.entries[offset as usize]
     }
 
     fn alloc_entry(&self) -> u64 {
         let phys = Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
             - amd64::paging::PHYS_VIRT_OFFSET;
         let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+        let sys_state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+        let scheduler = sys_state.scheduler.get_mut().unwrap().get_mut();
         state.user_allocations.get_mut().unwrap().lock().track(
-            self.0,
+            scheduler.current_thread_id.unwrap(),
             phys + USER_PHYS_VIRT_OFFSET,
             4096,
         );

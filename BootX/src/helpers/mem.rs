@@ -5,7 +5,6 @@ use alloc::vec::Vec;
 
 use sulphur_dioxide::{MemoryData, MemoryEntry};
 
-#[derive(Debug)]
 pub struct MemoryManager {
     entries: Vec<(u64, u64)>,
 }

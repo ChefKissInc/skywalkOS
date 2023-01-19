@@ -10,7 +10,6 @@ pub mod parse_elf;
 pub mod setup;
 
 #[repr(transparent)]
-#[derive(Debug)]
 pub struct PML4(amd64::paging::PageTable);
 
 impl amd64::paging::pml4::PML4 for PML4 {

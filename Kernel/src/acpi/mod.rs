@@ -9,7 +9,6 @@ pub mod apic;
 pub mod ioapic;
 pub mod madt;
 
-#[derive(Debug)]
 pub struct ACPIPlatform {
     pub version: u8,
     pub tables: Vec<&'static SDTHeader>,
