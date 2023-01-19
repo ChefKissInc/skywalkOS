@@ -3,4 +3,5 @@ members = ["Libraries/*", "BootX", "Kernel", "DCExtensions/PCICore"]
 resolver = "2"
 
 [profile.release]
+lto = true
 strip = true
