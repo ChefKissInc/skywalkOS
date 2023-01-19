@@ -83,7 +83,7 @@ impl SystemCall {
             in("rsi") s.as_ptr() as u64,
             in("rdx") s.len() as u64,
             out("rax") ret,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
@@ -102,7 +102,7 @@ impl SystemCall {
             out("rsi") proc_id,
             out("rdx") ptr,
             out("rcx") len,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         if id == 0 {
@@ -124,7 +124,7 @@ impl SystemCall {
             in("rdx") s.as_ptr() as u64,
             in("rcx") s.len() as u64,
             out("rax") ret,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
@@ -144,7 +144,7 @@ impl SystemCall {
             in("rdi") Self::RegisterProvider as u64,
             in("rsi") provider,
             out("rax") ret,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
@@ -157,7 +157,7 @@ impl SystemCall {
             in("rsi") provider,
             out("rax") ret,
             lateout("rdi") id,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         if id == 0 {
@@ -175,7 +175,7 @@ impl SystemCall {
             in("rdx") AccessSize::Byte as u64,
             out("rax") ret,
             lateout("dil") val,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         Ok(val)
@@ -190,7 +190,7 @@ impl SystemCall {
             in("dl") val,
             in("rcx") AccessSize::Byte as u64,
             out("rax") ret,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
@@ -204,7 +204,7 @@ impl SystemCall {
             in("rdx") AccessSize::Word as u64,
             out("rax") ret,
             lateout("rdi") val,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         Ok(val)
@@ -219,7 +219,7 @@ impl SystemCall {
             in("rdx") val,
             in("rcx") AccessSize::Word as u64,
             out("rax") ret,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
@@ -233,7 +233,7 @@ impl SystemCall {
             in("rdx") AccessSize::DWord as u64,
             out("rax") ret,
             lateout("edi") val,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         Ok(val)
@@ -248,7 +248,7 @@ impl SystemCall {
             in("rdx") val,
             in("rcx") AccessSize::DWord as u64,
             out("rax") ret,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
@@ -260,7 +260,7 @@ impl SystemCall {
             in("rdi") Self::RegisterIRQHandler as u64,
             in("sil") irq,
             out("rax") ret,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
@@ -273,7 +273,7 @@ impl SystemCall {
             in("rsi") size,
             out("rax") ret,
             lateout("rdi") ptr,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         Ok(ptr as *mut u8)
@@ -286,7 +286,7 @@ impl SystemCall {
             in("rdi") Self::Free as u64,
             in("rsi") ptr as u64,
             out("rax") ret,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
@@ -298,7 +298,7 @@ impl SystemCall {
             in("rdi") Self::Ack as u64,
             in("rsi") id,
             out("rax") ret,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
@@ -321,7 +321,7 @@ impl SystemCall {
             out("rax") ret,
             lateout("rdi") ptr,
             lateout("rsi") len,
-            options(nomem, nostack, preserves_flags, pure),
+            options(nomem, nostack, preserves_flags),
         );
         SystemCallStatus::try_from(ret).unwrap().as_result()?;
         Ok(Vec::from_raw_parts(ptr as *mut u8, len as _, len as _))
