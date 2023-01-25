@@ -22,12 +22,6 @@ use serde::{Deserialize, Serialize};
 pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC000_0000;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DistributionInfo<'a> {
-    pub branding: &'a str,
-    pub version: &'a str,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct DCInfo<'a> {
     pub identifier: &'a str,
     pub name: &'a str,
@@ -38,8 +32,7 @@ pub struct DCInfo<'a> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DCCache<'a> {
-    pub branding: &'a str,
-    pub version: &'a str,
+    #[serde(borrow)]
     pub infos: Vec<DCInfo<'a>>,
     pub payloads: HashMap<&'a str, &'a [u8]>,
 }

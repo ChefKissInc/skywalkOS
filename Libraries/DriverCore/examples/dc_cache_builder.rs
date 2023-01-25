@@ -8,16 +8,9 @@ use std::cell::UnsafeCell;
 use hashbrown::HashMap;
 
 fn main() {
-    let contents = std::fs::read_to_string("DistributionInfo.ron").unwrap();
-    let dist_info: driver_core::DistributionInfo = ron::from_str(&contents).unwrap();
-    println!(
-        "Creating DriverCore cache for {} v{}",
-        dist_info.branding, dist_info.version
-    );
+    println!("Creating DriverCore cache");
 
     let mut cache = driver_core::DCCache {
-        branding: dist_info.branding,
-        version: dist_info.version,
         infos: vec![],
         payloads: HashMap::new(),
     };
@@ -32,6 +25,10 @@ fn main() {
         contents.push(std::fs::read_to_string(ent.path().join("Info.ron")).unwrap());
 
         let info: driver_core::DCInfo = ron::from_str(contents.last().unwrap()).unwrap();
+        println!(
+            "Inserting DriverCore extension {} <{}> v{} to cache",
+            info.name, info.identifier, info.version
+        );
         let payloads = unsafe { payloads.get().as_mut().unwrap() };
         payloads.push(
             std::fs::read(
@@ -42,10 +39,6 @@ fn main() {
         cache
             .payloads
             .insert(info.identifier, payloads.last().unwrap());
-        println!(
-            "Inserting DriverCore extension {} <{}> v{} to cache",
-            info.name, info.identifier, info.version
-        );
         cache.infos.push(info);
     }
     std::fs::write(

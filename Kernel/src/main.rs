@@ -74,13 +74,9 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
         .call_once(|| spin::Mutex::new(system::proc::scheduler::Scheduler::new(&hpet)));
     let cache: driver_core::DCCache =
         postcard::from_bytes(state.dc_cache.as_ref().unwrap()).unwrap();
-    info!("{} v{}", cache.branding, cache.version);
+
     let len = cache.infos.len();
-    info!(
-        "Got {} DriverCore extension{}",
-        len,
-        if len == 1 { "" } else { "s" }
-    );
+    info!("Got {len} DriverCore extensions");
     for info in cache.infos {
         info!(
             "Spawning DriverCore extension {} <{}>",
