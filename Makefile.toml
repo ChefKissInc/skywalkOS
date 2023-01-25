@@ -94,6 +94,10 @@ args = [
     "fat:rw:Drive",
     "-serial",
     "stdio",
+    "-audiodev",
+    "coreaudio,id=audio,out.frequency=48000",
+    "-device",
+    "ac97,audiodev=audio",
 ]
 dependencies = ["make"]
 
@@ -110,6 +114,10 @@ args = [
     "if=pflash,format=raw,unit=1,file=${@}/OVMF_VARS.fd",
     "-hda",
     "fat:rw:Drive",
+    "-audiodev",
+    "coreaudio,id=audio,out.frequency=48000",
+    "-device",
+    "ac97,audiodev=audio",
 ]
 dependencies = ["make-release"]
 

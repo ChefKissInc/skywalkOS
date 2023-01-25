@@ -49,9 +49,16 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/DCExtensions/PCICore"
+    directory: "/DCExtensions/TestAudio"
     labels:
       - "Enhancement"
-      - "Project:PCICore"
+      - "Project:TestAudio"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "cargo"
+    directory: "/DCExtensions/TestDrv"
+    labels:
+      - "Enhancement"
+      - "Project:TestDrv"
     schedule:
       interval: "daily"

@@ -1,5 +1,11 @@
 [workspace]
-members = ["Libraries/*", "BootX", "Kernel", "DCExtensions/PCICore"]
+members = [
+    "Libraries/*",
+    "BootX",
+    "Kernel",
+    "DCExtensions/TestAudio",
+    "DCExtensions/TestDrv",
+]
 resolver = "2"
 
 [profile.release]

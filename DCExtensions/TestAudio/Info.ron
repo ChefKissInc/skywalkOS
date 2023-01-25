@@ -1,0 +1,11 @@
+DCInfo (
+    identifier: "com.ChefKiss.TestAudio",
+    name: "TestAudio",
+    version: "0.1.0",
+    description: "",
+    personalities: {
+        "com.ChefKiss.TestAudio": {
+            "Name": String("Root"),
+        },
+    },
+)
