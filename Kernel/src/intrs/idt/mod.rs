@@ -64,7 +64,7 @@ impl core::fmt::Debug for InterruptHandler {
 
 unsafe extern "C" fn default_handler(regs: &mut RegisterState) {
     let n = regs.int_num as u8;
-    debug!("No handler for ISR #{}", n);
+    debug!("No handler for ISR #{n}");
 }
 
 #[derive(Debug, BitfieldSpecifier, Clone, Copy, PartialEq, Eq)]

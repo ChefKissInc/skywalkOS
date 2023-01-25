@@ -29,22 +29,16 @@ pub fn load(
 ) -> Vec<u8> {
     let FileType::Regular(mut file) = esp
         .open(path, mode, attributes)
-        .unwrap_or_else(|_| panic!("File {} not found", path))
+        .unwrap()
         .into_type()
         .unwrap()
     else {
-        panic!("How do you expect me to load a folder?")
+        panic!();
     };
 
-    let mut buffer = vec![
-        0;
-        file.get_boxed_info::<FileInfo>()
-            .unwrap_or_else(|_| panic!("Failed to get {} file info", path))
-            .file_size() as _
-    ];
+    let mut buffer = vec![0; file.get_boxed_info::<FileInfo>().unwrap().file_size() as _];
 
-    file.read(&mut buffer)
-        .unwrap_or_else(|_| panic!("Failed to read {}.", path));
+    file.read(&mut buffer).unwrap();
     file.close();
 
     buffer

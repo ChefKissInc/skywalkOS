@@ -36,11 +36,10 @@ extern "C" fn callback(
                     },
                     |demangled| {
                         error!(
-                            "{:>4}: {:>#19X}+{:>#04X} -> {:#}",
+                            "{:>4}: {:>#19X}+{:>#04X} -> {demangled:#}",
                             data.counter,
                             symbol.start,
                             ip - symbol.start,
-                            demangled
                         );
                     },
                 );

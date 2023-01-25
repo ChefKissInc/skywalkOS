@@ -41,7 +41,7 @@ pub fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Box<FrameBuff
                 })
                 .unwrap(),
             uefi::proto::console::gop::PixelFormat::BltOnly => {
-                panic!("Blt-only mode not supported.")
+                panic!("Blt-only mode not supported.");
             }
         },
         pitch: gop.current_mode_info().stride(),

@@ -12,7 +12,10 @@ pub fn init_output() {
     unsafe {
         let stdout = uefi_services::system_table().as_mut().stdout();
         stdout.reset(false).unwrap();
-        let desired_mode = stdout.modes().last().unwrap();
+        let desired_mode = stdout
+            .modes()
+            .max_by_key(|v| (v.columns(), v.rows()))
+            .unwrap();
         stdout.set_mode(desired_mode).unwrap();
         stdout.set_color(Color::White, Color::Black).unwrap();
         stdout.clear().unwrap();
@@ -33,12 +36,7 @@ pub fn setup() {
     }
 
     trace!("    2. Modifying paging mappings to map higher-half...");
-
-    unsafe {
-        let pml4 = super::PML4::get();
-        pml4.map_higher_half();
-        pml4.set();
-    }
+    unsafe { super::PML4::get().map_higher_half() }
 }
 
 pub fn get_gop<'a>() -> ScopedProtocol<'a, GraphicsOutput<'a>> {
