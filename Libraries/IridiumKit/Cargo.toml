@@ -5,9 +5,7 @@ publish = false
 version = "0.1.0"
 
 [dependencies]
-num_enum = { version = "0.5.7", default-features = false, features = [
-    "nightly",
-] }
+num_enum = { version = "0.5.9", default-features = false }
 postcard = { version = "1.0.2", default-features = false, features = ["alloc"] }
 hashbrown = { version = "0.13.2", features = ["nightly", "serde"] }
 serde = { version = "1.0.152", default-features = false, features = ["derive"] }

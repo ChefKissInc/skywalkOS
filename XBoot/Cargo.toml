@@ -23,5 +23,10 @@ log = { version = "0.4.17", default-features = false, features = [
     "release_max_level_debug",
 ] }
 sulphur-dioxide = { path = "../Libraries/SulphurDioxide" }
-uefi = { version = "0.18.0", features = ["exts", "logger"] }
-uefi-services = "0.15.0"
+uefi = { version = "0.19.0", default-features = false, features = [
+    "alloc",
+    "global_allocator",
+    "unstable",
+    "logger",
+] }
+uefi-services = "0.16.0"
