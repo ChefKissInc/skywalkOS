@@ -21,10 +21,10 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/BootX"
+    directory: "/XBoot"
     labels:
       - "Enhancement"
-      - "Project:BootX"
+      - "Project:XBoot"
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"

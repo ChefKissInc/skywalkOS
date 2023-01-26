@@ -1,11 +1,11 @@
-[tasks.build-bootx]
+[tasks.build-xboot]
 command = "cargo"
 args = [
     "build",
     "-Zbuild-std=core,compiler_builtins,alloc",
     "-Zbuild-std-features=compiler-builtins-mem",
     "--bin",
-    "bootx",
+    "xboot",
     "--target",
     "x86_64-unknown-uefi",
     "--out-dir",
@@ -26,14 +26,14 @@ args = [
     "Drive/System",
 ]
 
-[tasks.build-bootx-release]
+[tasks.build-xboot-release]
 command = "cargo"
 args = [
     "build",
     "-Zbuild-std=core,compiler_builtins,alloc",
     "-Zbuild-std-features=compiler-builtins-mem",
     "--bin",
-    "bootx",
+    "xboot",
     "--target",
     "x86_64-unknown-uefi",
     "--out-dir",
@@ -69,11 +69,11 @@ command = "cargo"
 args = ["make", "--cwd", "Extensions", "make-release"]
 
 [tasks.make]
-dependencies = ["build-bootx", "build-kernel", "make-boot-exts", "make-dccache"]
+dependencies = ["build-xboot", "build-kernel", "make-boot-exts", "make-dccache"]
 
 [tasks.make-release]
 dependencies = [
-    "build-bootx-release",
+    "build-xboot-release",
     "build-kernel-release",
     "make-boot-exts-release",
     "make-dccache",

@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "Libraries/*",
-    "BootX",
+    "XBoot",
     "Kernel",
     "Extensions/TestAudio",
     "Extensions/TestDrv",

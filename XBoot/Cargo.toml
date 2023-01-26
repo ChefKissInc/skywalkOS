@@ -2,12 +2,12 @@ cargo-features = ["different-binary-name"]
 
 [package]
 edition = "2021"
-name = "bootx"
+name = "xboot"
 publish = false
 version = "0.1.0"
 
 [[bin]]
-name = "bootx"
+name = "xboot"
 filename = "BOOTX64"
 
 [dependencies]
