@@ -106,7 +106,6 @@ impl PS2Ctl {
     }
 
     pub fn init(&self) {
-        // Flush buffer before doing anything
         while self.output_full() {
             let _ = unsafe { self.data_port.read() };
         }
