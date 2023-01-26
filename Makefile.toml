@@ -21,7 +21,7 @@ args = [
     "--bin",
     "kernel",
     "--target",
-    "x86_64-bridgecore-kernel.json",
+    "x86_64-kernel-iridium.json",
     "--out-dir",
     "Drive/System",
 ]
@@ -50,7 +50,7 @@ args = [
     "--bin",
     "kernel",
     "--target",
-    "x86_64-bridgecore-kernel.json",
+    "x86_64-kernel-iridium.json",
     "--out-dir",
     "Drive/System",
     "--release",
@@ -62,11 +62,11 @@ args = ["run", "--example", "dc_cache_builder", "--release"]
 
 [tasks.make-boot-exts]
 command = "cargo"
-args = ["make", "--cwd", "DCExtensions", "make"]
+args = ["make", "--cwd", "Extensions", "make"]
 
 [tasks.make-boot-exts-release]
 command = "cargo"
-args = ["make", "--cwd", "DCExtensions", "make-release"]
+args = ["make", "--cwd", "Extensions", "make-release"]
 
 [tasks.make]
 dependencies = ["build-bootx", "build-kernel", "make-boot-exts", "make-dccache"]

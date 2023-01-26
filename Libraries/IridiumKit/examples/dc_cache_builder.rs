@@ -8,15 +8,15 @@ use std::cell::UnsafeCell;
 use hashbrown::HashMap;
 
 fn main() {
-    println!("Creating DriverCore cache");
+    println!("Creating IridiumKit cache");
 
-    let mut cache = driver_core::DCCache {
+    let mut cache = iridium_kit::IKCache {
         infos: vec![],
         payloads: HashMap::new(),
     };
     let contents = UnsafeCell::new(Vec::new());
     let payloads = UnsafeCell::new(Vec::new());
-    for ent in std::fs::read_dir("DCExtensions")
+    for ent in std::fs::read_dir("Extensions")
         .unwrap()
         .filter_map(Result::ok)
         .filter(|v| v.path().is_dir())
@@ -24,15 +24,15 @@ fn main() {
         let contents = unsafe { contents.get().as_mut().unwrap() };
         contents.push(std::fs::read_to_string(ent.path().join("Info.ron")).unwrap());
 
-        let info: driver_core::DCInfo = ron::from_str(contents.last().unwrap()).unwrap();
+        let info: iridium_kit::IKInfo = ron::from_str(contents.last().unwrap()).unwrap();
         println!(
-            "Inserting DriverCore extension {} <{}> v{} to cache",
+            "Inserting IridiumKit extension {} <{}> v{} to cache",
             info.name, info.identifier, info.version
         );
         let payloads = unsafe { payloads.get().as_mut().unwrap() };
         payloads.push(
             std::fs::read(
-                std::path::PathBuf::from("target/DCExtensions").join(format!("{}.exec", info.name)),
+                std::path::PathBuf::from("target/Extensions").join(format!("{}.exec", info.name)),
             )
             .unwrap(),
         );
@@ -42,7 +42,7 @@ fn main() {
         cache.infos.push(info);
     }
     std::fs::write(
-        "Drive/System/DCExtensions.dccache",
+        "Drive/System/Extensions.dccache",
         postcard::to_allocvec(&cache).unwrap(),
     )
     .unwrap();

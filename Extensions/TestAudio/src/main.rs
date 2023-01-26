@@ -13,7 +13,7 @@ extern crate alloc;
 
 use alloc::{collections::VecDeque, vec::Vec};
 
-use driver_core::{port::Port, syscall::SystemCall};
+use iridium_kit::{port::Port, syscall::SystemCall};
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 
@@ -360,9 +360,9 @@ impl AC97 {
     pub unsafe fn set_bdl(&mut self) {
         self.buf.make_contiguous();
         self.bdl[0].addr =
-            (self.buf.as_slices().0.as_ptr() as u64 - driver_core::USER_PHYS_VIRT_OFFSET) as _;
+            (self.buf.as_slices().0.as_ptr() as u64 - iridium_kit::USER_PHYS_VIRT_OFFSET) as _;
         self.pcm_out_bdl_addr
-            .write((self.bdl.as_ptr() as u64 - driver_core::USER_PHYS_VIRT_OFFSET) as _);
+            .write((self.bdl.as_ptr() as u64 - iridium_kit::USER_PHYS_VIRT_OFFSET) as _);
         self.pcm_out_bdl_last_ent.write(0);
     }
 

@@ -56,7 +56,7 @@ pub enum SystemCall {
     Allocate,
     Free,
     Ack,
-    GetRegistryEntryInfo,
+    GetDTEntryInfo,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
@@ -69,7 +69,7 @@ pub enum AccessSize {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u64)]
-pub enum BCRegistryEntryInfoType {
+pub enum OSDTEntryInfoType {
     Parent,
     PropertyNamed,
 }
@@ -303,9 +303,9 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    pub unsafe fn get_registry_entry_info(
+    pub unsafe fn get_dt_entry_info(
         id: u64,
-        ty: BCRegistryEntryInfoType,
+        ty: OSDTEntryInfoType,
         k: Option<&str>,
     ) -> Result<Vec<u8>, SystemCallStatus> {
         let mut ret: u64;
@@ -313,7 +313,7 @@ impl SystemCall {
         let mut len: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") Self::GetRegistryEntryInfo as u64,
+            in("rdi") Self::GetDTEntryInfo as u64,
             in("rsi") id,
             in("rdx") ty as u64,
             in("rcx") k.map_or(0, |s| s.as_ptr() as u64),

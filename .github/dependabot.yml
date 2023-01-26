@@ -49,14 +49,14 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/DCExtensions/TestAudio"
+    directory: "/Extensions/TestAudio"
     labels:
       - "Enhancement"
       - "Project:TestAudio"
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/DCExtensions/TestDrv"
+    directory: "/Extensions/TestDrv"
     labels:
       - "Enhancement"
       - "Project:TestDrv"

@@ -89,7 +89,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
 
     let dc_ext_buffer = helpers::file::load(
         &mut esp,
-        cstr16!("\\System\\DCExtensions.dccache"),
+        cstr16!("\\System\\Extensions.dccache"),
         FileMode::Read,
         FileAttribute::empty(),
     )

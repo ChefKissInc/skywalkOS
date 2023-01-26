@@ -8,7 +8,7 @@ use amd64::{
     io::port::PortIO,
     paging::{pml4::PML4, PageTableEntry},
 };
-use driver_core::syscall::{KernelMessage, Message, SystemCall, SystemCallStatus};
+use iridium_kit::syscall::{KernelMessage, Message, SystemCall, SystemCallStatus};
 
 use crate::system::{gdt::PrivilegeLevel, RegisterState};
 
@@ -42,7 +42,7 @@ impl PML4 for UserPageTableLvl4 {
         let scheduler = sys_state.scheduler.get_mut().unwrap().get_mut();
         state.user_allocations.get_mut().unwrap().lock().track(
             scheduler.current_thread_id.unwrap(),
-            phys + driver_core::USER_PHYS_VIRT_OFFSET,
+            phys + iridium_kit::USER_PHYS_VIRT_OFFSET,
             4096,
         );
         phys
@@ -59,7 +59,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
         .unwrap()
         .leak();
     let ptr = s.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
-    let virt = ptr + driver_core::USER_PHYS_VIRT_OFFSET;
+    let virt = ptr + iridium_kit::USER_PHYS_VIRT_OFFSET;
     let count = (s.len() as u64 + 0xFFF) / 0x1000;
     let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
     user_allocations.track(proc_id, virt, s.len() as u64);
@@ -190,25 +190,25 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         }
         SystemCall::PortIn => 'a: {
             let port = state.rsi as u16;
-            let Ok(access_size) = driver_core::syscall::AccessSize::try_from(state.rdx) else {
+            let Ok(access_size) = iridium_kit::syscall::AccessSize::try_from(state.rdx) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
             state.rdi = match access_size {
-                driver_core::syscall::AccessSize::Byte => u8::read(port) as u64,
-                driver_core::syscall::AccessSize::Word => u16::read(port) as u64,
-                driver_core::syscall::AccessSize::DWord => u32::read(port) as u64,
+                iridium_kit::syscall::AccessSize::Byte => u8::read(port) as u64,
+                iridium_kit::syscall::AccessSize::Word => u16::read(port) as u64,
+                iridium_kit::syscall::AccessSize::DWord => u32::read(port) as u64,
             };
             SystemCallStatus::Success.into()
         }
         SystemCall::PortOut => 'a: {
             let port = state.rsi as u16;
-            let Ok(access_size) = driver_core::syscall::AccessSize::try_from(state.rcx) else {
+            let Ok(access_size) = iridium_kit::syscall::AccessSize::try_from(state.rcx) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
             match access_size {
-                driver_core::syscall::AccessSize::Byte => u8::write(port, state.rdx as u8),
-                driver_core::syscall::AccessSize::Word => u16::write(port, state.rdx as u16),
-                driver_core::syscall::AccessSize::DWord => u32::write(port, state.rdx as u32),
+                iridium_kit::syscall::AccessSize::Byte => u8::write(port, state.rdx as u8),
+                iridium_kit::syscall::AccessSize::Word => u16::write(port, state.rdx as u16),
+                iridium_kit::syscall::AccessSize::DWord => u32::write(port, state.rdx as u32),
             };
             SystemCallStatus::Success.into()
         }
@@ -246,7 +246,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
 
             process.cr3.map_pages(
                 addr,
-                addr - driver_core::USER_PHYS_VIRT_OFFSET,
+                addr - iridium_kit::USER_PHYS_VIRT_OFFSET,
                 (size + 0xFFF) / 0x1000,
                 PageTableEntry::new()
                     .with_user(true)
@@ -289,33 +289,33 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             scheduler.message_id_gen.free(id);
             SystemCallStatus::Success.into()
         }
-        SystemCall::GetRegistryEntryInfo => 'a: {
+        SystemCall::GetDTEntryInfo => 'a: {
             let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
-            let registry_tree_index = sys_state.registry_tree_index.get().unwrap().lock();
-            let Some(registry_entry) = registry_tree_index.get(&state.rsi) else {
+            let dt_index = sys_state.dt_index.get().unwrap().lock();
+            let Some(dt_entry) = dt_index.get(&state.rsi) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
-            let Ok(info_type) = driver_core::syscall::BCRegistryEntryInfoType::try_from(state.rdx) else {
+            let Ok(info_type) = iridium_kit::syscall::OSDTEntryInfoType::try_from(state.rdx) else {
                 break 'a SystemCallStatus::MalformedData.into();
             };
             let data = match info_type {
-                driver_core::syscall::BCRegistryEntryInfoType::Parent => {
-                    postcard::to_allocvec(&registry_entry.parent)
+                iridium_kit::syscall::OSDTEntryInfoType::Parent => {
+                    postcard::to_allocvec(&dt_entry.parent)
                 }
-                driver_core::syscall::BCRegistryEntryInfoType::PropertyNamed => {
+                iridium_kit::syscall::OSDTEntryInfoType::PropertyNamed => {
                     let Ok(k) = core::str::from_utf8(core::slice::from_raw_parts(
                         state.rcx as *const u8,
                         state.r8 as usize,
                     )) else {
                         break 'a SystemCallStatus::MalformedData.into();
                     };
-                    postcard::to_allocvec(&registry_entry.properties.get(k))
+                    postcard::to_allocvec(&dt_entry.properties.get(k))
                 }
             }
             .unwrap()
             .leak();
             let ptr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
-            let virt = ptr + driver_core::USER_PHYS_VIRT_OFFSET;
+            let virt = ptr + iridium_kit::USER_PHYS_VIRT_OFFSET;
             let count = (data.len() as u64 + 0xFFF) / 0x1000;
             let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
             user_allocations.track(proc_id, virt, data.len() as u64);

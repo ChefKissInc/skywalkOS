@@ -7,7 +7,7 @@ use hashbrown::HashMap;
 
 use crate::{
     acpi::ACPIPlatform,
-    system::{pmm::BitmapAllocator, state::BCRegistryEntry},
+    system::{pmm::BitmapAllocator, state::OSDTEntry},
     utils::incr_id::IncrementalIDGen,
 };
 
@@ -67,7 +67,7 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
             .leak()
     });
 
-    let mut root = BCRegistryEntry {
+    let mut root = OSDTEntry {
         id: 0,
         properties: HashMap::from([
             ("Name".to_owned(), "Root".into()),
@@ -75,9 +75,9 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
         ]),
         ..Default::default()
     };
-    let mut registry_tree_id_gen = IncrementalIDGen::new();
-    let product = BCRegistryEntry {
-        id: registry_tree_id_gen.next(),
+    let mut dt_id_gen = IncrementalIDGen::new();
+    let product = OSDTEntry {
+        id: dt_id_gen.next(),
         parent: Some(root.id),
         properties: HashMap::from([
             ("Name".to_owned(), "Product".into()),
@@ -89,12 +89,10 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     root.children.push(product.id);
 
     state
-        .registry_tree_index
+        .dt_index
         .call_once(|| spin::Mutex::new(HashMap::from([(root.id, root), (product.id, product)])));
 
-    state
-        .registry_tree_id_gen
-        .call_once(|| spin::Mutex::new(registry_tree_id_gen));
+    state.dt_id_gen.call_once(|| spin::Mutex::new(dt_id_gen));
 
     state
         .acpi

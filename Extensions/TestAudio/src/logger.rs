@@ -3,7 +3,7 @@
 
 use core::fmt::Write;
 
-use driver_core::syscall::SystemCall;
+use iridium_kit::syscall::SystemCall;
 
 pub struct KWriter;
 

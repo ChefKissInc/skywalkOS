@@ -1,10 +1,10 @@
-DCInfo (
-    identifier: "com.ChefKiss.TestAudio",
-    name: "TestAudio",
+IKInfo (
+    identifier: "com.ChefKiss.TestDrv",
+    name: "TestDrv",
     version: "0.1.0",
     description: "",
     personalities: {
-        "com.ChefKiss.TestAudio": {
+        "com.ChefKiss.TestDrv": {
             "Name": String("Root"),
         },
     },

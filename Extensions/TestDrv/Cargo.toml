@@ -2,16 +2,16 @@ cargo-features = ["different-binary-name"]
 
 [package]
 edition = "2021"
-name = "test-audio"
+name = "test-drv"
 publish = false
 version = "0.1.0"
 
 [[bin]]
-name = "test-audio"
-filename = "TestAudio"
+name = "test-drv"
+filename = "TestDrv"
 
 [dependencies]
-driver-core = { path = "../../Libraries/DriverCore" }
+iridium-kit = { path = "../../Libraries/IridiumKit" }
 log = { version = "0.4.17", features = [
     "release_max_level_debug",
     "max_level_trace",

@@ -8,7 +8,7 @@ use alloc::{
     vec::Vec,
 };
 
-use driver_core::syscall::Message;
+use iridium_kit::syscall::Message;
 
 pub mod scheduler;
 pub mod userland;
@@ -46,7 +46,7 @@ impl Thread {
                     .into(),
                 rflags: 0x202,
                 rsp: stack.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET
-                    + driver_core::USER_PHYS_VIRT_OFFSET
+                    + iridium_kit::USER_PHYS_VIRT_OFFSET
                     + stack.len() as u64,
                 ss: super::gdt::SegmentSelector::new(4, super::gdt::PrivilegeLevel::User)
                     .0

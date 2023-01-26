@@ -3,8 +3,8 @@ members = [
     "Libraries/*",
     "BootX",
     "Kernel",
-    "DCExtensions/TestAudio",
-    "DCExtensions/TestDrv",
+    "Extensions/TestAudio",
+    "Extensions/TestDrv",
 ]
 resolver = "2"
 

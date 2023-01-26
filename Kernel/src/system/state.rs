@@ -21,10 +21,10 @@ use crate::{
 pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemState::new());
 
 #[derive(Debug, Default, Clone)]
-pub struct BCRegistryEntry {
+pub struct OSDTEntry {
     pub parent: Option<u64>,
     pub id: u64,
-    pub properties: HashMap<String, driver_core::registry::BCObject>,
+    pub properties: HashMap<String, iridium_kit::dt::OSValue>,
     pub children: Vec<u64>,
 }
 
@@ -42,8 +42,8 @@ pub struct SystemState {
     pub interrupt_context: Option<super::RegisterState>,
     pub in_panic: bool,
     pub user_allocations: spin::Once<spin::Mutex<UserAllocationTracker>>,
-    pub registry_tree_index: spin::Once<spin::Mutex<HashMap<u64, BCRegistryEntry>>>,
-    pub registry_tree_id_gen: spin::Once<spin::Mutex<IncrementalIDGen>>,
+    pub dt_index: spin::Once<spin::Mutex<HashMap<u64, OSDTEntry>>>,
+    pub dt_id_gen: spin::Once<spin::Mutex<IncrementalIDGen>>,
 }
 
 impl SystemState {
@@ -64,8 +64,8 @@ impl SystemState {
             interrupt_context: None,
             in_panic: false,
             user_allocations: spin::Once::new(),
-            registry_tree_index: spin::Once::new(),
-            registry_tree_id_gen: spin::Once::new(),
+            dt_index: spin::Once::new(),
+            dt_id_gen: spin::Once::new(),
         }
     }
 }

@@ -14,7 +14,7 @@ extern crate alloc;
 use alloc::string::String;
 use core::fmt::Write;
 
-use driver_core::{port::Port, syscall::SystemCall};
+use iridium_kit::{port::Port, syscall::SystemCall};
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
