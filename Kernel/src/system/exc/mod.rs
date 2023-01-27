@@ -1,5 +1,4 @@
-// Copyright (c) ChefKiss Inc 2021-2023.
-// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2023. All rights reserved.
 
 macro_rules! exc_msg {
     ($name:expr, $msg:expr, $regs:expr) => {

@@ -1,5 +1,4 @@
-// Copyright (c) ChefKiss Inc 2021-2023.
-// This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
+// Copyright (c) ChefKiss Inc 2021-2023. All rights reserved.
 
 use acpi::tables::rsdp::RSDP;
 use amd64::paging::pml4::PML4;
