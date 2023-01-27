@@ -15,7 +15,7 @@ pub trait ModelSpecificReg: Sized {
         Self: From<u64>,
     {
         let (low, high): (u32, u32);
-        core::arch::asm!("rdmsr", in("ecx") Self::MSR_NUM, out("eax") low, out("edx") high, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("rdmsr", in("ecx") Self::MSR_NUM, out("eax") low, out("edx") high, options(nostack, preserves_flags));
         Self::from((u64::from(high) << 32) | u64::from(low))
     }
 
@@ -25,6 +25,6 @@ pub trait ModelSpecificReg: Sized {
     {
         let value = u64::from(self);
         let (low, high): (u32, u32) = (value as u32, (value >> 32) as u32);
-        core::arch::asm!("wrmsr", in("ecx") Self::MSR_NUM, in("eax") low, in("edx") high, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("wrmsr", in("ecx") Self::MSR_NUM, in("eax") low, in("edx") high, options(nostack, preserves_flags));
     }
 }

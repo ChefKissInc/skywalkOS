@@ -26,7 +26,7 @@ impl super::Timer for HighPrecisionEventTimer {
 
         while self.inner.counter_value() < target {
             unsafe {
-                core::arch::asm!("pause", options(nostack, nomem, preserves_flags));
+                core::arch::asm!("pause", options(nostack, preserves_flags));
             }
         }
     }

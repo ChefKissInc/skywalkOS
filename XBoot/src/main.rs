@@ -142,7 +142,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
             in(reg) stack_ptr,
             in(reg) kernel_main,
             in("rdi") helpers::phys_to_kern_ref(boot_info),
-            options(nostack, nomem, preserves_flags, noreturn),
+            options(nostack, preserves_flags, noreturn),
         );
     }
 }

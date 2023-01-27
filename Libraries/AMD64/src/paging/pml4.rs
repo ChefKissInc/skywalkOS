@@ -10,13 +10,13 @@ pub trait PML4: Sized {
     fn alloc_entry(&self) -> u64;
 
     unsafe fn set(&mut self) {
-        core::arch::asm!("mov cr3, {}", in(reg) self as *mut _ as u64 - Self::VIRT_OFF, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("mov cr3, {}", in(reg) self as *mut _ as u64 - Self::VIRT_OFF, options(nostack, preserves_flags));
     }
 
     #[must_use]
     unsafe fn get() -> &'static mut Self {
         let pml4: *mut Self;
-        core::arch::asm!("mov {}, cr3", out(reg) pml4, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("mov {}, cr3", out(reg) pml4, options(nostack, preserves_flags));
         pml4.as_mut().unwrap()
     }
 
@@ -69,7 +69,7 @@ pub trait PML4: Sized {
             let Some(pd) = pdp.get_or_null_entry(offs.pdp) else { return false; };
             let Some(pt) = pd.get_or_null_entry(offs.pd) else { return false; };
             *pt.get_entry(offs.pt) = super::PageTableEntry::new();
-            core::arch::asm!("invlpg {}", in(reg) virt, options(nomem, nostack, preserves_flags));
+            core::arch::asm!("invlpg [{}]", in(reg) virt, options(nostack, preserves_flags));
         }
 
         true
@@ -102,7 +102,7 @@ pub trait PML4: Sized {
             let Some(pdp) = self.get_or_null_entry(offs.pml4) else { return false; };
             let Some(pd) = pdp.get_or_null_entry(offs.pdp) else { return false; };
             *pd.get_entry(offs.pt) = super::PageTableEntry::new();
-            core::arch::asm!("invlpg {}", in(reg) virt, options(nomem, nostack, preserves_flags));
+            core::arch::asm!("invlpg [{}]", in(reg) virt, options(nostack, preserves_flags));
         }
 
         true

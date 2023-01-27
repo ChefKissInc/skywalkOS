@@ -3,7 +3,7 @@
 
 pub unsafe extern "C" fn handler(regs: &mut crate::system::RegisterState) {
     let mut cr2: u64;
-    core::arch::asm!("mov {}, cr2", out(reg) cr2, options(nomem, nostack, preserves_flags));
+    core::arch::asm!("mov {}, cr2", out(reg) cr2, options(nostack, preserves_flags));
 
     let msg = format!(
         "There was {} while {} a {} at {:#X?}.{}{}{}{}",

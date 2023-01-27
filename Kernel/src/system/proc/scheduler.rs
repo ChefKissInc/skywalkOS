@@ -67,7 +67,7 @@ impl Scheduler {
             core::arch::asm!(
                 "ltr ax",
                 in("ax") crate::system::gdt::SegmentSelector::new(5, crate::system::gdt::PrivilegeLevel::Supervisor).0,
-                options(nostack, nomem, preserves_flags),
+                options(nostack, preserves_flags),
             );
         }
 
@@ -99,7 +99,7 @@ impl Scheduler {
         let state = unsafe { crate::system::state::SYS_STATE.get().as_ref().unwrap() };
         let lapic = state.lapic.get().unwrap();
         lapic.write_timer(lapic.read_timer().with_mask(false));
-        unsafe { core::arch::asm!("int 128", options(nomem, nostack, preserves_flags)) }
+        unsafe { core::arch::asm!("int 128", options(nostack, preserves_flags)) }
     }
 
     pub fn spawn_proc(&mut self, exec_data: &[u8]) {
