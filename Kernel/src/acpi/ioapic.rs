@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss Inc 2021-2023. All rights reserved.
+// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
 use acpi::tables::madt::ic::ioapic::{IOAPICRedir, IOAPIC};
 use amd64::spec::mps::{Polarity, TriggerMode};

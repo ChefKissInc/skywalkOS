@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss Inc 2021-2023. All rights reserved.
+// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
 macro_rules! isr_stub {
     ($err:expr, $i:expr) => {

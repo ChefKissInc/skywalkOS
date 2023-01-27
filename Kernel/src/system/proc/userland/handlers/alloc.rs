@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss Inc 2021-2023. All rights reserved.
+// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
 use iridium_kit::syscall::SystemCallStatus;
