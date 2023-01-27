@@ -49,6 +49,24 @@ pub trait PML4: Sized {
         }
     }
 
+    unsafe fn virt_to_phys(&mut self, virt: u64) -> Option<u64> {
+        let offs = super::PageTableOffsets::new(virt);
+        let pdp = self.get_or_null_entry(offs.pml4)?;
+        let pd = pdp.get_or_null_entry(offs.pdp)?;
+
+        if pd.get_entry(offs.pd).huge_or_pat() {
+            Some(pd.get_entry(offs.pd).address() << 12)
+        } else {
+            let pt = pd.get_or_null_entry(offs.pd)?;
+
+            if pt.get_entry(offs.pt).present() {
+                Some(pt.get_entry(offs.pt).address() << 12)
+            } else {
+                None
+            }
+        }
+    }
+
     unsafe fn map_pages(&mut self, virt: u64, phys: u64, count: u64, flags: super::PageTableEntry) {
         for i in 0..count {
             let phys = phys + 0x1000 * i;
