@@ -62,6 +62,4 @@ SECTIONS
         __eh_frame = .;
         KEEP(*(.eh_frame));
     }
-
-    __kernel_top = .;
 }

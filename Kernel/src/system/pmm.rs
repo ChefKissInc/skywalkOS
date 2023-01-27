@@ -2,10 +2,6 @@
 
 use sulphur_dioxide::MemoryEntry;
 
-extern "C" {
-    static __kernel_top: u64;
-}
-
 pub struct BitmapAllocator {
     bitmap: &'static mut [u64],
     highest_addr: u64,
@@ -18,10 +14,6 @@ impl BitmapAllocator {
     #[inline]
     #[must_use]
     pub fn new(mmap: &'static [MemoryEntry]) -> Self {
-        let alloc_base =
-            unsafe { &__kernel_top } as *const _ as u64 - amd64::paging::KERNEL_VIRT_OFFSET;
-        trace!("alloc_base: {:#X?}", alloc_base);
-
         let mut highest_addr = 0;
 
         // Find the highest available address
