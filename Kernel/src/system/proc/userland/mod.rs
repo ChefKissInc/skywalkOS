@@ -168,9 +168,6 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             SystemCallStatus::Success.into()
         }
         SystemCall::RegisterProvider => 'a: {
-            if scheduler.providers.contains_key(&state.rsi) {
-                break 'a SystemCallStatus::MalformedData.into();
-            }
             let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
             if scheduler.providers.try_insert(state.rsi, proc_id).is_err() {
                 break 'a SystemCallStatus::InvalidRequest.into();
