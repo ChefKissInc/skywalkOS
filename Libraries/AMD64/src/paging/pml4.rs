@@ -26,11 +26,8 @@ pub trait PML4: Sized {
         offset: u64,
         flags: super::PageTableEntry,
     ) -> &mut Self {
-        let is_present = self.get_entry(offset).present();
-
-        if !is_present {
-            let ent = flags.with_address(self.alloc_entry() >> 12);
-            *self.get_entry(offset) = ent;
+        if !self.get_entry(offset).present() {
+            *self.get_entry(offset) = flags.with_address(self.alloc_entry() >> 12);
         }
 
         (((self.get_entry(offset).address() << 12) + Self::VIRT_OFF) as *mut Self)
@@ -52,36 +49,30 @@ pub trait PML4: Sized {
         }
     }
 
-    unsafe fn virt_to_phys(&mut self, virt: u64) -> Option<u64> {
-        let offs = super::PageTableOffsets::new(virt);
-        let pdp = self.get_or_null_entry(offs.pml4)?;
-        let pd = pdp.get_or_null_entry(offs.pdp)?;
-
-        if pd.get_entry(offs.pd).huge_or_pat() {
-            Some(pd.get_entry(offs.pd).address() << 12)
-        } else {
-            let pt = pd.get_or_null_entry(offs.pd)?;
-
-            if pt.get_entry(offs.pt).present() {
-                Some(pt.get_entry(offs.pt).address() << 12)
-            } else {
-                None
-            }
-        }
-    }
-
     unsafe fn map_pages(&mut self, virt: u64, phys: u64, count: u64, flags: super::PageTableEntry) {
         for i in 0..count {
-            let physical_address = phys + 0x1000 * i;
-            let virtual_address = virt + 0x1000 * i;
-            let offs = super::PageTableOffsets::new(virtual_address);
+            let phys = phys + 0x1000 * i;
+            let virt = virt + 0x1000 * i;
+            let offs = super::PageTableOffsets::new(virt);
             let pdp = self.get_or_alloc_entry(offs.pml4, flags);
             let pd = pdp.get_or_alloc_entry(offs.pdp, flags);
             let pt = pd.get_or_alloc_entry(offs.pd, flags);
-            *pt.get_entry(offs.pt) = flags
-                .with_present(true)
-                .with_address(physical_address >> 12);
+            *pt.get_entry(offs.pt) = flags.with_present(true).with_address(phys >> 12);
         }
+    }
+
+    unsafe fn unmap_pages(&mut self, virt: u64, count: u64) -> bool {
+        for i in 0..count {
+            let virt = virt + 0x1000 * i;
+            let offs = super::PageTableOffsets::new(virt);
+            let Some(pdp) = self.get_or_null_entry(offs.pml4) else { return false; };
+            let Some(pd) = pdp.get_or_null_entry(offs.pdp) else { return false; };
+            let Some(pt) = pd.get_or_null_entry(offs.pd) else { return false; };
+            *pt.get_entry(offs.pt) = super::PageTableEntry::new();
+            core::arch::asm!("invlpg {}", in(reg) virt, options(nomem, nostack, preserves_flags));
+        }
+
+        true
     }
 
     unsafe fn map_huge_pages(
@@ -92,16 +83,29 @@ pub trait PML4: Sized {
         flags: super::PageTableEntry,
     ) {
         for i in 0..count {
-            let physical_address = phys + 0x20_0000 * i;
-            let virtual_address = virt + 0x20_0000 * i;
-            let offs = super::PageTableOffsets::new(virtual_address);
+            let phys = phys + 0x20_0000 * i;
+            let virt = virt + 0x20_0000 * i;
+            let offs = super::PageTableOffsets::new(virt);
             let pdp = self.get_or_alloc_entry(offs.pml4, flags);
             let pd = pdp.get_or_alloc_entry(offs.pdp, flags);
             *pd.get_entry(offs.pd) = flags
                 .with_present(true)
                 .with_huge_or_pat(true)
-                .with_address(physical_address >> 12);
+                .with_address(phys >> 12);
         }
+    }
+
+    unsafe fn unmap_huge_pages(&mut self, virt: u64, count: u64) -> bool {
+        for i in 0..count {
+            let virt = virt + 0x20_0000 * i;
+            let offs = super::PageTableOffsets::new(virt);
+            let Some(pdp) = self.get_or_null_entry(offs.pml4) else { return false; };
+            let Some(pd) = pdp.get_or_null_entry(offs.pdp) else { return false; };
+            *pd.get_entry(offs.pt) = super::PageTableEntry::new();
+            core::arch::asm!("invlpg {}", in(reg) virt, options(nomem, nostack, preserves_flags));
+        }
+
+        true
     }
 
     unsafe fn map_higher_half(&mut self) {
