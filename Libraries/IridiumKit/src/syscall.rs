@@ -49,13 +49,13 @@ pub enum SystemCall {
     Exit,
     Yield,
     RegisterProvider,
-    GetProvidingProcess,
+    GetProviderForProcess,
     PortIn,
     PortOut,
     RegisterIRQHandler,
     Allocate,
     Free,
-    Ack,
+    AckMessage,
     GetDTEntryInfo,
 }
 
@@ -153,7 +153,7 @@ impl SystemCall {
         let (mut ret, mut id): (u64, u64);
         core::arch::asm!(
             "int 249",
-            in("rdi") Self::GetProvidingProcess as u64,
+            in("rdi") Self::GetProviderForProcess as u64,
             in("rsi") provider,
             out("rax") ret,
             lateout("rdi") id,
@@ -291,11 +291,11 @@ impl SystemCall {
         SystemCallStatus::try_from(ret).unwrap().as_result()
     }
 
-    pub unsafe fn ack(id: u64) -> Result<(), SystemCallStatus> {
+    pub unsafe fn ack_message(id: u64) -> Result<(), SystemCallStatus> {
         let mut ret: u64;
         core::arch::asm!(
             "int 249",
-            in("rdi") Self::Ack as u64,
+            in("rdi") Self::AckMessage as u64,
             in("rsi") id,
             out("rax") ret,
             options(nostack, preserves_flags),

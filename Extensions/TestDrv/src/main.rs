@@ -175,6 +175,6 @@ extern "C" fn _start() -> ! {
                 };
             }
         }
-        unsafe { SystemCall::ack(msg.id).unwrap() }
+        unsafe { SystemCall::ack_message(msg.id).unwrap() }
     }
 }
