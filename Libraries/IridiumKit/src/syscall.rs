@@ -47,7 +47,7 @@ pub enum SystemCall {
     ReceiveMessage,
     SendMessage,
     Exit,
-    Skip,
+    Yield,
     RegisterProvider,
     GetProvidingProcess,
     PortIn,
@@ -134,7 +134,7 @@ impl SystemCall {
     }
 
     pub unsafe fn skip() {
-        core::arch::asm!("int 249", in("rdi") Self::Skip as u64, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("int 249", in("rdi") Self::Yield as u64, options(nomem, nostack, preserves_flags));
     }
 
     pub unsafe fn register_provider(provider: u64) -> Result<(), SystemCallStatus> {

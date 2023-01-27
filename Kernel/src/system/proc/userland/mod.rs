@@ -140,7 +140,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             super::scheduler::schedule(state);
             return;
         }
-        SystemCall::Skip => {
+        SystemCall::Yield => {
             drop(scheduler);
             super::scheduler::schedule(state);
             return;
