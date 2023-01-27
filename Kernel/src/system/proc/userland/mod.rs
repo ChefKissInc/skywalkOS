@@ -260,13 +260,27 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
             SystemCallStatus::Success.into()
         }
         SystemCall::Free => {
-            let ptr = state.rsi;
+            let addr = state.rsi;
+            let size = sys_state
+                .user_allocations
+                .get_mut()
+                .unwrap()
+                .lock()
+                .allocations
+                .get(&addr)
+                .unwrap()
+                .1;
             sys_state
                 .user_allocations
                 .get_mut()
                 .unwrap()
                 .lock()
-                .free(ptr);
+                .free(addr);
+
+            let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
+            let process = scheduler.processes.get_mut(&proc_id).unwrap();
+            process.cr3.unmap_pages(addr, (size + 0xFFF) / 0x1000);
+
             SystemCallStatus::Success.into()
         }
         SystemCall::Ack => 'a: {
