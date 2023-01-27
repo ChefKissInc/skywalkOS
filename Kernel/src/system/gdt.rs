@@ -4,51 +4,6 @@ use core::cell::SyncUnsafeCell;
 
 use modular_bitfield::prelude::*;
 
-#[derive(Debug, Clone, Copy)]
-#[repr(C, packed)]
-pub struct GDTData {
-    _null: SegmentDescriptor,
-    _code_segment: SegmentDescriptor,
-    _data_segment: SegmentDescriptor,
-    _user_code_segment: SegmentDescriptor,
-    _user_data_segment: SegmentDescriptor,
-    pub task_segment: TaskSegmentDescriptor,
-}
-
-impl GDTData {
-    #[inline]
-    #[must_use]
-    pub const fn new() -> Self {
-        Self {
-            _null: SegmentDescriptor::null(),
-            _code_segment: SegmentDescriptor::new_from_ty(
-                DescriptorType::CodeSegment,
-                PrivilegeLevel::Supervisor,
-            ),
-            _data_segment: SegmentDescriptor::new_from_ty(
-                DescriptorType::DataSegment,
-                PrivilegeLevel::Supervisor,
-            ),
-            _user_code_segment: SegmentDescriptor::new_from_ty(
-                DescriptorType::CodeSegment,
-                PrivilegeLevel::User,
-            ),
-            _user_data_segment: SegmentDescriptor::new_from_ty(
-                DescriptorType::DataSegment,
-                PrivilegeLevel::User,
-            ),
-            task_segment: TaskSegmentDescriptor::null(),
-        }
-    }
-}
-
-pub static GDT: SyncUnsafeCell<GDTData> = SyncUnsafeCell::new(GDTData::new());
-
-pub static GDTR: GDTReg = GDTReg {
-    limit: (core::mem::size_of_val(&GDT) - 1) as u16,
-    addr: GDT.get(),
-};
-
 #[derive(Default, BitfieldSpecifier, Debug, Clone, Copy)]
 #[bits = 2]
 #[repr(u16)]
@@ -110,7 +65,7 @@ pub struct SegmentDescriptor {
 impl SegmentDescriptor {
     #[inline]
     #[must_use]
-    pub const fn null() -> Self {
+    const fn null() -> Self {
         Self::new(
             0,
             DescriptorType::None,
@@ -122,7 +77,7 @@ impl SegmentDescriptor {
 
     #[inline]
     #[must_use]
-    pub const fn new(
+    const fn new(
         limit_low: u16,
         ty: DescriptorType,
         dpl: PrivilegeLevel,
@@ -143,7 +98,7 @@ impl SegmentDescriptor {
 
     #[inline]
     #[must_use]
-    pub const fn new_from_ty(ty: DescriptorType, dpl: PrivilegeLevel) -> Self {
+    const fn new_from_ty(ty: DescriptorType, dpl: PrivilegeLevel) -> Self {
         match ty {
             DescriptorType::CodeSegment => Self::new(0, ty, dpl, true, true),
             _ => Self::new(0, ty, dpl, true, false),
@@ -178,6 +133,51 @@ impl TaskSegmentDescriptor {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C, packed)]
+pub struct GDTData {
+    _null: SegmentDescriptor,
+    _code_segment: SegmentDescriptor,
+    _data_segment: SegmentDescriptor,
+    _user_code_segment: SegmentDescriptor,
+    _user_data_segment: SegmentDescriptor,
+    pub task_segment: TaskSegmentDescriptor,
+}
+
+impl GDTData {
+    #[inline]
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            _null: SegmentDescriptor::null(),
+            _code_segment: SegmentDescriptor::new_from_ty(
+                DescriptorType::CodeSegment,
+                PrivilegeLevel::Supervisor,
+            ),
+            _data_segment: SegmentDescriptor::new_from_ty(
+                DescriptorType::DataSegment,
+                PrivilegeLevel::Supervisor,
+            ),
+            _user_code_segment: SegmentDescriptor::new_from_ty(
+                DescriptorType::CodeSegment,
+                PrivilegeLevel::User,
+            ),
+            _user_data_segment: SegmentDescriptor::new_from_ty(
+                DescriptorType::DataSegment,
+                PrivilegeLevel::User,
+            ),
+            task_segment: TaskSegmentDescriptor::null(),
+        }
+    }
+}
+
+pub static GDT: SyncUnsafeCell<GDTData> = SyncUnsafeCell::new(GDTData::new());
+
+pub static GDTR: GDTReg = GDTReg {
+    limit: (core::mem::size_of_val(&GDT) - 1) as u16,
+    addr: GDT.get(),
+};
 
 #[repr(C, packed)]
 pub struct GDTReg {
