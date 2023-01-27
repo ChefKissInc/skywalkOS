@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
 use self::{
-    ioapic::{InterruptSourceOverride, NMISource, IOAPIC},
+    ioapic::{InterruptSourceOverride, IoApic, NMISource},
     proc_lapic::{LocalAPICAddrOverride, LocalAPICNMI, ProcessorLocalAPIC},
 };
 
@@ -11,22 +11,22 @@ pub mod proc_lapic;
 #[derive(Debug)]
 pub enum InterruptController {
     ProcessorLocalAPIC(&'static ProcessorLocalAPIC),
-    InputOutputAPIC(&'static IOAPIC),
+    InputOutputAPIC(&'static IoApic),
     InterruptSourceOverride(&'static InterruptSourceOverride),
-    NMISource(&'static NMISource),
-    LocalApicNMI(&'static LocalAPICNMI),
-    LocalAPICAddrOverride(&'static LocalAPICAddrOverride),
-    InputOutputSAPIC(&'static ICHeader),
+    NmiSrc(&'static NMISource),
+    LApicNmi(&'static LocalAPICNMI),
+    LApicAddrOverride(&'static LocalAPICAddrOverride),
+    IoSapic(&'static ICHeader),
     LocalSapic(&'static ICHeader),
     PlatformInterruptSrcs(&'static ICHeader),
     ProcessorLocalx2APIC(&'static ICHeader),
     Localx2APICNmi(&'static ICHeader),
-    GICCPU(&'static ICHeader),
-    GICDist(&'static ICHeader),
-    GICMSIFrame(&'static ICHeader),
-    GICRedist(&'static ICHeader),
-    GICIts(&'static ICHeader),
-    MPWakeup(&'static ICHeader),
+    GicCpu(&'static ICHeader),
+    GicDist(&'static ICHeader),
+    GicMsiFrame(&'static ICHeader),
+    GicRedist(&'static ICHeader),
+    GicIts(&'static ICHeader),
+    MpWakeup(&'static ICHeader),
     Reserved(&'static ICHeader),
     OemReserved(&'static ICHeader),
 }

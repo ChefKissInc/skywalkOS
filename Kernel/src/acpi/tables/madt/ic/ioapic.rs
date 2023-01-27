@@ -5,7 +5,7 @@ use num_enum::IntoPrimitive;
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C, packed)]
-pub struct IOAPIC {
+pub struct IoApic {
     header: super::ICHeader,
     pub id: u8,
     __: u8,
@@ -13,7 +13,7 @@ pub struct IOAPIC {
     pub gsi_base: u32,
 }
 
-impl core::ops::Deref for IOAPIC {
+impl core::ops::Deref for IoApic {
     type Target = super::ICHeader;
 
     fn deref(&self) -> &Self::Target {
@@ -36,8 +36,8 @@ pub enum IOAPICReg {
 pub enum DeliveryMode {
     Fixed,
     LowestPriority,
-    SMI,
-    NMI = 4,
+    Smi,
+    Nmi = 4,
     Init,
     ExtINT = 7,
 }
@@ -73,7 +73,7 @@ pub struct IOAPICVer {
     __: u8,
 }
 
-impl IOAPIC {
+impl IoApic {
     #[must_use]
     const fn base(&self, off: u8) -> *mut u32 {
         (self.address as u64 + off as u64 + amd64::paging::PHYS_VIRT_OFFSET) as *mut u32

@@ -2,21 +2,20 @@
 
 use alloc::vec::Vec;
 
-use acpi::tables::SDTHeader;
-
 pub mod apic;
 pub mod ioapic;
 pub mod madt;
+pub mod tables;
 
-pub struct ACPIPlatform {
+pub struct Acpi {
     pub version: u8,
-    pub tables: Vec<&'static SDTHeader>,
+    pub tables: Vec<&'static tables::SdtHeader>,
 }
 
-impl ACPIPlatform {
+impl Acpi {
     #[inline]
     #[must_use]
-    pub fn new(rsdp: &'static acpi::tables::rsdp::RSDP) -> Self {
+    pub fn new(rsdp: &'static tables::rsdp::Rsdp) -> Self {
         let mut tables = Vec::new();
 
         for ent in rsdp.as_type().iter() {
@@ -39,13 +38,16 @@ impl ACPIPlatform {
         self.tables
             .iter()
             .find(|&a| a.signature() == signature)
-            .map(|&v| unsafe { (v as *const SDTHeader).cast::<T>().as_ref().unwrap() })
+            .map(|&v| unsafe {
+                (v as *const tables::SdtHeader)
+                    .cast::<T>()
+                    .as_ref()
+                    .unwrap()
+            })
     }
 }
 
-pub fn get_hpet(
-    state: &mut crate::system::state::SystemState,
-) -> super::timer::hpet::HighPrecisionEventTimer {
+pub fn get_hpet(state: &mut crate::system::state::SystemState) -> super::timer::hpet::Hpet {
     let acpi = state.acpi.get_mut().unwrap();
     let pml4 = state.pml4.get_mut().unwrap();
 
@@ -60,7 +62,7 @@ pub fn get_hpet(
                     .with_present(true)
                     .with_writable(true),
             );
-            super::timer::hpet::HighPrecisionEventTimer::new(v)
+            super::timer::hpet::Hpet::new(v)
         })
         .unwrap()
 }

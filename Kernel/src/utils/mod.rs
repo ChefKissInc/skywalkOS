@@ -5,7 +5,7 @@ use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 use hashbrown::HashMap;
 
 use crate::{
-    acpi::ACPIPlatform,
+    acpi::{tables::rsdp::Rsdp, Acpi},
     system::{pmm::BitmapAllocator, state::OSDTEntry},
     utils::incr_id::IncrementalIDGen,
 };
@@ -93,9 +93,11 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
 
     state.dt_id_gen.call_once(|| spin::Mutex::new(dt_id_gen));
 
-    state
-        .acpi
-        .call_once(|| ACPIPlatform::new(boot_info.acpi_rsdp));
+    unsafe {
+        state
+            .acpi
+            .call_once(|| Acpi::new(boot_info.acpi_rsdp.cast::<Rsdp>().as_ref().unwrap()));
+    }
 
     state.dc_cache = Some(boot_info.dc_cache.to_vec());
 }

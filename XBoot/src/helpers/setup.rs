@@ -1,6 +1,5 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use acpi::tables::rsdp::RSDP;
 use amd64::paging::pml4::PML4;
 use uefi::{
     proto::console::{gop::GraphicsOutput, text::Color},
@@ -59,9 +58,9 @@ pub fn get_gop<'a>() -> ScopedProtocol<'a, GraphicsOutput<'a>> {
     }
 }
 
-pub fn get_rsdp() -> &'static RSDP {
+pub fn get_rsdp() -> *const u8 {
     let mut iter = unsafe { uefi_services::system_table().as_mut().config_table().iter() };
-    let rsdp: *const RSDP = iter
+    let rsdp: *const u8 = iter
         .find(|ent| ent.guid == uefi::table::cfg::ACPI2_GUID)
         .unwrap_or_else(|| {
             iter.find(|ent| ent.guid == uefi::table::cfg::ACPI_GUID)
@@ -69,5 +68,5 @@ pub fn get_rsdp() -> &'static RSDP {
         })
         .address
         .cast();
-    super::phys_to_kern_ref(unsafe { rsdp.as_ref().unwrap() })
+    super::pa_to_kern_va(rsdp)
 }

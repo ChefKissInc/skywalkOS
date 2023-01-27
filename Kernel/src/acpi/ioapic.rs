@@ -1,7 +1,8 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use acpi::tables::madt::ic::ioapic::{IOAPICRedir, IOAPIC};
 use amd64::spec::mps::{Polarity, TriggerMode};
+
+use super::tables::madt::ic::ioapic::{IOAPICRedir, IoApic};
 
 pub fn wire_legacy_irq(irq: u8, masked: bool) {
     let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
@@ -61,7 +62,7 @@ pub fn set_irq_mask(irq: u8, masked: bool) {
     );
 }
 
-pub fn find_for_gsi(madt: &super::madt::MADTData, gsi: u32) -> Option<&'static IOAPIC> {
+pub fn find_for_gsi(madt: &super::madt::MADTData, gsi: u32) -> Option<&'static IoApic> {
     madt.ioapics
         .iter()
         .find(|ioapic| {

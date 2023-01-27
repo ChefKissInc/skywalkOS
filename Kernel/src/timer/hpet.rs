@@ -1,16 +1,16 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use acpi::tables::hpet::{regs::GeneralConfiguration, HPET};
+use crate::acpi::tables::hpet::{regs::GeneralConfiguration, Hpet as HpetInner};
 
-pub struct HighPrecisionEventTimer {
-    inner: &'static HPET,
+pub struct Hpet {
+    inner: &'static HpetInner,
     clk: u64,
 }
 
-impl HighPrecisionEventTimer {
+impl Hpet {
     #[inline]
     #[must_use]
-    pub fn new(hpet: &'static HPET) -> Self {
+    pub fn new(hpet: &'static HpetInner) -> Self {
         let clk = u64::from(hpet.capabilities().clk_period());
         hpet.set_config(GeneralConfiguration::new());
         hpet.set_counter_value(0);
@@ -19,7 +19,7 @@ impl HighPrecisionEventTimer {
     }
 }
 
-impl super::Timer for HighPrecisionEventTimer {
+impl super::Timer for Hpet {
     fn sleep(&self, ms: u64) {
         let target = self.inner.counter_value() + (ms * 1_000_000_000_000) / self.clk;
 

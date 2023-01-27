@@ -5,4 +5,3 @@ publish = false
 version = "0.1.0"
 
 [dependencies]
-acpi = { path = "../ACPI" }

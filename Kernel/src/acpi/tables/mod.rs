@@ -2,14 +2,13 @@
 
 pub mod hpet;
 pub mod madt;
-pub mod mcfg;
 pub mod rsdp;
 pub mod rsdt;
 pub mod xsdt;
 
 #[repr(C, packed)]
 #[derive(Clone, Copy)]
-pub struct SDTHeader {
+pub struct SdtHeader {
     signature: [u8; 4],
     length: u32,
     pub revision: u8,
@@ -21,7 +20,7 @@ pub struct SDTHeader {
     pub creator_revision: u32,
 }
 
-impl SDTHeader {
+impl SdtHeader {
     #[must_use]
     pub fn validate(&self) -> bool {
         let bytes = unsafe {
@@ -58,7 +57,7 @@ impl SDTHeader {
     }
 }
 
-impl core::fmt::Debug for SDTHeader {
+impl core::fmt::Debug for SdtHeader {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let rev = self.oem_revision;
         let cr_rev = self.creator_revision;

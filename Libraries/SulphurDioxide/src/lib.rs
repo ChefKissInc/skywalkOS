@@ -92,7 +92,7 @@ pub struct BootInfo {
     pub settings: BootSettings,
     pub memory_map: &'static [MemoryEntry],
     pub frame_buffer: Option<&'static FrameBufferInfo>,
-    pub acpi_rsdp: &'static acpi::tables::rsdp::RSDP,
+    pub acpi_rsdp: *const u8,
     pub dc_cache: &'static [u8],
 }
 
@@ -103,7 +103,7 @@ impl BootInfo {
         kern_symbols: &'static [KernSymbol],
         settings: BootSettings,
         frame_buffer: Option<&'static FrameBufferInfo>,
-        acpi_rsdp: &'static acpi::tables::rsdp::RSDP,
+        acpi_rsdp: *const u8,
         dc_cache: &'static [u8],
     ) -> Self {
         Self {

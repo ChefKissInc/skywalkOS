@@ -2,16 +2,17 @@
 
 use alloc::vec::Vec;
 
-use acpi::tables::madt::ic::{
-    ioapic::{InterruptSourceOverride, IOAPIC},
+use amd64::paging::PageTableEntry;
+
+use super::tables::madt::ic::{
+    ioapic::{InterruptSourceOverride, IoApic},
     proc_lapic::ProcessorLocalAPIC,
     InterruptController,
 };
-use amd64::paging::PageTableEntry;
 
 pub struct MADTData {
     pub proc_lapics: Vec<&'static ProcessorLocalAPIC>,
-    pub ioapics: Vec<&'static IOAPIC>,
+    pub ioapics: Vec<&'static IoApic>,
     pub isos: Vec<&'static InterruptSourceOverride>,
     pub lapic_addr: u64,
 }
@@ -19,7 +20,7 @@ pub struct MADTData {
 impl MADTData {
     #[inline]
     #[must_use]
-    pub fn new(madt: &'static acpi::tables::madt::MADT) -> Self {
+    pub fn new(madt: &'static super::tables::madt::Madt) -> Self {
         // Disable PIC
         if madt.flags.pcat_compat() {
             crate::intrs::pic::ProgrammableInterruptController::new().remap_and_disable();
@@ -34,7 +35,7 @@ impl MADTData {
             madt.local_ic_addr()
         };
 
-        for ent in madt.into_iter() {
+        for ent in madt.as_iter() {
             match ent {
                 InterruptController::ProcessorLocalAPIC(lapic) => {
                     trace!("Found Local APIC: {:#X?}", lapic);
@@ -67,7 +68,7 @@ impl MADTData {
                     trace!("Found Interrupt Source Override: {:#X?}", iso);
                     isos.push(iso);
                 }
-                InterruptController::LocalAPICAddrOverride(a) => {
+                InterruptController::LApicAddrOverride(a) => {
                     trace!("Found Local APIC Address Override: {:#X?}", a);
                     lapic_addr = a.addr;
                 }

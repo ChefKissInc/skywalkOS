@@ -13,7 +13,7 @@ use super::{
     vmm::PageTableLvl4,
 };
 use crate::{
-    acpi::{apic::LocalAPIC, madt::MADTData, ACPIPlatform},
+    acpi::{apic::LocalAPIC, madt::MADTData, Acpi},
     utils::incr_id::IncrementalIDGen,
 };
 
@@ -34,7 +34,7 @@ pub struct SystemState {
     pub pml4: spin::Once<&'static mut PageTableLvl4>,
     pub dc_cache: Option<Vec<u8>>,
     pub terminal: Option<Terminal>,
-    pub acpi: spin::Once<ACPIPlatform>,
+    pub acpi: spin::Once<Acpi>,
     pub madt: spin::Once<spin::Mutex<MADTData>>,
     pub lapic: spin::Once<LocalAPIC>,
     pub scheduler: spin::Once<spin::Mutex<Scheduler>>,
