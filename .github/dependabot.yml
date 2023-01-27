@@ -7,13 +7,6 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Libraries/ACPI"
-    labels:
-      - "Enhancement"
-      - "Project:ACPI"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "cargo"
     directory: "/Libraries/AMD64"
     labels:
       - "Enhancement"
