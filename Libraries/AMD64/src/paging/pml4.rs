@@ -57,7 +57,7 @@ pub trait PML4: Sized {
             let pdp = self.get_or_alloc_entry(offs.pml4, flags);
             let pd = pdp.get_or_alloc_entry(offs.pdp, flags);
             let pt = pd.get_or_alloc_entry(offs.pd, flags);
-            *pt.get_entry(offs.pt) = flags.with_present(true).with_address(phys >> 12);
+            *pt.get_entry(offs.pt) = flags.with_address(phys >> 12);
         }
     }
 
@@ -88,10 +88,7 @@ pub trait PML4: Sized {
             let offs = super::PageTableOffsets::new(virt);
             let pdp = self.get_or_alloc_entry(offs.pml4, flags);
             let pd = pdp.get_or_alloc_entry(offs.pdp, flags);
-            *pd.get_entry(offs.pd) = flags
-                .with_present(true)
-                .with_huge_or_pat(true)
-                .with_address(phys >> 12);
+            *pd.get_entry(offs.pd) = flags.with_huge_or_pat(true).with_address(phys >> 12);
         }
     }
 

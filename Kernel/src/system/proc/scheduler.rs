@@ -172,9 +172,9 @@ impl Scheduler {
                 virt_addr - iridium_kit::USER_PHYS_VIRT_OFFSET,
                 count,
                 PageTableEntry::new()
-                    .with_user(true)
+                    .with_present(true)
                     .with_writable(true)
-                    .with_present(true),
+                    .with_user(true),
             );
             let stack_addr = thread.stack.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
             proc.cr3.map_pages(
@@ -182,9 +182,9 @@ impl Scheduler {
                 stack_addr,
                 (thread.stack.len() as u64 + 0xFFF) / 0x1000,
                 PageTableEntry::new()
-                    .with_user(true)
+                    .with_present(true)
                     .with_writable(true)
-                    .with_present(true),
+                    .with_user(true),
             );
         }
         self.current_thread_id = prev;

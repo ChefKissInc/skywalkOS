@@ -74,7 +74,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
         virt,
         ptr,
         count,
-        PageTableEntry::new().with_user(true).with_present(true),
+        PageTableEntry::new().with_present(true).with_user(true),
     );
     user_allocations.track_msg(msg.id, virt);
     process.messages.push_front(msg);
@@ -249,9 +249,9 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 addr - iridium_kit::USER_PHYS_VIRT_OFFSET,
                 (size + 0xFFF) / 0x1000,
                 PageTableEntry::new()
-                    .with_user(true)
                     .with_writable(true)
-                    .with_present(true),
+                    .with_present(true)
+                    .with_user(true),
             );
 
             core::ptr::write_bytes(addr as *mut u8, 0, ((size + 0xFFF) / 0x1000 * 0x1000) as _);
@@ -339,7 +339,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
                 virt,
                 ptr,
                 count,
-                PageTableEntry::new().with_user(true).with_present(true),
+                PageTableEntry::new().with_present(true).with_user(true),
             );
             state.rdi = virt;
             state.rsi = data.len() as u64;
