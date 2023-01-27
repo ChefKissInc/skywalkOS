@@ -383,9 +383,7 @@ impl AC97 {
     }
 
     pub fn play_audio(&mut self, data: &[u8]) {
-        for a in data {
-            self.buf.push_back(*a);
-        }
+        self.buf.extend(data.iter().copied());
         self.start_playback();
     }
 }
@@ -410,7 +408,7 @@ extern "C" fn _start() -> ! {
                 this.playing = false;
             } else {
                 if this.buf.len() < 0xFFFE * 2 {
-                    this.buf.reserve(0xFFFE * 2 - this.buf.len() + 1);
+                    this.buf.resize(0xFFFE * 2 - this.buf.len() + 1, 0);
                 }
                 this.buf.drain(0..0xFFFE * 2);
                 unsafe {
