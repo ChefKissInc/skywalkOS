@@ -49,7 +49,7 @@ pub trait PML4: Sized {
         }
     }
 
-    unsafe fn virt_to_phys(&mut self, virt: u64) -> Option<u64> {
+    unsafe fn virt_to_entry_addr(&mut self, virt: u64) -> Option<u64> {
         let offs = super::PageTableOffsets::new(virt);
         let pdp = self.get_or_null_entry(offs.pml4)?;
         let pd = pdp.get_or_null_entry(offs.pdp)?;

@@ -45,7 +45,7 @@ fn test_map_higher_half_phys() {
 
         for i in 0..2048 {
             assert_eq!(
-                pml4.virt_to_phys(amd64::paging::PHYS_VIRT_OFFSET + 0x20_0000 * i),
+                pml4.virt_to_entry_addr(amd64::paging::PHYS_VIRT_OFFSET + 0x20_0000 * i),
                 Some(0x20_0000 * i)
             );
         }
@@ -60,7 +60,7 @@ fn test_map_higher_half_kern() {
 
         for i in 0..1024 {
             assert_eq!(
-                pml4.virt_to_phys(amd64::paging::KERNEL_VIRT_OFFSET + 0x20_0000 * i),
+                pml4.virt_to_entry_addr(amd64::paging::KERNEL_VIRT_OFFSET + 0x20_0000 * i),
                 Some(0x20_0000 * i)
             );
         }
