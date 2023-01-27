@@ -21,7 +21,7 @@ impl BitmapAllocator {
             match mmap_ent {
                 MemoryEntry::Usable(v) | MemoryEntry::BootLoaderReclaimable(v) => {
                     let top = v.base + v.length;
-                    trace!("{:X?}, top: {:#X?}", mmap_ent, top);
+                    debug!("{:X?}, top: {:#X?}", mmap_ent, top);
 
                     if top > highest_addr {
                         highest_addr = top;
@@ -32,10 +32,9 @@ impl BitmapAllocator {
         }
 
         let bitmap_sz = (highest_addr / 0x1000) / 8;
-        trace!(
+        debug!(
             "highest_page: {:#X?}, bitmap_sz: {:#X?}",
-            highest_addr,
-            bitmap_sz
+            highest_addr, bitmap_sz
         );
 
         let mut bitmap = Default::default();
@@ -62,7 +61,7 @@ impl BitmapAllocator {
         // Populate the bitmap
         for mmap_ent in mmap {
             if let MemoryEntry::Usable(v) = mmap_ent {
-                trace!("Base: {:#X?}, End: {:#X?}", v.base, v.base + v.length);
+                debug!("Base: {:#X?}, End: {:#X?}", v.base, v.base + v.length);
 
                 let v = if v.base == bitmap.as_ptr() as u64 {
                     let mut v = *v;

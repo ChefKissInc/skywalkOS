@@ -134,7 +134,7 @@ extern "C" fn _start() -> ! {
     let this = PS2Ctl::new();
     this.init();
     let mut s = String::new();
-    write!(logger::KWriter, "> ").unwrap();
+    write!(logger::KWriter, "test-drv > ").unwrap();
     loop {
         let Some(msg) = (unsafe { SystemCall::receive_message().unwrap() }) else {
             unsafe { SystemCall::skip() };
@@ -168,7 +168,7 @@ extern "C" fn _start() -> ! {
                         s.push(ch);
                     } else {
                         info!("You typed: {}", s);
-                        write!(logger::KWriter, "> ").unwrap();
+                        write!(logger::KWriter, "test-drv > ").unwrap();
                         s.clear();
                     }
                 };

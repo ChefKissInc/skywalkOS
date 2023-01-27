@@ -38,11 +38,11 @@ impl MADTData {
         for ent in madt.as_iter() {
             match ent {
                 InterruptController::ProcessorLocalAPIC(lapic) => {
-                    trace!("Found Local APIC: {:#X?}", lapic);
+                    debug!("Found Local APIC: {:#X?}", lapic);
                     proc_lapics.push(lapic);
                 }
                 InterruptController::InputOutputAPIC(ioapic) => {
-                    trace!(
+                    debug!(
                         "Found I/O APIC with ver {:#X?}: {:#X?}",
                         ioapic.read_ver(),
                         ioapic,
@@ -65,14 +65,14 @@ impl MADTData {
                     ioapics.push(ioapic);
                 }
                 InterruptController::InterruptSourceOverride(iso) => {
-                    trace!("Found Interrupt Source Override: {:#X?}", iso);
+                    debug!("Found Interrupt Source Override: {:#X?}", iso);
                     isos.push(iso);
                 }
                 InterruptController::LApicAddrOverride(a) => {
-                    trace!("Found Local APIC Address Override: {:#X?}", a);
+                    debug!("Found Local APIC Address Override: {:#X?}", a);
                     lapic_addr = a.addr;
                 }
-                rest => trace!("Ignoring {:X?}", rest),
+                rest => debug!("Ignoring {:X?}", rest),
             }
         }
 
