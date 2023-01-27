@@ -69,11 +69,11 @@ pub struct Process {
 impl Process {
     #[inline]
     #[must_use]
-    pub fn new(path: &str, cwd: &str) -> Self {
+    pub fn new(proc_id: u64, path: &str, cwd: &str) -> Self {
         Self {
             path: path.to_string(),
             cwd: cwd.to_string(),
-            cr3: Box::new(userland::page_table::UserPML4::new()),
+            cr3: Box::new(userland::page_table::UserPML4::new(proc_id)),
             messages: VecDeque::new(),
         }
     }

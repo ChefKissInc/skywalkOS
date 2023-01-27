@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
 #[repr(u64)]
+#[must_use]
 pub enum SystemCallStatus {
     Success,
     InvalidRequest,
