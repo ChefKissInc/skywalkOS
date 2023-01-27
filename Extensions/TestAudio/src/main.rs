@@ -408,7 +408,7 @@ extern "C" fn _start() -> ! {
                 this.playing = false;
             } else {
                 if this.buf.len() < 0xFFFE * 2 {
-                    this.buf.resize(0xFFFE * 2 - this.buf.len() + 1, 0);
+                    this.buf.resize(0xFFFE * 2, 0);
                 }
                 this.buf.drain(0..0xFFFE * 2);
                 unsafe {
