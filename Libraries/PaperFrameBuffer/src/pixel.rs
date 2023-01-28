@@ -23,8 +23,6 @@ impl Colour {
         Self { r, g, b, a }
     }
 
-    /// Turns this Colour into raw pixel data.
-    /// This operation is expensive; it turns the bit-mask into a bit offset
     #[must_use]
     pub const fn as_u32(&self, bitmask: BitMask) -> u32 {
         let red_pixel = bitmask.r.leading_zeros();

@@ -141,9 +141,6 @@ impl Default for CPUIdentification {
 }
 
 impl CPUIdentification {
-    /// # Panics
-    ///
-    /// If the CPUID String is not valid UTF-8
     #[inline]
     #[must_use]
     pub fn new() -> Self {

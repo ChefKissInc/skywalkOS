@@ -37,15 +37,10 @@ impl FrameBuffer {
         }
     }
 
-    /// Clears the entire frame-buffer contents with the specified colour
     pub fn clear(&mut self, colour: u32) {
         self.base.fill(colour);
     }
 
-    /// Plot a pixel at a specified coordinate on the frame-buffer
-    /// # Errors
-    ///
-    /// This operation errors when X and Y coordinates are outside the screen boundaries
     pub fn plot_pixel(&mut self, x: usize, y: usize, colour: u32) -> Result<()> {
         if x >= self.width || y >= self.height {
             Err(FBError::OutOfBounds)
