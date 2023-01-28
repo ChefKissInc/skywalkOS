@@ -3,7 +3,7 @@
 #![no_std]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 
-pub const CURRENT_REVISION: u64 = 0x18;
+pub const CURRENT_REVISION: u64 = 0x19;
 
 pub type EntryPoint = extern "sysv64" fn(&'static BootInfo) -> !;
 
@@ -35,7 +35,6 @@ pub enum MemoryEntry {
     BadMemory(MemoryData),
     ACPIReclaimable(MemoryData),
     BootLoaderReclaimable(MemoryData),
-    KernelOrModule(MemoryData),
     FrameBuffer(MemoryData),
 }
 

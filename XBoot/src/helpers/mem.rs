@@ -43,10 +43,10 @@ impl MemoryManager {
                 if top > base + size {
                     data.length -= size;
                     data.base += size;
-                    return Some(MemoryEntry::BootLoaderReclaimable(data));
+                    Some(MemoryEntry::BootLoaderReclaimable(data))
+                } else {
+                    None
                 }
-
-                Some(MemoryEntry::KernelOrModule(data))
             }
             uefi::table::boot::MemoryType::ACPI_RECLAIM => Some(MemoryEntry::ACPIReclaimable(data)),
             _ => None,
