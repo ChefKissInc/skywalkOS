@@ -20,8 +20,7 @@ impl log::Log for Logger {
         .unwrap();
 
         let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
-        let verbose = state.boot_settings.verbose;
-        if record.metadata().level() <= log::Level::Info || verbose {
+        if record.metadata().level() <= log::Level::Info || state.verbose {
             if let Some(terminal) = &mut state.terminal {
                 writeln!(terminal, "{}: {}", record.target(), record.args()).unwrap();
             }

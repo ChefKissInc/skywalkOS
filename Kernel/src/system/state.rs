@@ -4,7 +4,6 @@ use alloc::{string::String, vec::Vec};
 use core::cell::SyncUnsafeCell;
 
 use hashbrown::HashMap;
-use sulphur_dioxide::BootSettings;
 
 use super::{
     pmm::BitmapAllocator,
@@ -29,7 +28,7 @@ pub struct OSDTEntry {
 
 pub struct SystemState {
     pub kern_symbols: spin::Once<&'static [sulphur_dioxide::KernSymbol]>,
-    pub boot_settings: BootSettings,
+    pub verbose: bool,
     pub pmm: spin::Once<spin::Mutex<BitmapAllocator>>,
     pub pml4: spin::Once<&'static mut PageTableLvl4>,
     pub dc_cache: Option<Vec<u8>>,
@@ -51,7 +50,7 @@ impl SystemState {
     pub const fn new() -> Self {
         Self {
             kern_symbols: spin::Once::new(),
-            boot_settings: BootSettings { verbose: false },
+            verbose: cfg!(debug_assertions),
             pmm: spin::Once::new(),
             pml4: spin::Once::new(),
             dc_cache: None,

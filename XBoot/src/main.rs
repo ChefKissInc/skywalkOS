@@ -109,7 +109,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
 
     let mut boot_info = Box::leak(Box::new(sulphur_dioxide::BootInfo::new(
         symbols.leak(),
-        sulphur_dioxide::BootSettings { verbose },
+        verbose,
         Some(fbinfo),
         rsdp,
         helpers::phys_to_kern_slice_ref(dc_ext_buffer),

@@ -40,7 +40,7 @@ macro_rules! cli {
 pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
     state.kern_symbols.call_once(|| boot_info.kern_symbols);
-    state.boot_settings = boot_info.settings;
+    state.verbose = boot_info.verbose;
 
     unsafe {
         crate::system::gdt::GDTR.load();

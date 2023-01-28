@@ -3,7 +3,7 @@
 #![no_std]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 
-pub const CURRENT_REVISION: u64 = 0x19;
+pub const CURRENT_REVISION: u64 = 0x1A;
 
 pub type EntryPoint = extern "sysv64" fn(&'static BootInfo) -> !;
 
@@ -13,12 +13,6 @@ pub struct KernSymbol {
     pub start: u64,
     pub end: u64,
     pub name: &'static str,
-}
-
-#[repr(C)]
-#[derive(Debug, Default, Clone, Copy)]
-pub struct BootSettings {
-    pub verbose: bool,
 }
 
 #[repr(C)]
@@ -88,7 +82,7 @@ pub struct FrameBufferInfo {
 pub struct BootInfo {
     pub revision: u64,
     pub kern_symbols: &'static [KernSymbol],
-    pub settings: BootSettings,
+    pub verbose: bool,
     pub memory_map: &'static [MemoryEntry],
     pub frame_buffer: Option<&'static FrameBufferInfo>,
     pub acpi_rsdp: *const u8,
@@ -100,7 +94,7 @@ impl BootInfo {
     #[must_use]
     pub fn new(
         kern_symbols: &'static [KernSymbol],
-        settings: BootSettings,
+        verbose: bool,
         frame_buffer: Option<&'static FrameBufferInfo>,
         acpi_rsdp: *const u8,
         dc_cache: &'static [u8],
@@ -108,7 +102,7 @@ impl BootInfo {
         Self {
             revision: CURRENT_REVISION,
             kern_symbols,
-            settings,
+            verbose,
             memory_map: Default::default(),
             frame_buffer,
             acpi_rsdp,
