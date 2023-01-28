@@ -52,7 +52,7 @@ impl core::ops::Deref for LocalAPICAddrOverride {
 pub struct LocalAPICNMI {
     header: super::ICHeader,
     pub acpi_proc_id: u8,
-    pub flags: amd64::spec::mps::Inti,
+    pub flags: amd64::spec::mps::INTI,
     pub lint: u8,
 }
 

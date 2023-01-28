@@ -204,22 +204,6 @@ impl LocalAPIC {
         self.read_reg(LocalAPICReg::ErrorStatus)
     }
 
-    //
-    // pub fn read_icr(&self) -> InterruptCommand {
-    //     (((self.read_reg::<_, u64>(LocalAPICReg::InterruptCommand2)) << 32)
-    //         | (self.read_reg::<_, u64>(LocalAPICReg::InterruptCommand)))
-    //     .into()
-    // }
-
-    //
-    // pub fn write_icr(&self, val: InterruptCommand) {
-    //     let val: u64 = val.into();
-    //     let a = val as u32;
-    //     let b = (val >> 32) as u32;
-    //     self.write_reg(LocalAPICReg::InterruptCommand2, b);
-    //     self.write_reg(LocalAPICReg::InterruptCommand, a);
-    // }
-
     pub fn write_spurious_intr_vec(&self, val: SpuriousIntrVector) {
         self.write_reg(LocalAPICReg::SpuriousInterruptVector, val);
     }

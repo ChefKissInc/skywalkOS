@@ -21,7 +21,7 @@ pub enum TriggerMode {
 #[bitfield(bits = 16)]
 #[derive(Debug, Clone, Copy)]
 #[repr(u16)]
-pub struct Inti {
+pub struct INTI {
     #[skip(setters)]
     pub polarity: Polarity,
     #[skip(setters)]

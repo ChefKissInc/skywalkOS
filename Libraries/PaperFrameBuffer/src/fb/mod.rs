@@ -3,22 +3,22 @@
 pub mod shapes;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Framebuffer {
+pub struct FrameBuffer {
     pub base: &'static mut [u32],
     pub width: usize,
     pub height: usize,
     pub stride: usize,
-    pub bitmask: crate::pixel::Bitmask,
+    pub bitmask: crate::pixel::BitMask,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum FramebufferError {
+pub enum FBError {
     OutOfBounds,
 }
 
-pub type Result<T> = core::result::Result<T, FramebufferError>;
+pub type Result<T> = core::result::Result<T, FBError>;
 
-impl Framebuffer {
+impl FrameBuffer {
     #[inline]
     #[must_use]
     pub unsafe fn new(
@@ -26,7 +26,7 @@ impl Framebuffer {
         width: usize,
         height: usize,
         stride: usize,
-        bitmask: crate::pixel::Bitmask,
+        bitmask: crate::pixel::BitMask,
     ) -> Self {
         Self {
             base: core::slice::from_raw_parts_mut(data, height * stride),
@@ -38,7 +38,6 @@ impl Framebuffer {
     }
 
     /// Clears the entire frame-buffer contents with the specified colour
-
     pub fn clear(&mut self, colour: u32) {
         self.base.fill(colour);
     }
@@ -47,10 +46,9 @@ impl Framebuffer {
     /// # Errors
     ///
     /// This operation errors when X and Y coordinates are outside the screen boundaries
-
     pub fn plot_pixel(&mut self, x: usize, y: usize, colour: u32) -> Result<()> {
         if x >= self.width || y >= self.height {
-            Err(FramebufferError::OutOfBounds)
+            Err(FBError::OutOfBounds)
         } else {
             self.base[x + self.stride * y] = colour;
 

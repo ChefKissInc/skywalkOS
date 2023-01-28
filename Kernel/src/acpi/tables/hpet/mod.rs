@@ -67,7 +67,7 @@ pub struct PageProtectionAttributes {
 #[derive(Debug, Clone, Copy)]
 #[repr(C, packed)]
 pub struct Hpet {
-    header: super::SdtHeader,
+    header: super::SDTHeader,
     pub evnt_timer_block: EventTimerBlockID,
     pub address: Address,
     pub hpet_num: u8,
@@ -105,18 +105,13 @@ impl Hpet {
         self.read_reg(regs::HPETReg::GeneralCapabilities).into()
     }
 
-    // #[must_use]
-    // pub fn config(&self) -> regs::GeneralConfiguration {
-    //     self.read_reg(regs::HPETReg::GeneralConfiguration).into()
-    // }
-
     pub fn set_config(&self, value: regs::GeneralConfiguration) {
         self.write_reg(regs::HPETReg::GeneralConfiguration, value.into());
     }
 }
 
 impl core::ops::Deref for Hpet {
-    type Target = super::SdtHeader;
+    type Target = super::SDTHeader;
 
     fn deref(&self) -> &Self::Target {
         &self.header

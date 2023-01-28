@@ -90,7 +90,7 @@ pub struct SerialPort {
 pub enum SerialPortReg {
     DataOrDivisor = 0,
     EnableIntrOrDivisorHigh,
-    IntrIDOrFifo,
+    IntrIDOrFIFO,
     LineControl,
     ModemControl,
     LineStatus,
@@ -140,7 +140,7 @@ impl SerialPort {
                     .with_data_bits(DataBits::EightBits),
             );
             // Disable FIFO
-            self.port.write_off(0, SerialPortReg::IntrIDOrFifo);
+            self.port.write_off(0, SerialPortReg::IntrIDOrFIFO);
             // Enable data terminal
             self.set_modem_ctl(
                 ModemControl::new()

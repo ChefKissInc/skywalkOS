@@ -5,7 +5,7 @@ use num_enum::IntoPrimitive;
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C, packed)]
-pub struct IoApic {
+pub struct InputOutputAPIC {
     header: super::ICHeader,
     pub id: u8,
     __: u8,
@@ -13,7 +13,7 @@ pub struct IoApic {
     pub gsi_base: u32,
 }
 
-impl core::ops::Deref for IoApic {
+impl core::ops::Deref for InputOutputAPIC {
     type Target = super::ICHeader;
 
     fn deref(&self) -> &Self::Target {
@@ -73,7 +73,7 @@ pub struct IOAPICVer {
     __: u8,
 }
 
-impl IoApic {
+impl InputOutputAPIC {
     #[must_use]
     const fn base(&self, off: u8) -> *mut u32 {
         (self.address as u64 + off as u64 + amd64::paging::PHYS_VIRT_OFFSET) as *mut u32
@@ -117,15 +117,15 @@ impl IoApic {
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C, packed)]
-pub struct InterruptSourceOverride {
+pub struct IntrSourceOverride {
     header: super::ICHeader,
     pub bus: u8,
     pub irq: u8,
     pub gsi: u32,
-    pub flags: amd64::spec::mps::Inti,
+    pub flags: amd64::spec::mps::INTI,
 }
 
-impl core::ops::Deref for InterruptSourceOverride {
+impl core::ops::Deref for IntrSourceOverride {
     type Target = super::ICHeader;
 
     fn deref(&self) -> &Self::Target {
@@ -137,7 +137,7 @@ impl core::ops::Deref for InterruptSourceOverride {
 #[repr(C, packed)]
 pub struct NMISource {
     header: super::ICHeader,
-    pub flags: amd64::spec::mps::Inti,
+    pub flags: amd64::spec::mps::INTI,
     pub gsi: u32,
 }
 

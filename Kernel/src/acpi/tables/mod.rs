@@ -8,7 +8,7 @@ pub mod xsdt;
 
 #[repr(C, packed)]
 #[derive(Clone, Copy)]
-pub struct SdtHeader {
+pub struct SDTHeader {
     signature: [u8; 4],
     length: u32,
     pub revision: u8,
@@ -20,7 +20,7 @@ pub struct SdtHeader {
     pub creator_revision: u32,
 }
 
-impl SdtHeader {
+impl SDTHeader {
     #[must_use]
     pub fn validate(&self) -> bool {
         let bytes = unsafe {
@@ -57,7 +57,7 @@ impl SdtHeader {
     }
 }
 
-impl core::fmt::Debug for SdtHeader {
+impl core::fmt::Debug for SDTHeader {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let rev = self.oem_revision;
         let cr_rev = self.creator_revision;

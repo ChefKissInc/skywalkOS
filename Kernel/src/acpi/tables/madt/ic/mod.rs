@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
 use self::{
-    ioapic::{InterruptSourceOverride, IoApic, NMISource},
+    ioapic::{InputOutputAPIC, IntrSourceOverride, NMISource},
     proc_lapic::{LocalAPICAddrOverride, LocalAPICNMI, ProcessorLocalAPIC},
 };
 
@@ -11,13 +11,13 @@ pub mod proc_lapic;
 #[derive(Debug)]
 pub enum InterruptController {
     ProcessorLocalAPIC(&'static ProcessorLocalAPIC),
-    InputOutputAPIC(&'static IoApic),
-    InterruptSourceOverride(&'static InterruptSourceOverride),
-    NmiSrc(&'static NMISource),
-    LApicNmi(&'static LocalAPICNMI),
-    LApicAddrOverride(&'static LocalAPICAddrOverride),
-    IoSapic(&'static ICHeader),
-    LocalSapic(&'static ICHeader),
+    InputOutputAPIC(&'static InputOutputAPIC),
+    IntrSourceOverride(&'static IntrSourceOverride),
+    NMISource(&'static NMISource),
+    LocalAPICNMI(&'static LocalAPICNMI),
+    LocalAPICAddrOverride(&'static LocalAPICAddrOverride),
+    InputOutputSAPIC(&'static ICHeader),
+    LocalSAPIC(&'static ICHeader),
     PlatformInterruptSrcs(&'static ICHeader),
     ProcessorLocalx2APIC(&'static ICHeader),
     Localx2APICNmi(&'static ICHeader),

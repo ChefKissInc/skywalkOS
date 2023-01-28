@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
-pub struct Bitmask {
+pub struct BitMask {
     pub r: u32,
     pub g: u32,
     pub b: u32,
@@ -24,10 +24,9 @@ impl Colour {
     }
 
     /// Turns this Colour into raw pixel data.
-    /// This operation is expensive, as it turns the bit-mask into a bit offset
-
+    /// This operation is expensive; it turns the bit-mask into a bit offset
     #[must_use]
-    pub const fn to_u32(&self, bitmask: Bitmask) -> u32 {
+    pub const fn as_u32(&self, bitmask: BitMask) -> u32 {
         let red_pixel = bitmask.r.leading_zeros();
         let green_pixel = bitmask.g.leading_zeros();
         let blue_pixel = bitmask.b.leading_zeros();

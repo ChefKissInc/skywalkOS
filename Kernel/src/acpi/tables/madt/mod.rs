@@ -5,7 +5,7 @@ use core::mem::size_of;
 use modular_bitfield::prelude::*;
 
 use self::ic::{
-    ioapic::{InterruptSourceOverride, IoApic, NMISource},
+    ioapic::{InputOutputAPIC, IntrSourceOverride, NMISource},
     proc_lapic::{LocalAPICAddrOverride, LocalAPICNMI, ProcessorLocalAPIC},
     ICHeader, InterruptController,
 };
@@ -24,19 +24,19 @@ pub struct MADTFlags {
 
 #[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
-pub struct Madt {
-    header: super::SdtHeader,
+pub struct MultipleAPICDescTable {
+    header: super::SDTHeader,
     local_ic_addr: u32,
     pub flags: MADTFlags,
 }
 
-pub struct MadtIter {
+pub struct MADTIter {
     ptr: *const u8,
     curr: usize,
     total: usize,
 }
 
-impl Iterator for MadtIter {
+impl Iterator for MADTIter {
     type Item = InterruptController;
 
     fn next(&mut self) -> core::option::Option<<Self as core::iter::Iterator>::Item> {
@@ -54,34 +54,37 @@ impl Iterator for MadtIter {
                             .unwrap(),
                     ),
                     1 => InterruptController::InputOutputAPIC(
-                        (next as *const ICHeader).cast::<IoApic>().as_ref().unwrap(),
-                    ),
-                    2 => InterruptController::InterruptSourceOverride(
                         (next as *const ICHeader)
-                            .cast::<InterruptSourceOverride>()
+                            .cast::<InputOutputAPIC>()
                             .as_ref()
                             .unwrap(),
                     ),
-                    3 => InterruptController::NmiSrc(
+                    2 => InterruptController::IntrSourceOverride(
+                        (next as *const ICHeader)
+                            .cast::<IntrSourceOverride>()
+                            .as_ref()
+                            .unwrap(),
+                    ),
+                    3 => InterruptController::NMISource(
                         (next as *const ICHeader)
                             .cast::<NMISource>()
                             .as_ref()
                             .unwrap(),
                     ),
-                    4 => InterruptController::LApicNmi(
+                    4 => InterruptController::LocalAPICNMI(
                         (next as *const ICHeader)
                             .cast::<LocalAPICNMI>()
                             .as_ref()
                             .unwrap(),
                     ),
-                    5 => InterruptController::LApicAddrOverride(
+                    5 => InterruptController::LocalAPICAddrOverride(
                         (next as *const ICHeader)
                             .cast::<LocalAPICAddrOverride>()
                             .as_ref()
                             .unwrap(),
                     ),
-                    6 => InterruptController::IoSapic(next),
-                    7 => InterruptController::LocalSapic(next),
+                    6 => InterruptController::InputOutputSAPIC(next),
+                    7 => InterruptController::LocalSAPIC(next),
                     8 => InterruptController::PlatformInterruptSrcs(next),
                     9 => InterruptController::ProcessorLocalx2APIC(next),
                     0xA => InterruptController::Localx2APICNmi(next),
@@ -99,15 +102,15 @@ impl Iterator for MadtIter {
     }
 }
 
-impl Madt {
+impl MultipleAPICDescTable {
     #[must_use]
     pub const fn local_ic_addr(&self) -> u64 {
         self.local_ic_addr as u64
     }
 
     #[must_use]
-    pub fn as_iter(&self) -> MadtIter {
-        MadtIter {
+    pub fn as_iter(&self) -> MADTIter {
+        MADTIter {
             ptr: unsafe { (self as *const Self).cast::<u8>().add(size_of::<Self>()) },
             curr: 0,
             total: self.length as usize - size_of::<Self>(),
@@ -115,8 +118,8 @@ impl Madt {
     }
 }
 
-impl core::ops::Deref for Madt {
-    type Target = super::SdtHeader;
+impl core::ops::Deref for MultipleAPICDescTable {
+    type Target = super::SDTHeader;
 
     fn deref(&self) -> &Self::Target {
         &self.header

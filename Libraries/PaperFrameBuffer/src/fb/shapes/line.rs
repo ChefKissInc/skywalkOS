@@ -1,11 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-impl crate::framebuffer::Framebuffer {
-    /// # Errors
-    ///
-    /// This operation errors if the X and Y coordinates or, depending on the `horizontal` argument,
-    /// the X or Y coordinate plus the length of the line are larger than the screen bounds
-
+impl crate::fb::FrameBuffer {
     pub fn draw_line(
         &mut self,
         x: usize,
@@ -13,9 +8,9 @@ impl crate::framebuffer::Framebuffer {
         len: usize,
         horizontal: bool,
         colour: u32,
-    ) -> crate::framebuffer::Result<()> {
+    ) -> crate::fb::Result<()> {
         if x + len >= self.width || y + len >= self.height {
-            Err(crate::framebuffer::FramebufferError::OutOfBounds)
+            Err(crate::fb::FBError::OutOfBounds)
         } else {
             if horizontal {
                 for i in 0..len {

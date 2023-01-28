@@ -9,13 +9,13 @@ pub mod tables;
 
 pub struct Acpi {
     pub version: u8,
-    pub tables: Vec<&'static tables::SdtHeader>,
+    pub tables: Vec<&'static tables::SDTHeader>,
 }
 
 impl Acpi {
     #[inline]
     #[must_use]
-    pub fn new(rsdp: &'static tables::rsdp::Rsdp) -> Self {
+    pub fn new(rsdp: &'static tables::rsdp::RootSystemDescPtr) -> Self {
         let mut tables = Vec::new();
 
         for ent in rsdp.as_type().iter() {
@@ -39,7 +39,7 @@ impl Acpi {
             .iter()
             .find(|&a| a.signature() == signature)
             .map(|&v| unsafe {
-                (v as *const tables::SdtHeader)
+                (v as *const tables::SDTHeader)
                     .cast::<T>()
                     .as_ref()
                     .unwrap()

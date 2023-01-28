@@ -4,5 +4,5 @@
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 #![allow(clippy::missing_safety_doc)]
 
-pub mod framebuffer;
+pub mod fb;
 pub mod pixel;

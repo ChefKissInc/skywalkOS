@@ -43,12 +43,12 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     state.terminal = boot_info.frame_buffer.map(|fb_info| {
         debug!("Got boot display: {:X?}", fb_info);
         let mut terminal = crate::system::terminal::Terminal::new(unsafe {
-            paper_fb::framebuffer::Framebuffer::new(
+            paper_fb::fb::FrameBuffer::new(
                 fb_info.base,
                 fb_info.resolution.width,
                 fb_info.resolution.height,
                 fb_info.pitch,
-                paper_fb::pixel::Bitmask {
+                paper_fb::pixel::BitMask {
                     r: fb_info.pixel_bitmask.red,
                     g: fb_info.pixel_bitmask.green,
                     b: fb_info.pixel_bitmask.blue,

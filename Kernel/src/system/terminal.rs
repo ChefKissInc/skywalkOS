@@ -3,12 +3,12 @@
 use core::fmt::Write;
 
 use amd64::paging::pml4::PML4;
-use paper_fb::{framebuffer::Framebuffer, pixel::Colour};
+use paper_fb::{fb::FrameBuffer, pixel::Colour};
 
 pub struct Terminal {
     pub x: usize,
     pub y: usize,
-    pub fb: Framebuffer,
+    pub fb: FrameBuffer,
     pub width: usize,
     pub height: usize,
 }
@@ -19,7 +19,7 @@ unsafe impl Sync for Terminal {}
 impl Terminal {
     #[inline]
     #[must_use]
-    pub const fn new(fb: Framebuffer) -> Self {
+    pub const fn new(fb: FrameBuffer) -> Self {
         let width = fb.width / 8;
         let height = fb.height / 8;
         Self {
@@ -63,7 +63,7 @@ impl Terminal {
             for bit in 0..8 {
                 if x_bit & (1 << bit) != 0 {
                     self.fb
-                        .plot_pixel(x + bit, y, colour.to_u32(self.fb.bitmask))
+                        .plot_pixel(x + bit, y, colour.as_u32(self.fb.bitmask))
                         .unwrap();
                 }
             }
