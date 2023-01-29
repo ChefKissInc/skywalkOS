@@ -13,7 +13,7 @@ extern crate alloc;
 use alloc::string::String;
 use core::fmt::Write;
 
-use iridium_kit::{port::Port, syscall::SystemCall};
+use iridium_kit::{dt::OSDTEntry, port::Port, syscall::SystemCall};
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
@@ -130,6 +130,10 @@ extern "C" fn _start() -> ! {
     logger::init();
     // unsafe { SystemCall::register_provider(PS2_SERVICE).unwrap() };
     // let target = unsafe { SystemCall::get_providing_process(PS2_SERVICE).unwrap() };
+
+    info!("TestDrv loaded");
+    info!("{:#X?}", OSDTEntry::from_id(0).parent());
+    info!("{:#X?}", OSDTEntry::from_id(0).get_prop("Name"));
 
     let this = PS2Ctl::new();
     this.init();

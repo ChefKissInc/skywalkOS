@@ -19,11 +19,8 @@ pub fn get_entry_info(scheduler: &mut Scheduler, state: &mut RegisterState) -> S
         iridium_kit::syscall::OSDTEntryInfoType::Parent => postcard::to_allocvec(&dt_entry.parent),
         iridium_kit::syscall::OSDTEntryInfoType::PropertyNamed => {
             let Ok(k) = core::str::from_utf8(unsafe {
-                core::slice::from_raw_parts(
-                state.rcx as *const u8,
-                state.r8 as usize,
-            )
-        }) else {
+                core::slice::from_raw_parts(state.rcx as *const u8, state.r8 as usize)
+            }) else {
                 return SystemCallStatus::MalformedData;
             };
             postcard::to_allocvec(&dt_entry.properties.get(k))

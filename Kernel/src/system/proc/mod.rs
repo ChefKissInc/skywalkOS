@@ -16,8 +16,8 @@ pub mod userland;
 #[allow(dead_code)]
 pub enum ThreadState {
     Active,
-    Blocked,
     Inactive,
+    Suspended,
 }
 
 #[derive(Debug)]

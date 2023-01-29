@@ -5,6 +5,7 @@ use alloc::vec::Vec;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
+// TODO: Remove this, all failures should result in process termination
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
 #[repr(u64)]
 #[must_use]

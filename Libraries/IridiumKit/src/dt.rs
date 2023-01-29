@@ -5,6 +5,9 @@ use alloc::{borrow::ToOwned, string::String, vec::Vec};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 
+#[cfg(target_arch = "x86_64")]
+use crate::syscall::{OSDTEntryInfoType, SystemCall};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[repr(C)]
 pub enum OSValue {
@@ -178,13 +181,42 @@ impl TryFrom<OSValue> for HashMap<String, OSValue> {
     }
 }
 
+#[cfg(target_arch = "x86_64")]
 #[derive(Debug, Default, Clone)]
 pub struct OSDTEntry(u64);
 
+#[cfg(target_arch = "x86_64")]
 impl OSDTEntry {
     #[inline]
     #[must_use]
     pub const fn from_id(id: u64) -> Self {
         Self(id)
+    }
+
+    #[must_use]
+    pub const fn id(&self) -> u64 {
+        self.0
+    }
+
+    #[must_use]
+    pub fn parent(&self) -> Option<Self> {
+        unsafe {
+            postcard::from_bytes::<Option<u64>>(
+                &SystemCall::get_dt_entry_info(self.0, OSDTEntryInfoType::Parent, None).unwrap(),
+            )
+            .unwrap()
+            .map(Self::from_id)
+        }
+    }
+
+    #[must_use]
+    pub fn get_prop(&self, k: &str) -> Option<OSValue> {
+        unsafe {
+            postcard::from_bytes(
+                &SystemCall::get_dt_entry_info(self.0, OSDTEntryInfoType::PropertyNamed, Some(k))
+                    .unwrap(),
+            )
+            .unwrap()
+        }
     }
 }
