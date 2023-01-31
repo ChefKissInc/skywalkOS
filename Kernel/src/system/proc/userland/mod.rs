@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
-use iridium_kit::syscall::{KernelMessage, Message, SystemCall, SystemCallStatus};
+use tungsten_kit::syscall::{KernelMessage, Message, SystemCall, SystemCallStatus};
 
 use crate::system::{gdt::PrivilegeLevel, RegisterState};
 
@@ -19,7 +19,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
         .unwrap()
         .leak();
     let ptr = s.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
-    let virt = ptr + iridium_kit::USER_PHYS_VIRT_OFFSET;
+    let virt = ptr + tungsten_kit::USER_PHYS_VIRT_OFFSET;
     let count = (s.len() as u64 + 0xFFF) / 0x1000;
     let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
     user_allocations.track(proc_id, virt, s.len() as u64);

@@ -21,7 +21,7 @@ args = [
     "--bin",
     "kernel",
     "--target",
-    "x86_64-kernel-iridium.json",
+    "x86_64-kernel-tungsten.json",
     "--out-dir",
     "Drive/System",
 ]
@@ -50,7 +50,7 @@ args = [
     "--bin",
     "kernel",
     "--target",
-    "x86_64-kernel-iridium.json",
+    "x86_64-kernel-tungsten.json",
     "--out-dir",
     "Drive/System",
     "--release",

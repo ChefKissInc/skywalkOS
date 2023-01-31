@@ -1,6 +1,6 @@
 [package]
 edition = "2021"
-name = "iridium-kit"
+name = "tungsten-kit"
 publish = false
 version = "0.1.0"
 

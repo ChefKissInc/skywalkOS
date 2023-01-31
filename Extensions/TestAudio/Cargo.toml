@@ -11,7 +11,7 @@ name = "test-audio"
 filename = "TestAudio"
 
 [dependencies]
-iridium-kit = { path = "../../Libraries/IridiumKit" }
+tungsten-kit = { path = "../../Libraries/TungstenKit" }
 log = { version = "0.4.17", features = [
     "release_max_level_debug",
     "max_level_trace",

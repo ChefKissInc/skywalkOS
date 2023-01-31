@@ -5,7 +5,7 @@ args = [
     "-Zbuild-std=core,compiler_builtins,alloc",
     "-Zbuild-std-features=compiler-builtins-mem",
     "--target",
-    "../../x86_64-pc-iridium.json",
+    "../../x86_64-pc-tungsten.json",
     "--out-dir",
     "../../target/Extensions",
 ]
@@ -17,7 +17,7 @@ args = [
     "-Zbuild-std=core,compiler_builtins,alloc",
     "-Zbuild-std-features=compiler-builtins-mem",
     "--target",
-    "../../x86_64-pc-iridium.json",
+    "../../x86_64-pc-tungsten.json",
     "--out-dir",
     "../../target/Extensions",
     "--release",

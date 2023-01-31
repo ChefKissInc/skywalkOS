@@ -13,10 +13,10 @@ extern crate alloc;
 use alloc::string::String;
 use core::fmt::Write;
 
-use iridium_kit::{dt::OSDTEntry, port::Port, syscall::SystemCall};
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
+use tungsten_kit::{dt::OSDTEntry, port::Port, syscall::SystemCall};
 
 mod allocator;
 mod logger;

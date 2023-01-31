@@ -71,14 +71,14 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     let sched = state
         .scheduler
         .call_once(|| spin::Mutex::new(system::proc::scheduler::Scheduler::new(&hpet)));
-    let cache: iridium_kit::IKCache =
+    let cache: tungsten_kit::IKCache =
         postcard::from_bytes(state.dc_cache.as_ref().unwrap()).unwrap();
 
     let len = cache.infos.len();
-    info!("Got {len} IridiumKit extensions");
+    info!("Got {len} TungstenKit extensions");
     for info in cache.infos {
         info!(
-            "Spawning IridiumKit extension {} <{}>",
+            "Spawning TungstenKit extension {} <{}>",
             info.name, info.identifier
         );
         sched.lock().spawn_proc(cache.payloads[info.identifier]);

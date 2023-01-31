@@ -7,9 +7,9 @@ use std::cell::UnsafeCell;
 use hashbrown::HashMap;
 
 fn main() {
-    println!("Creating IridiumKit cache");
+    println!("Creating TungstenKit cache");
 
-    let mut cache = iridium_kit::IKCache {
+    let mut cache = tungsten_kit::IKCache {
         infos: vec![],
         payloads: HashMap::new(),
     };
@@ -23,9 +23,9 @@ fn main() {
         let contents = unsafe { contents.get().as_mut().unwrap() };
         contents.push(std::fs::read_to_string(ent.path().join("Info.ron")).unwrap());
 
-        let info: iridium_kit::IKInfo = ron::from_str(contents.last().unwrap()).unwrap();
+        let info: tungsten_kit::IKInfo = ron::from_str(contents.last().unwrap()).unwrap();
         println!(
-            "Inserting IridiumKit extension {} <{}> v{} to cache",
+            "Inserting TungstenKit extension {} <{}> v{} to cache",
             info.name, info.identifier, info.version
         );
         let payloads = unsafe { payloads.get().as_mut().unwrap() };

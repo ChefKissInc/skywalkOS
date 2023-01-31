@@ -1,6 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use iridium_kit::syscall::SystemCall;
+use tungsten_kit::syscall::SystemCall;
 
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {
