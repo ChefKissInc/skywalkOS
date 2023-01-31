@@ -12,7 +12,7 @@ pub mod page_table;
 unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let irq = (state.int_num - 0x20) as u8;
     crate::acpi::ioapic::set_irq_mask(irq, true);
-    let sys_state = crate::system::state::SYS_STATE.get().as_mut().unwrap();
+    let sys_state = &mut *crate::system::state::SYS_STATE.get();
     let mut scheduler = sys_state.scheduler.get_mut().unwrap().lock();
     let proc_id = *scheduler.irq_handlers.get(&irq).unwrap();
     let s = postcard::to_allocvec(&KernelMessage::IRQFired(irq))
@@ -41,7 +41,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
 }
 
 unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
-    let sys_state = crate::system::state::SYS_STATE.get().as_mut().unwrap();
+    let sys_state = &mut *crate::system::state::SYS_STATE.get();
     let mut scheduler = sys_state.scheduler.get_mut().unwrap().lock();
 
     let Ok(v) = SystemCall::try_from(state.rdi) else {
@@ -101,7 +101,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
 }
 
 pub fn setup() {
-    let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+    let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     state
         .user_allocations
         .call_once(|| spin::Mutex::new(allocations::UserAllocationTracker::new()));

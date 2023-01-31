@@ -237,8 +237,10 @@ impl LocalAPIC {
 }
 
 unsafe extern "C" fn lapic_error_handler(_state: &mut RegisterState) {
-    let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
-    let lapic = state.lapic.get().unwrap();
+    let lapic = (*crate::system::state::SYS_STATE.get())
+        .lapic
+        .get()
+        .unwrap();
     // Pentium errata 3AP
     if lapic.read_ver().max_lvt_entry() > 3 {
         lapic.reset_error();

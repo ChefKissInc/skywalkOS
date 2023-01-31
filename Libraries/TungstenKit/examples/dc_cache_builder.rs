@@ -20,7 +20,7 @@ fn main() {
         .filter_map(Result::ok)
         .filter(|v| v.path().is_dir())
     {
-        let contents = unsafe { contents.get().as_mut().unwrap() };
+        let contents = unsafe { &mut *contents.get() };
         contents.push(std::fs::read_to_string(ent.path().join("Info.ron")).unwrap());
 
         let info: tungsten_kit::IKInfo = ron::from_str(contents.last().unwrap()).unwrap();
@@ -28,7 +28,7 @@ fn main() {
             "Inserting TungstenKit extension {} <{}> v{} to cache",
             info.name, info.identifier, info.version
         );
-        let payloads = unsafe { payloads.get().as_mut().unwrap() };
+        let payloads = unsafe { &mut *payloads.get() };
         payloads.push(
             std::fs::read(
                 std::path::PathBuf::from("target/Extensions").join(format!("{}.exec", info.name)),

@@ -38,7 +38,7 @@ macro_rules! cli {
 }
 
 pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
-    let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+    let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     state.kern_symbols.call_once(|| boot_info.kern_symbols);
     state.verbose = boot_info.verbose;
 
@@ -94,15 +94,9 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     state.dt_id_gen.call_once(|| spin::Mutex::new(dt_id_gen));
 
     unsafe {
-        state.acpi.call_once(|| {
-            Acpi::new(
-                boot_info
-                    .acpi_rsdp
-                    .cast::<RootSystemDescPtr>()
-                    .as_ref()
-                    .unwrap(),
-            )
-        });
+        state
+            .acpi
+            .call_once(|| Acpi::new(&*boot_info.acpi_rsdp.cast::<RootSystemDescPtr>()));
     }
 
     state.dc_cache = Some(boot_info.dc_cache.to_vec());

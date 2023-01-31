@@ -19,7 +19,7 @@ pub fn kprint(state: &mut RegisterState) -> SystemCallStatus {
     #[cfg(debug_assertions)]
     write!(crate::system::serial::SERIAL.lock(), "{s}").unwrap();
 
-    let sys_state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+    let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     if let Some(terminal) = &mut sys_state.terminal {
         write!(terminal, "{s}").unwrap();
     }
@@ -36,7 +36,7 @@ pub fn process_teardown(scheduler: &mut Scheduler) {
     scheduler.thread_id_gen.free(id);
     scheduler.current_thread_id = None;
 
-    let sys_state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+    let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     if !scheduler.threads.iter().any(|(_, v)| v.proc_id == proc_id) {
         sys_state
             .user_allocations

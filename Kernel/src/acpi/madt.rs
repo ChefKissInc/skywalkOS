@@ -47,10 +47,7 @@ impl MADTData {
                         ioapic,
                     );
                     unsafe {
-                        crate::system::state::SYS_STATE
-                            .get()
-                            .as_mut()
-                            .unwrap()
+                        (*crate::system::state::SYS_STATE.get())
                             .pml4
                             .get_mut()
                             .unwrap()

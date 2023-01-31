@@ -33,7 +33,7 @@ impl Terminal {
 
     pub fn map_fb(&self) {
         unsafe {
-            let state = super::state::SYS_STATE.get().as_mut().unwrap();
+            let state = &mut *super::state::SYS_STATE.get();
             let base = self.fb.base.as_ptr() as u64;
             state.pml4.get_mut().unwrap().map_huge_pages(
                 base,

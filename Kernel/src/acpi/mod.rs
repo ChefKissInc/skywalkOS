@@ -38,12 +38,7 @@ impl Acpi {
         self.tables
             .iter()
             .find(|&a| a.signature() == signature)
-            .map(|&v| unsafe {
-                (v as *const tables::SDTHeader)
-                    .cast::<T>()
-                    .as_ref()
-                    .unwrap()
-            })
+            .map(|&v| unsafe { &*(v as *const tables::SDTHeader).cast::<T>() })
     }
 }
 

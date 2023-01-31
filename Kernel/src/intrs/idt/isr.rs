@@ -49,10 +49,10 @@ macro_rules! isr_stub {
 
 unsafe extern "C" fn isr_handler(regs: &mut crate::system::RegisterState) {
     let n = regs.int_num as u8;
-    let handler = &super::HANDLERS.get().as_mut().unwrap()[n as usize];
+    let handler = &(*super::HANDLERS.get())[n as usize];
     (handler.func)(regs);
     if handler.is_irq {
-        let state = crate::system::state::SYS_STATE.get().as_mut().unwrap();
+        let state = &mut *crate::system::state::SYS_STATE.get();
         state.lapic.get_mut().unwrap().send_eoi();
     }
     if !handler.should_iret && !handler.is_irq {

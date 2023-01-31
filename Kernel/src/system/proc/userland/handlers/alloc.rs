@@ -9,7 +9,7 @@ pub fn alloc(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCall
     let size = state.rsi;
     let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
 
-    let sys_state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+    let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     let addr = sys_state
         .user_allocations
         .get_mut()
@@ -38,7 +38,7 @@ pub fn alloc(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCall
 
 pub fn free(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCallStatus {
     let addr = state.rsi;
-    let sys_state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+    let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     let size = sys_state
         .user_allocations
         .get_mut()

@@ -16,7 +16,7 @@ pub trait PML4: Sized {
     unsafe fn get() -> &'static mut Self {
         let pml4: *mut Self;
         core::arch::asm!("mov {}, cr3", out(reg) pml4, options(nostack, preserves_flags));
-        pml4.as_mut().unwrap()
+        &mut *pml4
     }
 
     #[must_use]
@@ -29,20 +29,14 @@ pub trait PML4: Sized {
             *self.get_entry(offset) = flags.with_address(self.alloc_entry() >> 12);
         }
 
-        (((self.get_entry(offset).address() << 12) + Self::VIRT_OFF) as *mut Self)
-            .as_mut()
-            .unwrap()
+        &mut *(((self.get_entry(offset).address() << 12) + Self::VIRT_OFF) as *mut Self)
     }
 
     unsafe fn get_or_null_entry(&mut self, offset: u64) -> Option<&mut Self> {
         let entry = self.get_entry(offset);
 
         if entry.present() {
-            Some(
-                (((entry.address() << 12) + Self::VIRT_OFF) as *mut Self)
-                    .as_mut()
-                    .unwrap(),
-            )
+            Some(&mut *(((entry.address() << 12) + Self::VIRT_OFF) as *mut Self))
         } else {
             None
         }

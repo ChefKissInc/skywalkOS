@@ -39,7 +39,7 @@ impl UserAllocationTracker {
         let (proc_id, size) = self.allocations.remove(&addr).unwrap();
         let count = (size + 0xFFF) / 0x1000;
         trace!("Freeing allocation of {size} bytes at {addr:#X} from process {proc_id}");
-        let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+        let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         unsafe {
             state.pmm.get_mut().unwrap().lock().free(
                 (addr - tungsten_kit::USER_PHYS_VIRT_OFFSET) as *mut _,
@@ -62,7 +62,7 @@ impl UserAllocationTracker {
 
     #[must_use]
     pub fn allocate(&mut self, proc_id: u64, size: u64) -> u64 {
-        let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+        let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         let addr = unsafe {
             state
                 .pmm

@@ -11,7 +11,7 @@ extern "C" fn callback(
     unwind_ctx: &mut UnwindContext<'_>,
     arg: *mut core::ffi::c_void,
 ) -> UnwindReasonCode {
-    let data = unsafe { arg.cast::<CallbackData>().as_mut().unwrap() };
+    let data = unsafe { &mut *arg.cast::<CallbackData>() };
     data.counter += 1;
 
     let ip = _Unwind_GetIP(unwind_ctx) as u64;
@@ -55,7 +55,7 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
     while super::serial::SERIAL.is_locked() {
         unsafe { super::serial::SERIAL.force_unlock() }
     }
-    let state = unsafe { super::state::SYS_STATE.get().as_mut().unwrap() };
+    let state = unsafe { &mut *super::state::SYS_STATE.get() };
 
     if state.in_panic {
         error!("Panicked while panicking!");

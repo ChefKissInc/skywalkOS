@@ -39,7 +39,7 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     utils::init_core(boot_info);
     debug!("Copyright ChefKiss Inc 2021-2023.");
 
-    let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+    let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     state.terminal = boot_info.frame_buffer.map(|fb_info| {
         debug!("Got boot display: {:X?}", fb_info);
         let mut terminal = crate::system::terminal::Terminal::new(unsafe {

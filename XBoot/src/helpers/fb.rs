@@ -7,8 +7,12 @@ use uefi::{proto::console::gop::GraphicsOutput, table::boot::ScopedProtocol};
 
 pub fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Box<FrameBufferInfo> {
     Box::new(FrameBufferInfo {
-        base: (gop.frame_buffer().as_mut_ptr() as u64 + amd64::paging::PHYS_VIRT_OFFSET)
-            as *mut u32,
+        base: unsafe {
+            gop.frame_buffer()
+                .as_mut_ptr()
+                .add(amd64::paging::PHYS_VIRT_OFFSET as _)
+                .cast::<u32>()
+        },
         resolution: ScreenRes::new(gop.current_mode_info().resolution()),
         pixel_format: match gop.current_mode_info().pixel_format() {
             uefi::proto::console::gop::PixelFormat::Rgb => PixelFormat::RedGreenBlue,

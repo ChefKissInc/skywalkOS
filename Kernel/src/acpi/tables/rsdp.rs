@@ -45,7 +45,7 @@ impl Iterator for RSDTTypeIter {
                     u64::from((self.ptr as *const u32).add(self.curr).read_unaligned())
                 } + amd64::paging::PHYS_VIRT_OFFSET;
                 self.curr += 1;
-                Some((addr as *const super::SDTHeader).as_ref().unwrap())
+                Some(&*(addr as *const super::SDTHeader))
             }
         }
     }
@@ -106,18 +106,10 @@ impl RootSystemDescPtr {
     pub fn as_type(&self) -> RSDTType {
         if self.revision == 0 {
             let addr = u64::from(self.rsdt_addr) + amd64::paging::PHYS_VIRT_OFFSET;
-            unsafe {
-                RSDTType::RootSystemDescTable(
-                    (addr as *const RootSystemDescTable).as_ref().unwrap(),
-                )
-            }
+            unsafe { RSDTType::RootSystemDescTable(&*(addr as *const RootSystemDescTable)) }
         } else {
             let addr = self.xsdt_addr + amd64::paging::PHYS_VIRT_OFFSET;
-            unsafe {
-                RSDTType::ExtendedSystemDescTable(
-                    (addr as *const ExtendedSystemDescTable).as_ref().unwrap(),
-                )
-            }
+            unsafe { RSDTType::ExtendedSystemDescTable(&*(addr as *const ExtendedSystemDescTable)) }
         }
     }
 }

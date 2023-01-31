@@ -17,7 +17,7 @@ pub fn send(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCallS
     scheduler.message_sources.insert(msg.id, src);
 
     let process = scheduler.processes.get_mut(&state.rsi).unwrap();
-    let sys_state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+    let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     sys_state
         .user_allocations
         .get_mut()
@@ -49,7 +49,7 @@ pub fn ack(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCallSt
     let Some(&src) = scheduler.message_sources.get(&id) else {
         return SystemCallStatus::MalformedData;
     };
-    let sys_state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+    let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
     if src == 0 {
         let addr = *user_allocations.message_allocations.get(&id).unwrap();

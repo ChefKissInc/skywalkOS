@@ -19,7 +19,7 @@ impl log::Log for Logger {
         )
         .unwrap();
 
-        let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+        let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         if record.metadata().level() <= log::Level::Info || state.verbose {
             if let Some(terminal) = &mut state.terminal {
                 writeln!(terminal, "{}: {}", record.target(), record.args()).unwrap();

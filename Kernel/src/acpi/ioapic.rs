@@ -5,7 +5,7 @@ use amd64::spec::mps::{Polarity, TriggerMode};
 use super::tables::madt::ic::ioapic::{IOAPICRedir, InputOutputAPIC};
 
 pub fn wire_legacy_irq(irq: u8, masked: bool) {
-    let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+    let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     let madt = state.madt.get().unwrap().lock();
     madt.isos.iter().find(|v| v.irq == irq).map_or_else(
         || {
@@ -39,7 +39,7 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
 }
 
 pub fn set_irq_mask(irq: u8, masked: bool) {
-    let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+    let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     let madt = state.madt.get().unwrap().lock();
     madt.isos.iter().find(|v| v.irq == irq).map_or_else(
         || {

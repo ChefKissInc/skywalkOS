@@ -28,7 +28,7 @@ pub struct Scheduler {
 }
 
 pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
-    let sys_state = crate::system::state::SYS_STATE.get().as_mut().unwrap();
+    let sys_state = &mut *crate::system::state::SYS_STATE.get();
     let mut this = sys_state.scheduler.get_mut().unwrap().lock();
 
     if let Some(old_thread) = this.current_thread_mut() {
@@ -53,7 +53,7 @@ impl Scheduler {
         let kern_stack = vec![0; 0x14000];
 
         unsafe {
-            let gdt = crate::system::gdt::GDT.get().as_mut().unwrap();
+            let gdt = &mut *crate::system::gdt::GDT.get();
             (*TSS.get()) =
                 TaskSegmentSelector::new(kern_stack.as_ptr() as u64 + kern_stack.len() as u64);
             let tss_addr = TSS.get() as u64;
@@ -70,7 +70,7 @@ impl Scheduler {
             );
         }
 
-        let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+        let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         let lapic = state.lapic.get_mut().unwrap();
 
         lapic.setup_timer(timer);
@@ -95,7 +95,7 @@ impl Scheduler {
 
     pub fn unmask() {
         crate::sti!();
-        let state = unsafe { crate::system::state::SYS_STATE.get().as_ref().unwrap() };
+        let state = unsafe { &*crate::system::state::SYS_STATE.get() };
         let lapic = state.lapic.get().unwrap();
         lapic.write_timer(lapic.read_timer().with_mask(false));
         unsafe { core::arch::asm!("int 128", options(nostack, preserves_flags)) }
@@ -129,11 +129,7 @@ impl Scheduler {
         let virt_addr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET
             + tungsten_kit::USER_PHYS_VIRT_OFFSET;
         for reloc in exec.dynrelas.iter() {
-            let ptr = unsafe {
-                ((data.as_ptr() as u64 + reloc.r_offset) as *mut u64)
-                    .as_mut()
-                    .unwrap()
-            };
+            let ptr = unsafe { &mut *data.as_mut_ptr().add(reloc.r_offset as _).cast::<u64>() };
             let target = reloc.r_addend.map_or_else(
                 || virt_addr + *ptr,
                 |addend| {
@@ -148,7 +144,7 @@ impl Scheduler {
         }
         let rip = virt_addr + exec.entry;
         let proc_id = self.proc_id_gen.next();
-        let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+        let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         let count = (data.len() as u64 + 0xFFF) / 0x1000;
         state.user_allocations.get_mut().unwrap().lock().track(
             proc_id,

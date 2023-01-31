@@ -27,7 +27,7 @@ impl PML4 for UserPML4 {
     fn alloc_entry(&self) -> u64 {
         let phys = Box::leak(Box::new(Self::new(self.1))) as *mut _ as u64
             - amd64::paging::PHYS_VIRT_OFFSET;
-        let state = unsafe { crate::system::state::SYS_STATE.get().as_mut().unwrap() };
+        let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         state.user_allocations.get_mut().unwrap().lock().track(
             self.1,
             phys + tungsten_kit::USER_PHYS_VIRT_OFFSET,

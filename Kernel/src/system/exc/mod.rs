@@ -8,11 +8,7 @@ macro_rules! exc_msg {
         }
 
         if $regs.cs.trailing_zeros() >= 2 {
-            crate::system::state::SYS_STATE
-                .get()
-                .as_mut()
-                .unwrap()
-                .interrupt_context = Some(*$regs);
+            (*crate::system::state::SYS_STATE.get()).interrupt_context = Some(*$regs);
             panic!("Received {} exception: {}", $name, $msg);
         } else {
             error!("Received {} exception in user-land: {}", $name, $msg);
