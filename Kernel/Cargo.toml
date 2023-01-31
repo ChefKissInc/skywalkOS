@@ -12,7 +12,7 @@ filename = "Kernel"
 
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
-tungsten-kit = { path = "../Libraries/TungstenKit" }
+tungstenkit = { path = "../Libraries/TungstenKit" }
 font8x8 = { version = "0.3.1", default-features = false }
 goblin = { version = "0.6.0", default-features = false, features = [
     "elf32",

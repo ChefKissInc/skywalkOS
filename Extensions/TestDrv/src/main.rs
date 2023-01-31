@@ -16,7 +16,7 @@ use core::fmt::Write;
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
-use tungsten_kit::{dt::OSDTEntry, port::Port, syscall::SystemCall};
+use tungstenkit::{dt::OSDTEntry, port::Port, syscall::SystemCall};
 
 mod allocator;
 mod logger;

@@ -2,7 +2,7 @@
 
 use core::fmt::Write;
 
-use tungsten_kit::syscall::SystemCallStatus;
+use tungstenkit::syscall::SystemCallStatus;
 
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
 

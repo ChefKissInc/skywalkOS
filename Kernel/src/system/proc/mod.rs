@@ -7,7 +7,7 @@ use alloc::{
     vec::Vec,
 };
 
-use tungsten_kit::syscall::Message;
+use tungstenkit::syscall::Message;
 
 pub mod scheduler;
 pub mod userland;
@@ -45,7 +45,7 @@ impl Thread {
                     .into(),
                 rflags: 0x202,
                 rsp: stack.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET
-                    + tungsten_kit::USER_PHYS_VIRT_OFFSET
+                    + tungstenkit::USER_PHYS_VIRT_OFFSET
                     + stack.len() as u64,
                 ss: super::gdt::SegmentSelector::new(4, super::gdt::PrivilegeLevel::User)
                     .0

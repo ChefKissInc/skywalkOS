@@ -1,7 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
-use tungsten_kit::syscall::SystemCallStatus;
+use tungstenkit::syscall::SystemCallStatus;
 
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
 
@@ -21,7 +21,7 @@ pub fn alloc(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCall
         let process = scheduler.processes.get_mut(&proc_id).unwrap();
         process.cr3.map_pages(
             addr,
-            addr - tungsten_kit::USER_PHYS_VIRT_OFFSET,
+            addr - tungstenkit::USER_PHYS_VIRT_OFFSET,
             (size + 0xFFF) / 0x1000,
             PageTableEntry::new()
                 .with_writable(true)

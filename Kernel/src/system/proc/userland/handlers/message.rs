@@ -1,6 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use tungsten_kit::syscall::{KernelMessage, Message, SystemCallStatus};
+use tungstenkit::syscall::{KernelMessage, Message, SystemCallStatus};
 
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
 

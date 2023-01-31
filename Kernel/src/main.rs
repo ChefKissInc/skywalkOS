@@ -71,7 +71,7 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     let sched = state
         .scheduler
         .call_once(|| spin::Mutex::new(system::proc::scheduler::Scheduler::new(&hpet)));
-    let cache: tungsten_kit::IKCache =
+    let cache: tungstenkit::IKCache =
         postcard::from_bytes(state.dc_cache.as_ref().unwrap()).unwrap();
 
     let len = cache.infos.len();
