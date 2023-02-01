@@ -53,7 +53,7 @@ unsafe extern "C" fn isr_handler(regs: &mut crate::system::RegisterState) {
     (handler.func)(regs);
     if handler.is_irq {
         let state = &mut *crate::system::state::SYS_STATE.get();
-        state.lapic.get_mut().unwrap().send_eoi();
+        state.lapic.as_ref().unwrap().send_eoi();
     }
     if !handler.should_iret && !handler.is_irq {
         crate::hlt_loop!();

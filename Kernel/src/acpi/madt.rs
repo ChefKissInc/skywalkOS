@@ -49,7 +49,7 @@ impl MADTData {
                     unsafe {
                         (*crate::system::state::SYS_STATE.get())
                             .pml4
-                            .get_mut()
+                            .as_mut()
                             .unwrap()
                             .map_mmio(
                                 u64::from(ioapic.address) + amd64::paging::PHYS_VIRT_OFFSET,
@@ -82,8 +82,6 @@ impl MADTData {
 }
 
 pub fn setup(state: &mut crate::system::state::SystemState) {
-    let acpi = state.acpi.get_mut().unwrap();
-    state
-        .madt
-        .call_once(|| spin::Mutex::new(MADTData::new(acpi.find("APIC").unwrap())));
+    let acpi = state.acpi.as_mut().unwrap();
+    state.madt = Some(spin::Mutex::new(MADTData::new(acpi.find("APIC").unwrap())));
 }

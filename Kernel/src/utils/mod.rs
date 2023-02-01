@@ -39,7 +39,7 @@ macro_rules! cli {
 
 pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    state.kern_symbols.call_once(|| boot_info.kern_symbols);
+    state.kern_symbols = Some(boot_info.kern_symbols);
     state.verbose = boot_info.verbose;
 
     unsafe {
@@ -49,12 +49,10 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
         crate::system::exc::init();
     }
 
-    state
-        .pmm
-        .call_once(|| spin::Mutex::new(BitmapAllocator::new(boot_info.memory_map)));
+    state.pmm = Some(spin::Mutex::new(BitmapAllocator::new(boot_info.memory_map)));
 
     // Switch ownership of symbol data to kernel
-    state.kern_symbols.call_once(|| {
+    state.kern_symbols = Some(
         boot_info
             .kern_symbols
             .iter()
@@ -63,8 +61,8 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
                 ..*v
             })
             .collect::<Vec<_>>()
-            .leak()
-    });
+            .leak(),
+    );
 
     let mut root = OSDTEntry {
         id: 0,
@@ -87,17 +85,14 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     };
     root.children.push(product.id);
 
-    state
-        .dt_index
-        .call_once(|| spin::Mutex::new(HashMap::from([(root.id, root), (product.id, product)])));
+    state.dt_index = Some(spin::Mutex::new(HashMap::from([
+        (root.id, root),
+        (product.id, product),
+    ])));
 
-    state.dt_id_gen.call_once(|| spin::Mutex::new(dt_id_gen));
+    state.dt_id_gen = Some(spin::Mutex::new(dt_id_gen));
 
-    unsafe {
-        state
-            .acpi
-            .call_once(|| Acpi::new(&*boot_info.acpi_rsdp.cast::<RootSystemDescPtr>()));
-    }
+    unsafe { state.acpi = Some(Acpi::new(&*boot_info.acpi_rsdp.cast::<RootSystemDescPtr>())) }
 
     state.dc_cache = Some(boot_info.dc_cache.to_vec());
 }
@@ -107,8 +102,7 @@ pub fn init_paging(state: &mut crate::system::state::SystemState) {
 
     let pml4 = Box::leak(Box::new(crate::system::vmm::PageTableLvl4::new()));
     unsafe { pml4.init() }
-
-    state.pml4.call_once(|| pml4);
+    state.pml4 = Some(pml4);
 
     if let Some(terminal) = &mut state.terminal {
         terminal.map_fb();

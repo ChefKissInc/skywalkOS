@@ -27,21 +27,21 @@ pub struct OSDTEntry {
 }
 
 pub struct SystemState {
-    pub kern_symbols: spin::Once<&'static [sulphur_dioxide::KernSymbol]>,
+    pub kern_symbols: Option<&'static [sulphur_dioxide::KernSymbol]>,
     pub verbose: bool,
-    pub pmm: spin::Once<spin::Mutex<BitmapAllocator>>,
-    pub pml4: spin::Once<&'static mut PageTableLvl4>,
+    pub pmm: Option<spin::Mutex<BitmapAllocator>>,
+    pub pml4: Option<&'static mut PageTableLvl4>,
     pub dc_cache: Option<Vec<u8>>,
     pub terminal: Option<Terminal>,
-    pub acpi: spin::Once<Acpi>,
-    pub madt: spin::Once<spin::Mutex<MADTData>>,
-    pub lapic: spin::Once<LocalAPIC>,
-    pub scheduler: spin::Once<spin::Mutex<Scheduler>>,
+    pub acpi: Option<Acpi>,
+    pub madt: Option<spin::Mutex<MADTData>>,
+    pub lapic: Option<LocalAPIC>,
+    pub scheduler: Option<spin::Mutex<Scheduler>>,
     pub interrupt_context: Option<super::RegisterState>,
     pub in_panic: bool,
-    pub user_allocations: spin::Once<spin::Mutex<UserAllocationTracker>>,
-    pub dt_index: spin::Once<spin::Mutex<HashMap<u64, OSDTEntry>>>,
-    pub dt_id_gen: spin::Once<spin::Mutex<IncrementalIDGen>>,
+    pub usr_allocs: Option<spin::Mutex<UserAllocationTracker>>,
+    pub dt_index: Option<spin::Mutex<HashMap<u64, OSDTEntry>>>,
+    pub dt_id_gen: Option<spin::Mutex<IncrementalIDGen>>,
 }
 
 impl SystemState {
@@ -49,21 +49,21 @@ impl SystemState {
     #[must_use]
     pub const fn new() -> Self {
         Self {
-            kern_symbols: spin::Once::new(),
+            kern_symbols: None,
             verbose: cfg!(debug_assertions),
-            pmm: spin::Once::new(),
-            pml4: spin::Once::new(),
+            pmm: None,
+            pml4: None,
             dc_cache: None,
             terminal: None,
-            acpi: spin::Once::new(),
-            madt: spin::Once::new(),
-            lapic: spin::Once::new(),
-            scheduler: spin::Once::new(),
+            acpi: None,
+            madt: None,
+            lapic: None,
+            scheduler: None,
             interrupt_context: None,
             in_panic: false,
-            user_allocations: spin::Once::new(),
-            dt_index: spin::Once::new(),
-            dt_id_gen: spin::Once::new(),
+            usr_allocs: None,
+            dt_index: None,
+            dt_id_gen: None,
         }
     }
 }

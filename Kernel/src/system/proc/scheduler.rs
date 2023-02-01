@@ -29,7 +29,7 @@ pub struct Scheduler {
 
 pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
     let sys_state = &mut *crate::system::state::SYS_STATE.get();
-    let mut this = sys_state.scheduler.get_mut().unwrap().lock();
+    let mut this = sys_state.scheduler.as_ref().unwrap().lock();
 
     if let Some(old_thread) = this.current_thread_mut() {
         old_thread.regs = *state;
@@ -71,9 +71,7 @@ impl Scheduler {
         }
 
         let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-        let lapic = state.lapic.get_mut().unwrap();
-
-        lapic.setup_timer(timer);
+        state.lapic.as_ref().unwrap().setup_timer(timer);
 
         crate::intrs::idt::set_handler(128, 1, PrivilegeLevel::Supervisor, schedule, true, true);
         crate::acpi::ioapic::wire_legacy_irq(96, false);
@@ -96,7 +94,7 @@ impl Scheduler {
     pub fn unmask() {
         crate::sti!();
         let state = unsafe { &*crate::system::state::SYS_STATE.get() };
-        let lapic = state.lapic.get().unwrap();
+        let lapic = state.lapic.as_ref().unwrap();
         lapic.write_timer(lapic.read_timer().with_mask(false));
         unsafe { core::arch::asm!("int 128", options(nostack, preserves_flags)) }
     }
@@ -146,11 +144,12 @@ impl Scheduler {
         let proc_id = self.proc_id_gen.next();
         let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         let count = (data.len() as u64 + 0xFFF) / 0x1000;
-        state.user_allocations.get_mut().unwrap().lock().track(
-            proc_id,
-            virt_addr,
-            data.len() as u64,
-        );
+        state
+            .usr_allocs
+            .as_ref()
+            .unwrap()
+            .lock()
+            .track(proc_id, virt_addr, data.len() as u64);
         self.processes
             .insert(proc_id, super::Process::new(proc_id, "", ""));
         let proc = self.processes.get_mut(&proc_id).unwrap();

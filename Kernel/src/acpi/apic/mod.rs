@@ -239,7 +239,7 @@ impl LocalAPIC {
 unsafe extern "C" fn lapic_error_handler(_state: &mut RegisterState) {
     let lapic = (*crate::system::state::SYS_STATE.get())
         .lapic
-        .get()
+        .as_ref()
         .unwrap();
     // Pentium errata 3AP
     if lapic.read_ver().max_lvt_entry() > 3 {
@@ -253,9 +253,9 @@ unsafe extern "C" fn spurious_vector_handler(_state: &mut RegisterState) {
 }
 
 pub fn setup(state: &mut crate::system::state::SystemState) {
-    let addr = state.madt.get().unwrap().lock().lapic_addr;
+    let addr = state.madt.as_ref().unwrap().lock().lapic_addr;
     unsafe { APICBase::read().with_apic_base(addr).write() }
-    let pml4 = state.pml4.get_mut().unwrap();
+    let pml4 = state.pml4.as_mut().unwrap();
 
     let virt_addr = addr + amd64::paging::PHYS_VIRT_OFFSET;
     unsafe {
@@ -269,7 +269,7 @@ pub fn setup(state: &mut crate::system::state::SystemState) {
         );
     }
     debug!("LAPIC address is {addr:#X?}");
-    let lapic = state.lapic.call_once(|| LocalAPIC::new(virt_addr));
+    let lapic = LocalAPIC::new(virt_addr);
     let ver = lapic.read_ver();
     debug!("LAPIC version is {ver:#X?}");
 
@@ -333,4 +333,6 @@ pub fn setup(state: &mut crate::system::state::SystemState) {
             lvt::LocalVectorTable::new().with_vector(0xFE),
         );
     }
+
+    state.lapic = Some(lapic);
 }

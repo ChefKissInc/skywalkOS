@@ -39,8 +39,8 @@ pub fn process_teardown(scheduler: &mut Scheduler) {
     let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     if !scheduler.threads.iter().any(|(_, v)| v.proc_id == proc_id) {
         sys_state
-            .user_allocations
-            .get_mut()
+            .usr_allocs
+            .as_ref()
             .unwrap()
             .lock()
             .free_proc(proc_id);

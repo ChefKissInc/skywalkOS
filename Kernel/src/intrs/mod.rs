@@ -13,7 +13,7 @@ unsafe extern "C" fn irq7_quirk(_state: &mut RegisterState) {
     if p.read() & 0x80 != 0 {
         (*crate::system::state::SYS_STATE.get())
             .lapic
-            .get_mut()
+            .as_ref()
             .unwrap()
             .send_eoi();
     }

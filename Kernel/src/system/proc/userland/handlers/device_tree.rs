@@ -8,7 +8,7 @@ use crate::system::{proc::scheduler::Scheduler, RegisterState};
 pub fn get_entry_info(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCallStatus {
     let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
     let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    let dt_index = sys_state.dt_index.get().unwrap().lock();
+    let dt_index = sys_state.dt_index.as_ref().unwrap().lock();
     let Some(dt_entry) = dt_index.get(&state.rsi) else {
         return SystemCallStatus::MalformedData;
     };
@@ -31,8 +31,8 @@ pub fn get_entry_info(scheduler: &mut Scheduler, state: &mut RegisterState) -> S
     let ptr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
     let virt = ptr + tungstenkit::USER_PHYS_VIRT_OFFSET;
     let count = (data.len() as u64 + 0xFFF) / 0x1000;
-    let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
-    user_allocations.track(proc_id, virt, data.len() as u64);
+    let mut usr_allocs = sys_state.usr_allocs.as_ref().unwrap().lock();
+    usr_allocs.track(proc_id, virt, data.len() as u64);
 
     unsafe {
         let process = scheduler.processes.get_mut(&proc_id).unwrap();

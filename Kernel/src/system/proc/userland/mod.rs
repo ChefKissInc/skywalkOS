@@ -13,7 +13,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let irq = (state.int_num - 0x20) as u8;
     crate::acpi::ioapic::set_irq_mask(irq, true);
     let sys_state = &mut *crate::system::state::SYS_STATE.get();
-    let mut scheduler = sys_state.scheduler.get_mut().unwrap().lock();
+    let mut scheduler = sys_state.scheduler.as_ref().unwrap().lock();
     let proc_id = *scheduler.irq_handlers.get(&irq).unwrap();
     let s = postcard::to_allocvec(&KernelMessage::IRQFired(irq))
         .unwrap()
@@ -21,8 +21,8 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let ptr = s.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
     let virt = ptr + tungstenkit::USER_PHYS_VIRT_OFFSET;
     let count = (s.len() as u64 + 0xFFF) / 0x1000;
-    let mut user_allocations = sys_state.user_allocations.get_mut().unwrap().lock();
-    user_allocations.track(proc_id, virt, s.len() as u64);
+    let mut usr_allocs = sys_state.usr_allocs.as_ref().unwrap().lock();
+    usr_allocs.track(proc_id, virt, s.len() as u64);
     let msg = Message::new(
         scheduler.message_id_gen.next(),
         0,
@@ -36,13 +36,13 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
         count,
         PageTableEntry::new().with_present(true).with_user(true),
     );
-    user_allocations.track_msg(msg.id, virt);
+    usr_allocs.track_msg(msg.id, virt);
     process.messages.push_front(msg);
 }
 
 unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
     let sys_state = &mut *crate::system::state::SYS_STATE.get();
-    let mut scheduler = sys_state.scheduler.get_mut().unwrap().lock();
+    let mut scheduler = sys_state.scheduler.as_ref().unwrap().lock();
 
     let Ok(v) = SystemCall::try_from(state.rdi) else {
         state.rax = SystemCallStatus::UnknownRequest.into();
@@ -102,8 +102,6 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
 
 pub fn setup() {
     let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    state
-        .user_allocations
-        .call_once(|| spin::Mutex::new(allocations::UserAllocationTracker::new()));
+    state.usr_allocs = Some(spin::Mutex::new(allocations::UserAllocationTracker::new()));
     crate::intrs::idt::set_handler(249, 1, PrivilegeLevel::User, syscall_handler, false, true);
 }

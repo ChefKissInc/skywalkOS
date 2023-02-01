@@ -68,7 +68,7 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
     error!("Backtrace:");
     let mut data = CallbackData {
         counter: 0,
-        kern_symbols: state.kern_symbols.get_mut().unwrap(),
+        kern_symbols: state.kern_symbols.as_ref().unwrap(),
     };
     _Unwind_Backtrace(callback, core::ptr::addr_of_mut!(data).cast());
 

@@ -43,7 +43,7 @@ impl UserAllocationTracker {
         unsafe {
             state
                 .pmm
-                .get_mut()
+                .as_mut()
                 .unwrap()
                 .lock()
                 .free((addr - tungstenkit::USER_PHYS_VIRT_OFFSET) as *mut _, count);
@@ -68,7 +68,7 @@ impl UserAllocationTracker {
         let addr = unsafe {
             state
                 .pmm
-                .get_mut()
+                .as_mut()
                 .unwrap()
                 .lock()
                 .alloc((size + 0xFFF) / 0x1000)

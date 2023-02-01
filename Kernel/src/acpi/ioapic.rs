@@ -6,7 +6,7 @@ use super::tables::madt::ic::ioapic::{IOAPICRedir, InputOutputAPIC};
 
 pub fn wire_legacy_irq(irq: u8, masked: bool) {
     let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    let madt = state.madt.get().unwrap().lock();
+    let madt = state.madt.as_ref().unwrap().lock();
     madt.isos.iter().find(|v| v.irq == irq).map_or_else(
         || {
             let ioapic = find_for_gsi(&madt, 0).unwrap();
@@ -40,7 +40,7 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
 
 pub fn set_irq_mask(irq: u8, masked: bool) {
     let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    let madt = state.madt.get().unwrap().lock();
+    let madt = state.madt.as_ref().unwrap().lock();
     madt.isos.iter().find(|v| v.irq == irq).map_or_else(
         || {
             let ioapic = find_for_gsi(&madt, 0).unwrap();
