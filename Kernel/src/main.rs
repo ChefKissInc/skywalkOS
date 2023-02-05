@@ -69,7 +69,7 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
 
     system::proc::userland::setup();
     let mut sched = system::proc::scheduler::Scheduler::new(&hpet);
-    let cache: tungstenkit::IKCache =
+    let cache: tungstenkit::TKCache =
         postcard::from_bytes(state.dc_cache.as_ref().unwrap()).unwrap();
 
     let len = cache.infos.len();

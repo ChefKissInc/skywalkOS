@@ -42,13 +42,6 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Extensions/TestAudio"
-    labels:
-      - "Enhancement"
-      - "Project:TestAudio"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "cargo"
     directory: "/Extensions/TestDrv"
     labels:
       - "Enhancement"

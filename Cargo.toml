@@ -1,11 +1,5 @@
 [workspace]
-members = [
-    "Libraries/*",
-    "XBoot",
-    "Kernel",
-    "Extensions/TestAudio",
-    "Extensions/TestDrv",
-]
+members = ["Libraries/*", "XBoot", "Kernel", "Extensions/TestDrv"]
 resolver = "2"
 
 [profile.release]

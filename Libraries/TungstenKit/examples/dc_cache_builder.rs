@@ -9,7 +9,7 @@ use hashbrown::HashMap;
 fn main() {
     println!("Creating TungstenKit cache");
 
-    let mut cache = tungstenkit::IKCache {
+    let mut cache = tungstenkit::TKCache {
         infos: vec![],
         payloads: HashMap::new(),
     };
@@ -23,7 +23,7 @@ fn main() {
         let contents = unsafe { &mut *contents.get() };
         contents.push(std::fs::read_to_string(ent.path().join("Info.ron")).unwrap());
 
-        let info: tungstenkit::IKInfo = ron::from_str(contents.last().unwrap()).unwrap();
+        let info: tungstenkit::TKInfo = ron::from_str(contents.last().unwrap()).unwrap();
         println!(
             "Inserting TungstenKit extension {} <{}> v{} to cache",
             info.name, info.identifier, info.version
