@@ -23,15 +23,6 @@ mod system;
 mod timer;
 mod utils;
 
-#[used]
-#[no_mangle]
-static __stack_chk_guard: u64 = 0x595E_9FBD_94FD_A766;
-
-#[no_mangle]
-extern "C" fn __stack_chk_fail() {
-    panic!("stack check failure");
-}
-
 #[no_mangle]
 extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     utils::logger::init();

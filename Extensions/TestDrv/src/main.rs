@@ -22,15 +22,6 @@ mod allocator;
 mod logger;
 mod panic;
 
-#[used]
-#[no_mangle]
-static __stack_chk_guard: u64 = 0x595E_9FBD_94FD_A766;
-
-#[no_mangle]
-extern "C" fn __stack_chk_fail() {
-    panic!("stack check failure");
-}
-
 // const PS2_SERVICE: uuid::Uuid = uuid!("e8f08fbc-b0a3-4365-b91e-12dbfeec6586");
 
 #[derive(IntoPrimitive)]

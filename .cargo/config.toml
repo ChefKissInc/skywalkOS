@@ -1,5 +1,2 @@
 [unstable]
 unstable-options = true
-
-[build]
-rustflags = ["-Zstack-protector=strong"]

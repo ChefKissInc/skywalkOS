@@ -24,17 +24,6 @@ use uefi::{
 
 mod helpers;
 
-#[used]
-#[no_mangle]
-static __security_cookie: usize = 0x595E_9FBD_94FD_A766;
-
-#[no_mangle]
-unsafe extern "C" fn __security_check_cookie(cookie: usize) {
-    if cookie != __security_cookie {
-        core::intrinsics::abort();
-    }
-}
-
 #[export_name = "efi_main"]
 extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     unsafe { system_table.boot_services().set_image_handle(image_handle) }
