@@ -13,7 +13,8 @@ impl log::Log for Logger {
         #[cfg(debug_assertions)]
         writeln!(
             crate::system::serial::SERIAL.lock(),
-            "{}: {}",
+            "{} {} > {}",
+            record.level(),
             record.target(),
             record.args()
         )
@@ -22,7 +23,14 @@ impl log::Log for Logger {
         let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         if record.metadata().level() <= log::Level::Info || state.verbose {
             if let Some(terminal) = &mut state.terminal {
-                writeln!(terminal, "{}: {}", record.target(), record.args()).unwrap();
+                writeln!(
+                    terminal,
+                    "{} {} > {}",
+                    record.level(),
+                    record.target(),
+                    record.args()
+                )
+                .unwrap();
             }
         }
     }

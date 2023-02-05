@@ -23,7 +23,14 @@ impl log::Log for KLog {
     }
 
     fn log(&self, record: &log::Record) {
-        writeln!(KWriter, "{}: {}", record.target(), record.args()).unwrap();
+        writeln!(
+            KWriter,
+            "{} {} > {}",
+            record.level(),
+            record.target(),
+            record.args()
+        )
+        .unwrap();
     }
 
     fn flush(&self) {}
