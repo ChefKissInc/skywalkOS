@@ -27,7 +27,6 @@ pub struct Thread {
 
 impl Thread {
     #[inline]
-    #[must_use]
     pub fn new(proc_id: u64, rip: u64) -> Self {
         let stack = vec![0; 0x14000];
         Self {
@@ -62,7 +61,6 @@ pub struct Process {
 
 impl Process {
     #[inline]
-    #[must_use]
     pub fn new(proc_id: u64, path: String) -> Self {
         Self {
             path,

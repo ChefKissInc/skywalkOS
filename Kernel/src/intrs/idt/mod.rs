@@ -101,7 +101,6 @@ pub struct Entry {
 
 impl Entry {
     #[inline]
-    #[must_use]
     pub const fn new(
         base: u64,
         selector: SegmentSelector,

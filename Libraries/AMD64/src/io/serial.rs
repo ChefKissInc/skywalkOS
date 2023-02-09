@@ -98,7 +98,6 @@ pub enum SerialPortReg {
 
 impl SerialPort {
     #[inline]
-    #[must_use]
     pub const fn new(port_num: u16) -> Self {
         Self {
             port: super::port::Port::new(port_num),
@@ -160,7 +159,6 @@ impl SerialPort {
         self.line_status().data_ready()
     }
 
-    #[must_use]
     pub fn receive(&self) -> u8 {
         while !self.can_receive_data() {}
 

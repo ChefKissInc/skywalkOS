@@ -49,7 +49,6 @@ pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
 
 impl Scheduler {
     #[inline]
-    #[must_use]
     pub fn new(timer: &impl Timer) -> Self {
         let kern_stack = vec![0; 0x14000];
 

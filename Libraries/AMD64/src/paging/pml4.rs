@@ -3,23 +3,22 @@
 pub trait PML4: Sized {
     const VIRT_OFF: u64;
 
-    #[must_use]
     fn get_entry(&mut self, offset: u64) -> &mut super::PageTableEntry;
-    #[must_use]
     fn alloc_entry(&self) -> u64;
 
+    #[inline]
     unsafe fn set(&mut self) {
         core::arch::asm!("mov cr3, {}", in(reg) self as *mut _ as u64 - Self::VIRT_OFF, options(nostack, preserves_flags));
     }
 
-    #[must_use]
+    #[inline]
     unsafe fn get() -> &'static mut Self {
         let pml4: *mut Self;
         core::arch::asm!("mov {}, cr3", out(reg) pml4, options(nostack, preserves_flags));
         &mut *pml4
     }
 
-    #[must_use]
+    #[inline]
     unsafe fn get_or_alloc_entry(
         &mut self,
         offset: u64,
@@ -32,6 +31,7 @@ pub trait PML4: Sized {
         &mut *(((self.get_entry(offset).address() << 12) + Self::VIRT_OFF) as *mut Self)
     }
 
+    #[inline]
     unsafe fn get_or_null_entry(&mut self, offset: u64) -> Option<&mut Self> {
         let entry = self.get_entry(offset);
 

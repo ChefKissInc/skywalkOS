@@ -12,7 +12,6 @@ pub struct BitmapAllocator {
 
 impl BitmapAllocator {
     #[inline]
-    #[must_use]
     pub fn new(mmap: &'static [MemoryEntry]) -> Self {
         let mut highest_addr = 0;
 

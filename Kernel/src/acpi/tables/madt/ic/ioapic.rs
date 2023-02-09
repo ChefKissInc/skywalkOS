@@ -74,13 +74,12 @@ pub struct IOAPICVer {
 }
 
 impl InputOutputAPIC {
-    #[must_use]
+    #[inline]
     const fn base(&self, off: u8) -> *mut u32 {
         (self.address as u64 + off as u64 + amd64::paging::PHYS_VIRT_OFFSET) as *mut u32
     }
 
     #[inline]
-    #[must_use]
     pub fn read<T: Into<u32>>(&self, reg: T) -> u32 {
         unsafe {
             self.base(0).write_volatile(reg.into());
@@ -88,13 +87,11 @@ impl InputOutputAPIC {
         }
     }
 
-    #[must_use]
     pub fn read_redir(&self, num: u32) -> IOAPICRedir {
         let reg = IOAPICReg::IORedirTable as u32 + num * 2;
         IOAPICRedir::from(u64::from(self.read(reg)) | (u64::from(self.read(reg + 1)) << 32))
     }
 
-    #[must_use]
     pub fn read_ver(&self) -> IOAPICVer {
         IOAPICVer::from(self.read(IOAPICReg::Ver))
     }

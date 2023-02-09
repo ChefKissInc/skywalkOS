@@ -11,7 +11,6 @@ pub struct UserPML4(amd64::paging::PageTable, u64);
 
 impl UserPML4 {
     #[inline]
-    #[must_use]
     pub const fn new(proc_id: u64) -> Self {
         Self(amd64::paging::PageTable::new(), proc_id)
     }

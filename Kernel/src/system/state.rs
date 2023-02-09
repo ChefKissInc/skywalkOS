@@ -46,7 +46,6 @@ pub struct SystemState {
 
 impl SystemState {
     #[inline]
-    #[must_use]
     pub const fn new() -> Self {
         Self {
             kern_symbols: None,

@@ -9,7 +9,6 @@ pub struct Hpet {
 
 impl Hpet {
     #[inline]
-    #[must_use]
     pub fn new(hpet: &'static HpetInner) -> Self {
         let clk = u64::from(hpet.capabilities().clk_period());
         hpet.set_config(GeneralConfiguration::new());

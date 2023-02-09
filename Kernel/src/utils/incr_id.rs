@@ -9,7 +9,6 @@ pub struct IncrementalIDGen {
 
 impl IncrementalIDGen {
     #[inline]
-    #[must_use]
     pub const fn new() -> Self {
         Self {
             last_used: 0,
@@ -17,7 +16,6 @@ impl IncrementalIDGen {
         }
     }
 
-    #[must_use]
     pub fn next(&mut self) -> u64 {
         if let Some(ret) = self.freed.pop() {
             ret

@@ -15,7 +15,6 @@ pub struct PageTableLvl4(amd64::paging::PageTable);
 
 impl PageTableLvl4 {
     #[inline]
-    #[must_use]
     pub const fn new() -> Self {
         Self(amd64::paging::PageTable::new())
     }

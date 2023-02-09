@@ -85,12 +85,10 @@ impl Iterator for MADTIter {
 }
 
 impl MultipleAPICDescTable {
-    #[must_use]
     pub const fn local_ic_addr(&self) -> u64 {
         self.local_ic_addr as u64
     }
 
-    #[must_use]
     pub fn as_iter(&self) -> MADTIter {
         MADTIter {
             ptr: unsafe { (self as *const Self).cast::<u8>().add(size_of::<Self>()) },

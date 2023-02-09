@@ -18,12 +18,10 @@ pub struct Colour {
 
 impl Colour {
     #[inline]
-    #[must_use]
     pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
     }
 
-    #[must_use]
     pub const fn as_u32(&self, bitmask: BitMask) -> u32 {
         let red_pixel = bitmask.r.leading_zeros();
         let green_pixel = bitmask.g.leading_zeros();

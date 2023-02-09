@@ -16,7 +16,6 @@ pub struct PML4(amd64::paging::PageTable);
 
 impl PML4 {
     #[inline]
-    #[must_use]
     pub fn new() -> Self {
         Self(amd64::paging::PageTable {
             entries: [amd64::paging::PageTableEntry::default(); 512],

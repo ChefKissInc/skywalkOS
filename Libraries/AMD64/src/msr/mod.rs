@@ -5,14 +5,10 @@ pub mod efer;
 pub mod pat;
 pub mod vm_cr;
 
-pub trait ModelSpecificReg: Sized {
+pub trait ModelSpecificReg: Sized + From<u64> {
     const MSR_NUM: u32;
 
-    #[must_use]
-    unsafe fn read() -> Self
-    where
-        Self: From<u64>,
-    {
+    unsafe fn read() -> Self {
         let (low, high): (u32, u32);
         core::arch::asm!("rdmsr", in("ecx") Self::MSR_NUM, out("eax") low, out("edx") high, options(nostack, preserves_flags));
         Self::from((u64::from(high) << 32) | u64::from(low))

@@ -66,7 +66,7 @@ struct PS2Ctl {
 }
 
 impl PS2Ctl {
-    #[must_use]
+    #[inline]
     pub const fn new() -> Self {
         Self {
             data_port: Port::new(0x60),

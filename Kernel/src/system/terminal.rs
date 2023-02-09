@@ -18,7 +18,6 @@ unsafe impl Sync for Terminal {}
 
 impl Terminal {
     #[inline]
-    #[must_use]
     pub const fn new(fb: FrameBuffer) -> Self {
         let width = fb.width / 8;
         let height = fb.height / 8;

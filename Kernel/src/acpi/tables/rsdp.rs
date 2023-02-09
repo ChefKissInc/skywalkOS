@@ -52,7 +52,6 @@ impl Iterator for RSDTTypeIter {
 }
 
 impl RSDTType {
-    #[must_use]
     pub fn iter(&self) -> RSDTTypeIter {
         unsafe {
             let (is_xsdt, length, header) = match *self {
@@ -80,7 +79,6 @@ impl RSDTType {
 }
 
 impl RootSystemDescPtr {
-    #[must_use]
     pub fn validate(&self) -> bool {
         let bytes = unsafe {
             core::slice::from_raw_parts((self as *const Self).cast::<u8>(), self.length())
@@ -88,12 +86,10 @@ impl RootSystemDescPtr {
         bytes.iter().fold(0u8, |sum, &byte| sum.wrapping_add(byte)) == 0
     }
 
-    #[must_use]
     pub fn oem_id(&self) -> &str {
         unsafe { core::str::from_utf8_unchecked(&self.oem_id).trim() }
     }
 
-    #[must_use]
     pub const fn length(&self) -> usize {
         if self.revision == 0 {
             20
@@ -102,7 +98,6 @@ impl RootSystemDescPtr {
         }
     }
 
-    #[must_use]
     pub fn as_type(&self) -> RSDTType {
         if self.revision == 0 {
             let addr = u64::from(self.rsdt_addr) + amd64::paging::PHYS_VIRT_OFFSET;

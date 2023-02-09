@@ -17,7 +17,6 @@ pub struct PageTableOffsets {
 
 impl PageTableOffsets {
     #[inline]
-    #[must_use]
     pub const fn new(virtual_address: u64) -> Self {
         Self {
             pml4: (virtual_address >> 39) & 0x1FF,
@@ -55,15 +54,8 @@ pub struct PageTable {
     pub entries: [PageTableEntry; 512],
 }
 
-impl Default for PageTable {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl PageTable {
     #[inline]
-    #[must_use]
     pub const fn new() -> Self {
         Self {
             entries: [PageTableEntry::new(); 512],

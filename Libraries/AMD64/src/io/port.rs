@@ -50,7 +50,6 @@ pub struct Port<T: PortIO, R: From<T> + Into<T>> {
 
 impl<T: PortIO, R: From<T> + Into<T>> Port<T, R> {
     #[inline]
-    #[must_use]
     pub const fn new(port: u16) -> Self {
         Self {
             port,
@@ -59,12 +58,10 @@ impl<T: PortIO, R: From<T> + Into<T>> Port<T, R> {
         }
     }
 
-    #[must_use]
     pub unsafe fn read(&self) -> R {
         T::read(self.port).into()
     }
 
-    #[must_use]
     pub unsafe fn read_off<A: Into<u16>, R2: From<T> + Into<T>>(&self, off: A) -> R2 {
         T::read(self.port + off.into()).into()
     }

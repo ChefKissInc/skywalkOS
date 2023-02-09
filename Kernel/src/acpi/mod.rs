@@ -14,7 +14,6 @@ pub struct ACPIState {
 
 impl ACPIState {
     #[inline]
-    #[must_use]
     pub fn new(rsdp: &'static tables::rsdp::RootSystemDescPtr) -> Self {
         let mut tables = Vec::new();
 

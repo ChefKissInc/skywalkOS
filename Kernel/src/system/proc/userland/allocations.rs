@@ -11,7 +11,6 @@ pub struct UserAllocationTracker {
 
 impl UserAllocationTracker {
     #[inline]
-    #[must_use]
     pub fn new() -> Self {
         Self {
             allocations: HashMap::new(),
@@ -62,7 +61,6 @@ impl UserAllocationTracker {
         }
     }
 
-    #[must_use]
     pub fn allocate(&mut self, proc_id: u64, size: u64) -> u64 {
         let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         let addr = unsafe {

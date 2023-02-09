@@ -21,7 +21,6 @@ pub struct SDTHeader {
 }
 
 impl SDTHeader {
-    #[must_use]
     pub fn validate(&self) -> bool {
         let bytes = unsafe {
             core::slice::from_raw_parts((self as *const Self).cast::<u8>(), self.length())
@@ -31,27 +30,22 @@ impl SDTHeader {
         sum == 0
     }
 
-    #[must_use]
     pub fn signature(&self) -> &str {
         unsafe { core::str::from_utf8_unchecked(&self.signature).trim() }
     }
 
-    #[must_use]
     pub const fn length(&self) -> usize {
         self.length as usize
     }
 
-    #[must_use]
     pub fn oem_id(&self) -> &str {
         unsafe { core::str::from_utf8_unchecked(&self.oem_id).trim() }
     }
 
-    #[must_use]
     pub fn oem_table_id(&self) -> &str {
         unsafe { core::str::from_utf8_unchecked(&self.oem_table_id).trim() }
     }
 
-    #[must_use]
     pub fn creator_id(&self) -> &str {
         unsafe { core::str::from_utf8_unchecked(&self.creator_id).trim() }
     }

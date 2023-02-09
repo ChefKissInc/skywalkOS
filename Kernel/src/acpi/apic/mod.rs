@@ -136,7 +136,6 @@ pub struct LocalAPICVer {
 
 impl LocalAPIC {
     #[inline]
-    #[must_use]
     pub const fn new(addr: u64) -> Self {
         Self { addr }
     }

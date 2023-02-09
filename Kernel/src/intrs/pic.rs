@@ -15,7 +15,6 @@ pub struct ProgrammableIntrController {
 
 impl ProgrammableIntrController {
     #[inline]
-    #[must_use]
     pub const fn new() -> Self {
         Self {
             master_cmd: Port::new(0x20),

@@ -76,7 +76,6 @@ pub struct Hpet {
 }
 
 impl Hpet {
-    #[must_use]
     pub fn read_reg<T: Into<u64>>(&self, reg: T) -> u64 {
         unsafe {
             ((self.address.address() + amd64::paging::PHYS_VIRT_OFFSET + reg.into()) as *const u64)
@@ -91,7 +90,6 @@ impl Hpet {
         }
     }
 
-    #[must_use]
     pub fn counter_value(&self) -> u64 {
         self.read_reg(regs::HPETReg::MainCounterValue)
     }
@@ -100,7 +98,6 @@ impl Hpet {
         self.write_reg(regs::HPETReg::MainCounterValue, value);
     }
 
-    #[must_use]
     pub fn capabilities(&self) -> regs::GeneralCapabilities {
         self.read_reg(regs::HPETReg::GeneralCapabilities).into()
     }

@@ -10,7 +10,6 @@ pub struct MemoryManager {
 
 impl MemoryManager {
     #[inline]
-    #[must_use]
     pub const fn new() -> Self {
         Self {
             entries: Vec::new(),

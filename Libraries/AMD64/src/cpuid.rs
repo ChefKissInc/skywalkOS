@@ -142,7 +142,6 @@ impl Default for CPUIdentification {
 
 impl CPUIdentification {
     #[inline]
-    #[must_use]
     pub fn new() -> Self {
         // Function 0
         let res = unsafe { core::arch::x86_64::__cpuid(0) };
