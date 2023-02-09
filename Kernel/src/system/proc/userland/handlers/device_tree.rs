@@ -8,22 +8,28 @@ use crate::system::{proc::scheduler::Scheduler, RegisterState};
 pub fn get_entry_info(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCallStatus {
     let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
     let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    let dt_index = sys_state.dt_index.as_ref().unwrap().lock();
-    let Some(dt_entry) = dt_index.get(&state.rsi) else {
+    let dt_index = sys_state.dt_index.as_ref().unwrap().read();
+    let Ok(info_type) = tungstenkit::syscall::OSDTEntryReqType::try_from(state.rdx) else {
         return SystemCallStatus::MalformedData;
     };
-    let Ok(info_type) = tungstenkit::syscall::OSDTEntryInfoType::try_from(state.rdx) else {
+    let Some(ent) = dt_index.get(&state.rsi) else {
         return SystemCallStatus::MalformedData;
     };
     let data = match info_type {
-        tungstenkit::syscall::OSDTEntryInfoType::Parent => postcard::to_allocvec(&dt_entry.parent),
-        tungstenkit::syscall::OSDTEntryInfoType::PropertyNamed => {
+        tungstenkit::syscall::OSDTEntryReqType::Parent => postcard::to_allocvec(&ent.lock().parent),
+        tungstenkit::syscall::OSDTEntryReqType::Children => {
+            postcard::to_allocvec(&ent.lock().children)
+        }
+        tungstenkit::syscall::OSDTEntryReqType::Properties => {
+            postcard::to_allocvec(&ent.lock().properties)
+        }
+        tungstenkit::syscall::OSDTEntryReqType::Property => {
             let Ok(k) = core::str::from_utf8(unsafe {
-                core::slice::from_raw_parts(state.rcx as *const u8, state.r8 as usize)
+                core::slice::from_raw_parts(state.rcx as *const _, state.r8 as _)
             }) else {
                 return SystemCallStatus::MalformedData;
             };
-            postcard::to_allocvec(&dt_entry.properties.get(k))
+            postcard::to_allocvec(&ent.lock().properties.get(k))
         }
     }
     .unwrap()

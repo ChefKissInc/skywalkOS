@@ -59,20 +59,20 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     acpi::apic::setup(state);
 
     system::proc::userland::setup();
-    let mut sched = system::proc::scheduler::Scheduler::new(&hpet);
-    let cache: tungstenkit::TKCache =
-        postcard::from_bytes(state.dc_cache.as_ref().unwrap()).unwrap();
+    let sched = system::proc::scheduler::Scheduler::new(&hpet);
+    let cache: tungstenkit::TKCache = postcard::from_bytes(boot_info.dc_cache).unwrap();
 
-    let len = cache.infos.len();
-    info!("Got {len} TungstenKit extensions");
-    for info in cache.infos {
-        info!(
-            "Spawning TungstenKit extension {} <{}>",
-            info.name, info.identifier
+    debug!("TungstenKit extension summary:");
+    for (i, (info, _)) in cache.0.iter().enumerate() {
+        debug!(
+            "    {i}: {} <{}> v{}",
+            info.name, info.identifier, info.version
         );
-        sched.spawn_proc(cache.payloads[info.identifier]);
     }
+    state.tkcache = Some(spin::Mutex::new(cache));
     state.scheduler = Some(spin::Mutex::new(sched));
+
+    system::tkext::spawn_new_matches();
 
     debug!("I'm out of here!");
     system::proc::scheduler::Scheduler::unmask();

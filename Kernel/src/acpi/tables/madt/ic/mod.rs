@@ -40,7 +40,7 @@ pub struct ICHeader {
 
 impl ICHeader {
     #[must_use]
-    pub fn length(&self) -> usize {
+    pub fn length(self) -> usize {
         self.length.into()
     }
 }

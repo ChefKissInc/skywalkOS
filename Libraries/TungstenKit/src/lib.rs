@@ -20,18 +20,15 @@ use serde::{Deserialize, Serialize};
 
 pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC000_0000;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TKInfo<'a> {
-    pub identifier: &'a str,
-    pub name: &'a str,
-    pub version: &'a str,
-    pub description: &'a str,
-    pub personalities: HashMap<&'a str, HashMap<String, dt::OSValue>>,
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct TKInfo {
+    pub identifier: String,
+    pub name: String,
+    pub version: String,
+    pub description: String,
+    pub matching_props: HashMap<String, dt::OSValue>,
+    pub dependencies: HashMap<String, String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TKCache<'a> {
-    #[serde(borrow)]
-    pub infos: Vec<TKInfo<'a>>,
-    pub payloads: HashMap<&'a str, &'a [u8]>,
-}
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct TKCache(pub Vec<(TKInfo, Vec<u8>)>);

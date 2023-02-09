@@ -3,9 +3,8 @@ TKInfo (
     name: "TestDrv",
     version: "0.1.0",
     description: "",
-    personalities: {
-        "com.ChefKiss.TestDrv": {
-            "Name": String("Root"),
-        },
+    matching_props: {
+        "Name": String("Root"),
     },
+    dependencies: {},
 )

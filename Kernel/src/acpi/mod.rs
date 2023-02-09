@@ -7,12 +7,12 @@ pub mod ioapic;
 pub mod madt;
 pub mod tables;
 
-pub struct Acpi {
+pub struct ACPIState {
     pub version: u8,
     pub tables: Vec<&'static tables::SDTHeader>,
 }
 
-impl Acpi {
+impl ACPIState {
     #[inline]
     #[must_use]
     pub fn new(rsdp: &'static tables::rsdp::RootSystemDescPtr) -> Self {

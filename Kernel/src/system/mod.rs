@@ -10,6 +10,7 @@ pub mod proc;
 pub mod serial;
 pub mod state;
 pub mod terminal;
+pub mod tkext;
 pub mod tss;
 pub mod vmm;
 

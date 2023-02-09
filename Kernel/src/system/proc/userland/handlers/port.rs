@@ -12,9 +12,9 @@ pub fn port_in(state: &mut RegisterState) -> SystemCallStatus {
     };
     unsafe {
         state.rdi = match access_size {
-            AccessSize::Byte => u8::read(port) as u64,
-            AccessSize::Word => u16::read(port) as u64,
-            AccessSize::DWord => u32::read(port) as u64,
+            AccessSize::Byte => u64::from(u8::read(port)),
+            AccessSize::Word => u64::from(u16::read(port)),
+            AccessSize::DWord => u64::from(u32::read(port)),
         };
     }
     SystemCallStatus::Success

@@ -9,13 +9,11 @@ OUTPUT_FORMAT(elf64-x86-64)
 
 KERNEL_VIRT_OFF = 0xFFFFFFFF80000000;
 
-SECTIONS
-{
+SECTIONS {
     . = KERNEL_VIRT_OFF + 0x200000;
     . = ALIGN(4K);
 
-    .text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VIRT_OFF)
-    {
+    .text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VIRT_OFF) {
         __text_start = .;
         *(.text*)
         . = ALIGN(4K);
@@ -24,16 +22,14 @@ SECTIONS
 
     PROVIDE(__etext = .);
 
-    .rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VIRT_OFF)
-    {
+    .rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VIRT_OFF) {
         __rodata_start = .;
         *(.rodata*)
         . = ALIGN(4K);
         __rodata_end = .;
     }
 
-    .data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VIRT_OFF)
-    {
+    .data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VIRT_OFF) {
         __data_start = .;
         *(.data*)
         . = ALIGN(4K);
@@ -57,8 +53,7 @@ SECTIONS
         __tbss_end = .;
     }
 
-    .eh_frame ALIGN(4K) : AT(ADDR(.eh_frame) - KERNEL_VIRT_OFF)
-    {
+    .eh_frame ALIGN(4K) : AT(ADDR(.eh_frame) - KERNEL_VIRT_OFF) {
         __eh_frame = .;
         KEEP(*(.eh_frame));
     }

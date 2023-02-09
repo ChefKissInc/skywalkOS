@@ -57,12 +57,14 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
     }
     let state = unsafe { &mut *super::state::SYS_STATE.get() };
 
-    if state.in_panic {
+    if state.in_panic.load(core::sync::atomic::Ordering::Relaxed) {
         error!("Panicked while panicking!");
 
         crate::hlt_loop!();
     }
-    state.in_panic = true;
+    state
+        .in_panic
+        .store(true, core::sync::atomic::Ordering::Relaxed);
 
     error!("{info}");
     error!("Backtrace:");

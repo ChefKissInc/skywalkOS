@@ -1,6 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 use core::cell::SyncUnsafeCell;
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
@@ -36,14 +36,15 @@ pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
         old_thread.state = super::ThreadState::Inactive;
     }
 
-    let (id, thread) = this.next_thread_mut().unwrap();
-    *state = thread.regs;
-    thread.state = super::ThreadState::Active;
-    let proc_id = thread.proc_id;
-    let new = Some(id);
-    this.processes.get_mut(&proc_id).unwrap().cr3.set();
-
-    this.current_thread_id = new;
+    if let Some((id, thread)) = this.next_thread_mut() {
+        *state = thread.regs;
+        thread.state = super::ThreadState::Active;
+        let proc_id = thread.proc_id;
+        this.processes.get_mut(&proc_id).unwrap().cr3.set();
+        this.current_thread_id = Some(id);
+    } else {
+        this.current_thread_id = None;
+    }
 }
 
 impl Scheduler {
@@ -151,7 +152,7 @@ impl Scheduler {
             .lock()
             .track(proc_id, virt_addr, data.len() as u64);
         self.processes
-            .insert(proc_id, super::Process::new(proc_id, "", ""));
+            .insert(proc_id, super::Process::new(proc_id, String::new()));
         let proc = self.processes.get_mut(&proc_id).unwrap();
         unsafe { proc.cr3.map_higher_half() }
         let id = self.thread_id_gen.next();

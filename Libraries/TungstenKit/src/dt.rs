@@ -6,9 +6,9 @@ use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 
 #[cfg(target_arch = "x86_64")]
-use crate::syscall::{OSDTEntryInfoType, SystemCall};
+use crate::syscall::{OSDTEntryReqType, SystemCall};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[repr(C)]
 pub enum OSValue {
     Boolean(bool),
@@ -202,7 +202,7 @@ impl OSDTEntry {
     pub fn parent(&self) -> Option<Self> {
         unsafe {
             postcard::from_bytes::<Option<u64>>(
-                &SystemCall::get_dt_entry_info(self.0, OSDTEntryInfoType::Parent, None).unwrap(),
+                &SystemCall::get_dt_entry_info(self.0, OSDTEntryReqType::Parent, None).unwrap(),
             )
             .unwrap()
             .map(Self::from_id)
@@ -210,10 +210,33 @@ impl OSDTEntry {
     }
 
     #[must_use]
-    pub fn get_prop(&self, k: &str) -> Option<OSValue> {
+    pub fn children(&self) -> Vec<Self> {
+        unsafe {
+            postcard::from_bytes::<Vec<u64>>(
+                &SystemCall::get_dt_entry_info(self.0, OSDTEntryReqType::Children, None).unwrap(),
+            )
+            .unwrap()
+            .into_iter()
+            .map(Self::from_id)
+            .collect()
+        }
+    }
+
+    #[must_use]
+    pub fn properties(&self) -> HashMap<String, OSValue> {
         unsafe {
             postcard::from_bytes(
-                &SystemCall::get_dt_entry_info(self.0, OSDTEntryInfoType::PropertyNamed, Some(k))
+                &SystemCall::get_dt_entry_info(self.0, OSDTEntryReqType::Properties, None).unwrap(),
+            )
+            .unwrap()
+        }
+    }
+
+    #[must_use]
+    pub fn get_property(&self, k: &str) -> Option<OSValue> {
+        unsafe {
+            postcard::from_bytes(
+                &SystemCall::get_dt_entry_info(self.0, OSDTEntryReqType::Property, Some(k))
                     .unwrap(),
             )
             .unwrap()

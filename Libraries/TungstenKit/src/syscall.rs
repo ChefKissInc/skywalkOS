@@ -70,9 +70,11 @@ pub enum AccessSize {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u64)]
-pub enum OSDTEntryInfoType {
+pub enum OSDTEntryReqType {
     Parent,
-    PropertyNamed,
+    Children,
+    Properties,
+    Property,
 }
 
 impl SystemCall {
@@ -112,7 +114,7 @@ impl SystemCall {
         Ok(Some(Message {
             id,
             proc_id,
-            data: core::slice::from_raw_parts(ptr as *const u8, len as usize),
+            data: core::slice::from_raw_parts(ptr as *const u8, len as _),
         }))
     }
 
@@ -306,7 +308,7 @@ impl SystemCall {
 
     pub unsafe fn get_dt_entry_info(
         id: u64,
-        ty: OSDTEntryInfoType,
+        ty: OSDTEntryReqType,
         k: Option<&str>,
     ) -> Result<Vec<u8>, SystemCallStatus> {
         let mut ret: u64;

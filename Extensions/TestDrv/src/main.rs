@@ -116,6 +116,20 @@ impl PS2Ctl {
     }
 }
 
+fn print_ent(ent: OSDTEntry, ident: usize) {
+    let spacing = " ".repeat(ident);
+
+    writeln!(logger::KWriter, "{spacing}+ {}", ent.id()).unwrap();
+
+    for (k, v) in ent.properties() {
+        writeln!(logger::KWriter, "{spacing}|--- {k}: {v:X?}").unwrap();
+    }
+
+    for child in ent.children() {
+        print_ent(child, ident + 4);
+    }
+}
+
 #[no_mangle]
 extern "C" fn _start() -> ! {
     logger::init();
@@ -123,8 +137,7 @@ extern "C" fn _start() -> ! {
     // let target = unsafe { SystemCall::get_providing_process(PS2_SERVICE).unwrap() };
 
     info!("TestDrv loaded");
-    info!("{:#X?}", OSDTEntry::from_id(0).parent());
-    info!("{:#X?}", OSDTEntry::from_id(0).get_prop("Name"));
+    print_ent(OSDTEntry::from_id(0), 0);
 
     let this = PS2Ctl::new();
     this.init();
@@ -132,7 +145,7 @@ extern "C" fn _start() -> ! {
     write!(logger::KWriter, "Tungsten / ").unwrap();
     loop {
         let Some(msg) = (unsafe { SystemCall::receive_message().unwrap() }) else {
-            unsafe { SystemCall::skip() };
+            unsafe { SystemCall::skip() }
             continue;
         };
         if msg.proc_id == 0 {
@@ -159,14 +172,14 @@ extern "C" fn _start() -> ! {
 
                 if let Ps2Event::Pressed(ch) = event {
                     write!(logger::KWriter, "{ch}").unwrap();
-                    if ch != '\n' {
-                        s.push(ch);
-                    } else {
+                    if ch == '\n' {
                         info!("You typed: {}", s);
                         write!(logger::KWriter, "Tungsten / ").unwrap();
                         s.clear();
+                    } else {
+                        s.push(ch);
                     }
-                };
+                }
             }
         }
         unsafe { SystemCall::ack_message(msg.id).unwrap() }

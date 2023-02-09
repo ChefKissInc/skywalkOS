@@ -1,11 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use alloc::{
-    boxed::Box,
-    collections::VecDeque,
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::{boxed::Box, collections::VecDeque, string::String, vec::Vec};
 
 use tungstenkit::syscall::Message;
 
@@ -61,7 +56,6 @@ impl Thread {
 
 pub struct Process {
     pub path: String,
-    pub cwd: String,
     pub cr3: Box<userland::page_table::UserPML4>,
     pub messages: VecDeque<Message>,
 }
@@ -69,10 +63,9 @@ pub struct Process {
 impl Process {
     #[inline]
     #[must_use]
-    pub fn new(proc_id: u64, path: &str, cwd: &str) -> Self {
+    pub fn new(proc_id: u64, path: String) -> Self {
         Self {
-            path: path.to_string(),
-            cwd: cwd.to_string(),
+            path,
             cr3: Box::new(userland::page_table::UserPML4::new(proc_id)),
             messages: VecDeque::new(),
         }

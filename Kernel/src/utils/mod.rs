@@ -5,7 +5,7 @@ use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 use hashbrown::HashMap;
 
 use crate::{
-    acpi::{tables::rsdp::RootSystemDescPtr, Acpi},
+    acpi::{tables::rsdp::RootSystemDescPtr, ACPIState},
     system::{pmm::BitmapAllocator, state::OSDTEntry},
     utils::incr_id::IncrementalIDGen,
 };
@@ -85,16 +85,18 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     };
     root.children.push(product.id);
 
-    state.dt_index = Some(spin::Mutex::new(HashMap::from([
-        (root.id, root),
-        (product.id, product),
+    state.dt_index = Some(spin::RwLock::new(HashMap::from([
+        (root.id, spin::Mutex::new(root)),
+        (product.id, spin::Mutex::new(product)),
     ])));
 
     state.dt_id_gen = Some(spin::Mutex::new(dt_id_gen));
 
-    unsafe { state.acpi = Some(Acpi::new(&*boot_info.acpi_rsdp.cast::<RootSystemDescPtr>())) }
-
-    state.dc_cache = Some(boot_info.dc_cache.to_vec());
+    unsafe {
+        state.acpi = Some(ACPIState::new(
+            &*boot_info.acpi_rsdp.cast::<RootSystemDescPtr>(),
+        ));
+    }
 }
 
 pub fn init_paging(state: &mut crate::system::state::SystemState) {
