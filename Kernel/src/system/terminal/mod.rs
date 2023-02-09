@@ -5,6 +5,8 @@ use core::fmt::Write;
 use amd64::paging::pml4::PML4;
 use paper_fb::{fb::FrameBuffer, pixel::Colour};
 
+mod font;
+
 pub struct Terminal {
     pub x: usize,
     pub y: usize,
@@ -20,7 +22,7 @@ impl Terminal {
     #[inline]
     pub const fn new(fb: FrameBuffer) -> Self {
         let width = fb.width / 8;
-        let height = fb.height / 8;
+        let height = fb.height / 16;
         Self {
             x: 0,
             y: 0,
@@ -54,15 +56,15 @@ impl Terminal {
 
     pub fn draw_char(&mut self, c: char, colour: Colour) {
         let x = self.x * 8;
-        let mut y = self.y * 8;
-        let Some(v) = font8x8::legacy::BASIC_LEGACY.get(c as usize) else {
+        let mut y = self.y * 16;
+        let Some(v) = font::FONT_BITMAP.get(c as usize - 0x21) else {
             return;
         };
         for &x_bit in v {
             for bit in 0..8 {
                 if x_bit & (1 << bit) != 0 {
                     self.fb
-                        .plot_pixel(x + bit, y, colour.as_u32(self.fb.bitmask))
+                        .plot_pixel(x + 8 - bit, y, colour.as_u32(self.fb.bitmask))
                         .unwrap();
                 }
             }
@@ -74,8 +76,8 @@ impl Terminal {
         if self.y >= self.height {
             self.fb
                 .base
-                .copy_within(self.fb.stride * 8..self.fb.stride * self.fb.height, 0);
-            self.fb.base[self.fb.stride * (self.fb.height - 8)..].fill(0);
+                .copy_within(self.fb.stride * 16..self.fb.stride * self.fb.height, 0);
+            self.fb.base[self.fb.stride * (self.fb.height - 16)..].fill(0);
             self.y -= 1;
             self.x = 0;
         }
