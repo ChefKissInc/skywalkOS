@@ -53,6 +53,9 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
 
     utils::init_paging(state);
 
+    acpi::madt::setup(state);
+    acpi::apic::setup(state);
+
     state.tkcache = Some(spin::Mutex::new(
         postcard::from_bytes(boot_info.dc_cache).unwrap(),
     ));
@@ -61,9 +64,6 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     )));
 
     system::tkext::spawn_new_matches();
-
-    acpi::madt::setup(state);
-    acpi::apic::setup(state);
 
     debug!("I'm out of here!");
     system::proc::userland::setup();
