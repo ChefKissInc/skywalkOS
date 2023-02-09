@@ -39,6 +39,57 @@ impl Message {
     pub const fn new(id: u64, proc_id: u64, data: &'static [u8]) -> Self {
         Self { id, proc_id, data }
     }
+
+    pub unsafe fn receive() -> Result<Option<Self>, SystemCallStatus> {
+        let mut ret: u64;
+        let (mut id, mut proc_id): (u64, u64);
+        let (mut ptr, mut len): (u64, u64);
+        core::arch::asm!(
+            "int 249",
+            in("rdi") SystemCall::ReceiveMessage as u64,
+            out("rax") ret,
+            lateout("rdi") id,
+            out("rsi") proc_id,
+            out("rdx") ptr,
+            out("rcx") len,
+            options(nostack, preserves_flags),
+        );
+        SystemCallStatus::try_from(ret).unwrap().as_result()?;
+        if id == 0 {
+            return Ok(None);
+        }
+        Ok(Some(Self {
+            id,
+            proc_id,
+            data: core::slice::from_raw_parts(ptr as *const u8, len as _),
+        }))
+    }
+
+    pub unsafe fn send(self) -> Result<(), SystemCallStatus> {
+        let mut ret: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") SystemCall::SendMessage as u64,
+            in("rsi") self.proc_id,
+            in("rdx") self.data.as_ptr() as u64,
+            in("rcx") self.data.len() as u64,
+            out("rax") ret,
+            options(nostack, preserves_flags),
+        );
+        SystemCallStatus::try_from(ret).unwrap().as_result()
+    }
+
+    pub unsafe fn ack(self) -> Result<(), SystemCallStatus> {
+        let mut ret: u64;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") SystemCall::AckMessage as u64,
+            in("rsi") self.id,
+            out("rax") ret,
+            options(nostack, preserves_flags),
+        );
+        SystemCallStatus::try_from(ret).unwrap().as_result()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
@@ -85,47 +136,6 @@ impl SystemCall {
             in("rdi") Self::KPrint as u64,
             in("rsi") s.as_ptr() as u64,
             in("rdx") s.len() as u64,
-            out("rax") ret,
-            options(nostack, preserves_flags),
-        );
-        SystemCallStatus::try_from(ret).unwrap().as_result()
-    }
-
-    pub unsafe fn receive_message() -> Result<Option<Message>, SystemCallStatus> {
-        let mut ret: u64;
-        let mut id: u64;
-        let mut proc_id: u64;
-        let mut ptr: u64;
-        let mut len: u64;
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::ReceiveMessage as u64,
-            out("rax") ret,
-            lateout("rdi") id,
-            out("rsi") proc_id,
-            out("rdx") ptr,
-            out("rcx") len,
-            options(nostack, preserves_flags),
-        );
-        SystemCallStatus::try_from(ret).unwrap().as_result()?;
-        if id == 0 {
-            return Ok(None);
-        }
-        Ok(Some(Message {
-            id,
-            proc_id,
-            data: core::slice::from_raw_parts(ptr as *const u8, len as _),
-        }))
-    }
-
-    pub unsafe fn send_message(target: u64, s: &[u8]) -> Result<(), SystemCallStatus> {
-        let mut ret: u64;
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::SendMessage as u64,
-            in("rsi") target,
-            in("rdx") s.as_ptr() as u64,
-            in("rcx") s.len() as u64,
             out("rax") ret,
             options(nostack, preserves_flags),
         );
@@ -288,18 +298,6 @@ impl SystemCall {
             "int 249",
             in("rdi") Self::Free as u64,
             in("rsi") ptr as u64,
-            out("rax") ret,
-            options(nostack, preserves_flags),
-        );
-        SystemCallStatus::try_from(ret).unwrap().as_result()
-    }
-
-    pub unsafe fn ack_message(id: u64) -> Result<(), SystemCallStatus> {
-        let mut ret: u64;
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::AckMessage as u64,
-            in("rsi") id,
             out("rax") ret,
             options(nostack, preserves_flags),
         );

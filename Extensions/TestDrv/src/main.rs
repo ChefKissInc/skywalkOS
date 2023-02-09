@@ -16,7 +16,11 @@ use core::fmt::Write;
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
-use tungstenkit::{dt::OSDTEntry, port::Port, syscall::SystemCall};
+use tungstenkit::{
+    dt::OSDTEntry,
+    port::Port,
+    syscall::{Message, SystemCall},
+};
 
 mod allocator;
 mod logger;
@@ -144,7 +148,7 @@ extern "C" fn _start() -> ! {
     let mut s = String::new();
     write!(logger::KWriter, "Tungsten / ").unwrap();
     loop {
-        let Some(msg) = (unsafe { SystemCall::receive_message().unwrap() }) else {
+        let Some(msg) = (unsafe { Message::receive().unwrap() }) else {
             unsafe { SystemCall::skip() }
             continue;
         };
@@ -182,6 +186,6 @@ extern "C" fn _start() -> ! {
                 }
             }
         }
-        unsafe { SystemCall::ack_message(msg.id).unwrap() }
+        unsafe { msg.ack().unwrap() }
     }
 }
