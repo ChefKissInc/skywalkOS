@@ -126,7 +126,7 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
     writeln!(logger::KWriter, "{spacing}+ {}", ent.id()).unwrap();
 
     for (k, v) in ent.properties() {
-        writeln!(logger::KWriter, "{spacing}|--- {k}: {v:X?}").unwrap();
+        writeln!(logger::KWriter, "{spacing}|- {k}: {v:X?}").unwrap();
     }
 
     for child in ent.children() {

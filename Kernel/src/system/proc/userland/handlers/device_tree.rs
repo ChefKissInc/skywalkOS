@@ -1,6 +1,5 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use amd64::paging::{pml4::PML4, PageTableEntry};
 use tungstenkit::syscall::SystemCallStatus;
 
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
@@ -34,21 +33,16 @@ pub fn get_entry_info(scheduler: &mut Scheduler, state: &mut RegisterState) -> S
     }
     .unwrap()
     .leak();
+
     let ptr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
     let virt = ptr + tungstenkit::USER_PHYS_VIRT_OFFSET;
-    let count = (data.len() as u64 + 0xFFF) / 0x1000;
-    let mut usr_allocs = sys_state.usr_allocs.as_ref().unwrap().lock();
-    usr_allocs.track(proc_id, virt, data.len() as u64);
 
-    unsafe {
-        let process = scheduler.processes.get_mut(&proc_id).unwrap();
-        process.cr3.map_pages(
-            virt,
-            ptr,
-            count,
-            PageTableEntry::new().with_present(true).with_user(true),
-        );
-    }
+    scheduler.processes.get_mut(&proc_id).unwrap().track_alloc(
+        virt,
+        data.len() as u64,
+        Some(false),
+    );
+
     state.rdi = virt;
     state.rsi = data.len() as u64;
     SystemCallStatus::Success

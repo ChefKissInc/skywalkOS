@@ -72,18 +72,16 @@ pub trait PML4: Sized {
         }
     }
 
-    unsafe fn unmap_pages(&mut self, virt: u64, count: u64) -> bool {
+    unsafe fn unmap_pages(&mut self, virt: u64, count: u64) {
         for i in 0..count {
             let virt = virt + 0x1000 * i;
             let offs = super::PageTableOffsets::new(virt);
-            let Some(pdp) = self.get_or_null_entry(offs.pml4) else { return false; };
-            let Some(pd) = pdp.get_or_null_entry(offs.pdp) else { return false; };
-            let Some(pt) = pd.get_or_null_entry(offs.pd) else { return false; };
+            let Some(pdp) = self.get_or_null_entry(offs.pml4) else { return; };
+            let Some(pd) = pdp.get_or_null_entry(offs.pdp) else { return; };
+            let Some(pt) = pd.get_or_null_entry(offs.pd) else { return; };
             *pt.get_entry(offs.pt) = super::PageTableEntry::new();
             core::arch::asm!("invlpg [{}]", in(reg) virt, options(nostack, preserves_flags));
         }
-
-        true
     }
 
     unsafe fn map_huge_pages(

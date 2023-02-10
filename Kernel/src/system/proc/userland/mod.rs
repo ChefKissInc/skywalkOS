@@ -1,11 +1,9 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use amd64::paging::{pml4::PML4, PageTableEntry};
 use tungstenkit::syscall::{KernelMessage, Message, SystemCall, SystemCallStatus};
 
 use crate::system::{gdt::PrivilegeLevel, RegisterState};
 
-pub mod allocations;
 mod handlers;
 pub mod page_table;
 
@@ -20,9 +18,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
         .leak();
     let ptr = s.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
     let virt = ptr + tungstenkit::USER_PHYS_VIRT_OFFSET;
-    let count = (s.len() as u64 + 0xFFF) / 0x1000;
-    let mut usr_allocs = sys_state.usr_allocs.as_ref().unwrap().lock();
-    usr_allocs.track(proc_id, virt, s.len() as u64);
+
     let msg = Message::new(
         scheduler.message_id_gen.next(),
         0,
@@ -30,13 +26,8 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     );
     scheduler.message_sources.insert(msg.id, 0);
     let process = scheduler.processes.get_mut(&proc_id).unwrap();
-    process.cr3.map_pages(
-        virt,
-        ptr,
-        count,
-        PageTableEntry::new().with_present(true).with_user(true),
-    );
-    usr_allocs.track_msg(msg.id, virt);
+    process.track_alloc(virt, s.len() as u64, Some(false));
+    process.track_msg(msg.id, virt);
     process.messages.push_front(msg);
 }
 
@@ -101,7 +92,5 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
 }
 
 pub fn setup() {
-    let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    state.usr_allocs = Some(spin::Mutex::new(allocations::UserAllocationTracker::new()));
     crate::intrs::idt::set_handler(249, 1, PrivilegeLevel::User, syscall_handler, false, true);
 }

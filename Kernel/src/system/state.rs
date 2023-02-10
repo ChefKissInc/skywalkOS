@@ -6,10 +6,7 @@ use core::cell::SyncUnsafeCell;
 use hashbrown::HashMap;
 
 use super::{
-    pmm::BitmapAllocator,
-    proc::{scheduler::Scheduler, userland::allocations::UserAllocationTracker},
-    terminal::Terminal,
-    vmm::PageTableLvl4,
+    pmm::BitmapAllocator, proc::scheduler::Scheduler, terminal::Terminal, vmm::PageTableLvl4,
 };
 use crate::{
     acpi::{apic::LocalAPIC, madt::MADTData, ACPIState},
@@ -38,7 +35,6 @@ pub struct SystemState {
     pub scheduler: Option<spin::Mutex<Scheduler>>,
     pub interrupt_context: Option<super::RegisterState>,
     pub in_panic: core::sync::atomic::AtomicBool,
-    pub usr_allocs: Option<spin::Mutex<UserAllocationTracker>>,
     pub dt_index: Option<spin::RwLock<HashMap<u64, spin::Mutex<OSDTEntry>>>>,
     pub dt_id_gen: Option<spin::Mutex<IncrementalIDGen>>,
     pub tkcache: Option<spin::Mutex<tungstenkit::TKCache>>,
@@ -59,7 +55,6 @@ impl SystemState {
             scheduler: None,
             interrupt_context: None,
             in_panic: core::sync::atomic::AtomicBool::new(false),
-            usr_allocs: None,
             dt_index: None,
             dt_id_gen: None,
             tkcache: None,

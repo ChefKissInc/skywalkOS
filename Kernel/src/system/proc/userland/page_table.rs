@@ -26,11 +26,18 @@ impl PML4 for UserPML4 {
     fn alloc_entry(&self) -> u64 {
         let phys = Box::leak(Box::new(Self::new(self.1))) as *mut _ as u64
             - amd64::paging::PHYS_VIRT_OFFSET;
-        let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-        state.usr_allocs.as_ref().unwrap().lock().track(
-            self.1,
+
+        let scheduler = unsafe {
+            (*crate::system::state::SYS_STATE.get())
+                .scheduler
+                .as_mut()
+                .unwrap()
+                .get_mut()
+        };
+        scheduler.processes.get_mut(&self.1).unwrap().track_alloc(
             phys + tungstenkit::USER_PHYS_VIRT_OFFSET,
             size_of::<Self>() as _,
+            None,
         );
         phys
     }

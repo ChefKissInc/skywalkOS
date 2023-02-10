@@ -140,32 +140,16 @@ impl Scheduler {
             );
             *ptr = target;
         }
-        let rip = virt_addr + exec.entry;
+
         let proc_id = self.proc_id_gen.next();
-        let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-        let count = (data.len() as u64 + 0xFFF) / 0x1000;
-        state
-            .usr_allocs
-            .as_ref()
-            .unwrap()
-            .lock()
-            .track(proc_id, virt_addr, data.len() as u64);
         self.processes
             .insert(proc_id, super::Process::new(proc_id, String::new()));
         let proc = self.processes.get_mut(&proc_id).unwrap();
         unsafe { proc.cr3.map_higher_half() }
+        proc.track_alloc(virt_addr, data.len() as _, Some(true));
         let id = self.thread_id_gen.next();
-        let thread = super::Thread::new(proc_id, rip);
+        let thread = super::Thread::new(proc_id, virt_addr + exec.entry);
         unsafe {
-            proc.cr3.map_pages(
-                virt_addr,
-                virt_addr - tungstenkit::USER_PHYS_VIRT_OFFSET,
-                count,
-                PageTableEntry::new()
-                    .with_present(true)
-                    .with_writable(true)
-                    .with_user(true),
-            );
             let stack_addr = thread.stack.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
             proc.cr3.map_pages(
                 stack_addr + tungstenkit::USER_PHYS_VIRT_OFFSET,

@@ -17,13 +17,7 @@ pub fn send(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCallS
     scheduler.message_sources.insert(msg.id, src);
 
     let process = scheduler.processes.get_mut(&state.rsi).unwrap();
-    let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    sys_state
-        .usr_allocs
-        .as_ref()
-        .unwrap()
-        .lock()
-        .track_msg(msg.id, state.rcx);
+    process.track_msg(msg.id, state.rcx);
     process.messages.push_front(msg);
     SystemCallStatus::Success
 }
@@ -49,18 +43,18 @@ pub fn ack(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCallSt
     let Some(&src) = scheduler.message_sources.get(&id) else {
         return SystemCallStatus::MalformedData;
     };
-    let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    let mut usr_allocs = sys_state.usr_allocs.as_ref().unwrap().lock();
+    let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
+    let process = scheduler.processes.get_mut(&proc_id).unwrap();
     if src == 0 {
-        let addr = *usr_allocs.message_allocations.get(&id).unwrap();
-        let size = usr_allocs.allocations.get(&addr).unwrap().1;
+        let addr = *process.message_allocations.get(&id).unwrap();
+        let (size, _) = *process.allocations.get(&addr).unwrap();
         let data = addr as *const u8;
         let msg: KernelMessage =
             unsafe { postcard::from_bytes(core::slice::from_raw_parts(data, size as _)).unwrap() };
         let KernelMessage::IRQFired(irq) = msg;
         crate::acpi::ioapic::set_irq_mask(irq, false);
     }
-    usr_allocs.free_msg(id);
+    process.free_msg(id);
     scheduler.message_id_gen.free(id);
     SystemCallStatus::Success
 }
