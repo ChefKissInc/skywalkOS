@@ -19,8 +19,8 @@ pub enum ThreadState {
 
 #[derive(Debug)]
 pub struct Thread {
-    pub state: ThreadState,
     pub proc_id: u64,
+    pub state: ThreadState,
     pub regs: super::RegisterState,
     pub fs_base: usize,
     pub gs_base: usize,
@@ -32,8 +32,8 @@ impl Thread {
     pub fn new(proc_id: u64, rip: u64) -> Self {
         let stack = vec![0; 0x14000];
         Self {
-            state: ThreadState::Inactive,
             proc_id,
+            state: ThreadState::Inactive,
             regs: super::RegisterState {
                 rip,
                 cs: super::gdt::SegmentSelector::new(3, super::gdt::PrivilegeLevel::User)
@@ -56,7 +56,7 @@ impl Thread {
 }
 
 pub struct Process {
-    pub proc_id: u64,
+    pub id: u64,
     pub path: String,
     pub cr3: Box<userland::page_table::UserPML4>,
     pub messages: VecDeque<Message>,
@@ -66,11 +66,11 @@ pub struct Process {
 
 impl Process {
     #[inline]
-    pub fn new(proc_id: u64, path: String) -> Self {
+    pub fn new(id: u64, path: String) -> Self {
         Self {
-            proc_id,
+            id,
             path,
-            cr3: Box::new(userland::page_table::UserPML4::new(proc_id)),
+            cr3: Box::new(userland::page_table::UserPML4::new(id)),
             messages: VecDeque::new(),
             allocations: HashMap::new(),
             message_allocations: HashMap::new(),
@@ -80,7 +80,7 @@ impl Process {
     pub fn track_alloc(&mut self, addr: u64, size: u64, writable: Option<bool>) {
         trace!(
             "Tracking allocation of {size} bytes at {addr:#X} from process {}",
-            self.proc_id
+            self.id
         );
         self.allocations.insert(addr, (size, writable.is_some()));
         if let Some(writable) = writable {
@@ -102,7 +102,7 @@ impl Process {
         let (size, mapped) = self.allocations.remove(&addr).unwrap();
         trace!(
             "Freeing allocation of {size} bytes at {addr:#X} from process {}",
-            self.proc_id
+            self.id
         );
 
         let page_count = (size + 0xFFF) / 0x1000;
