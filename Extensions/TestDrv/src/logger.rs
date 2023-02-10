@@ -8,7 +8,7 @@ pub struct KWriter;
 
 impl Write for KWriter {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        unsafe { SystemCall::kprint(s).unwrap() }
+        unsafe { SystemCall::kprint(s) }
         Ok(())
     }
 }

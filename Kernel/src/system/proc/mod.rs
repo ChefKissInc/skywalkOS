@@ -6,51 +6,48 @@ use amd64::paging::{pml4::PML4, PageTableEntry};
 use hashbrown::HashMap;
 use tungstenkit::syscall::Message;
 
+use super::gdt::{PrivilegeLevel, SegmentSelector};
+
 pub mod scheduler;
 pub mod userland;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)]
+pub const STACK_SIZE: u64 = 0x14000;
+
+#[derive(PartialEq, Eq)]
 pub enum ThreadState {
     Active,
     Inactive,
     Suspended,
 }
 
-#[derive(Debug)]
 pub struct Thread {
-    pub proc_id: u64,
+    pub id: u64,
+    pub pid: u64,
     pub state: ThreadState,
     pub regs: super::RegisterState,
     pub fs_base: usize,
     pub gs_base: usize,
-    pub stack: Vec<u8>,
+    pub stack_addr: u64,
 }
 
 impl Thread {
     #[inline]
-    pub fn new(proc_id: u64, rip: u64) -> Self {
-        let stack = vec![0; 0x14000];
+    pub fn new(id: u64, pid: u64, rip: u64, stack_addr: u64) -> Self {
         Self {
-            proc_id,
+            id,
+            pid,
             state: ThreadState::Inactive,
             regs: super::RegisterState {
                 rip,
-                cs: super::gdt::SegmentSelector::new(3, super::gdt::PrivilegeLevel::User)
-                    .0
-                    .into(),
+                cs: SegmentSelector::new(3, PrivilegeLevel::User).0.into(),
                 rflags: 0x202,
-                rsp: stack.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET
-                    + tungstenkit::USER_PHYS_VIRT_OFFSET
-                    + stack.len() as u64,
-                ss: super::gdt::SegmentSelector::new(4, super::gdt::PrivilegeLevel::User)
-                    .0
-                    .into(),
+                rsp: stack_addr + STACK_SIZE,
+                ss: SegmentSelector::new(4, PrivilegeLevel::User).0.into(),
                 ..Default::default()
             },
             fs_base: 0,
             gs_base: 0,
-            stack,
+            stack_addr,
         }
     }
 }
@@ -62,6 +59,7 @@ pub struct Process {
     pub messages: VecDeque<Message>,
     pub allocations: HashMap<u64, (u64, bool)>,
     pub message_allocations: HashMap<u64, u64>,
+    pub tids: Vec<u64>,
 }
 
 impl Process {
@@ -74,14 +72,12 @@ impl Process {
             messages: VecDeque::new(),
             allocations: HashMap::new(),
             message_allocations: HashMap::new(),
+            tids: vec![],
         }
     }
 
     pub fn track_alloc(&mut self, addr: u64, size: u64, writable: Option<bool>) {
-        trace!(
-            "Tracking allocation of {size} bytes at {addr:#X} from process {}",
-            self.id
-        );
+        trace!("PID {}: Tracked {addr:#X} ({size}B)", self.id);
         self.allocations.insert(addr, (size, writable.is_some()));
         if let Some(writable) = writable {
             unsafe {
@@ -100,10 +96,6 @@ impl Process {
 
     pub fn free_alloc(&mut self, addr: u64) {
         let (size, mapped) = self.allocations.remove(&addr).unwrap();
-        trace!(
-            "Freeing allocation of {size} bytes at {addr:#X} from process {}",
-            self.id
-        );
 
         let page_count = (size + 0xFFF) / 0x1000;
 
@@ -122,23 +114,24 @@ impl Process {
         if mapped {
             unsafe { self.cr3.unmap_pages(addr, page_count) }
         }
+
+        trace!("PID {}: Freed {addr:#X} ({size}B)", self.id);
     }
 
     pub fn track_msg(&mut self, id: u64, addr: u64) {
-        trace!("Marking allocation at {addr:#X} as message {id}");
         self.message_allocations.insert(id, addr);
+        trace!("PID {}: Marked {addr:#X} as message {id}", self.id);
     }
 
     pub fn free_msg(&mut self, id: u64) {
-        trace!("Freeing message {id}");
         let addr = self.message_allocations.remove(&id).unwrap();
         self.free_alloc(addr);
+        trace!("PID {}: Freed message {id}", self.id);
     }
 
     pub fn allocate(&mut self, size: u64) -> u64 {
-        let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         let addr = unsafe {
-            state
+            (*crate::system::state::SYS_STATE.get())
                 .pmm
                 .as_mut()
                 .unwrap()

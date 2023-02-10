@@ -1,13 +1,11 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use tungstenkit::syscall::SystemCallStatus;
-
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
 
-pub fn alloc(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCallStatus {
+pub fn alloc(scheduler: &mut Scheduler, state: &mut RegisterState) {
     let size = state.rsi;
-    let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
-    let process = scheduler.processes.get_mut(&proc_id).unwrap();
+    let pid = scheduler.current_pid.unwrap();
+    let process = scheduler.processes.get_mut(&pid).unwrap();
     let addr = process.allocate(size);
 
     unsafe {
@@ -15,15 +13,12 @@ pub fn alloc(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCall
     }
 
     state.rdi = addr;
-    SystemCallStatus::Success
 }
 
-pub fn free(scheduler: &mut Scheduler, state: &mut RegisterState) -> SystemCallStatus {
+pub fn free(scheduler: &mut Scheduler, state: &mut RegisterState) {
     let addr = state.rsi;
 
-    let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
-    let process = scheduler.processes.get_mut(&proc_id).unwrap();
+    let pid = scheduler.current_pid.unwrap();
+    let process = scheduler.processes.get_mut(&pid).unwrap();
     process.free_alloc(addr);
-
-    SystemCallStatus::Success
 }

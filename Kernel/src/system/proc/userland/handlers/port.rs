@@ -1,14 +1,14 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
 use amd64::io::port::PortIO;
-use tungstenkit::syscall::{AccessSize, SystemCallStatus};
+use tungstenkit::syscall::AccessSize;
 
 use crate::system::RegisterState;
 
-pub fn port_in(state: &mut RegisterState) -> SystemCallStatus {
+pub fn port_in(state: &mut RegisterState) {
     let port = state.rsi as u16;
     let Ok(access_size) = AccessSize::try_from(state.rdx) else {
-        return SystemCallStatus::MalformedData;
+        todo!()
     };
     unsafe {
         state.rdi = match access_size {
@@ -17,13 +17,12 @@ pub fn port_in(state: &mut RegisterState) -> SystemCallStatus {
             AccessSize::DWord => u64::from(u32::read(port)),
         };
     }
-    SystemCallStatus::Success
 }
 
-pub fn port_out(state: &mut RegisterState) -> SystemCallStatus {
+pub fn port_out(state: &mut RegisterState) {
     let port = state.rsi as u16;
     let Ok(access_size) = AccessSize::try_from(state.rcx) else {
-        return SystemCallStatus::MalformedData;
+        todo!()
     };
     unsafe {
         match access_size {
@@ -32,5 +31,4 @@ pub fn port_out(state: &mut RegisterState) -> SystemCallStatus {
             AccessSize::DWord => u32::write(port, state.rdx as u32),
         };
     }
-    SystemCallStatus::Success
 }

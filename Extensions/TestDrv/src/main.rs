@@ -113,7 +113,7 @@ impl PS2Ctl {
                 .with_port2_intr(false)
                 .with_port1_translation(true)
         };
-        unsafe { SystemCall::register_irq_handler(1).unwrap() }
+        unsafe { SystemCall::register_irq_handler(1) }
         self.send_cmd(PS2CtlCmd::WriteControllerCfg, false);
         unsafe { self.data_port.write(cfg.into()) }
         while self.input_full() {}
@@ -148,11 +148,8 @@ extern "C" fn _start() -> ! {
     let mut s = String::new();
     write!(logger::KWriter, "Tungsten / ").unwrap();
     loop {
-        let Some(msg) = (unsafe { Message::receive().unwrap() }) else {
-            unsafe { SystemCall::skip() }
-            continue;
-        };
-        if msg.proc_id == 0 {
+        let msg = unsafe { Message::receive() };
+        if msg.pid == 0 {
             while this.output_full() {
                 let event = match unsafe { this.data_port.read() } {
                     0xE => Ps2Event::BackSpace,
@@ -186,6 +183,6 @@ extern "C" fn _start() -> ! {
                 }
             }
         }
-        unsafe { msg.ack().unwrap() }
+        unsafe { msg.ack() }
     }
 }

@@ -3,11 +3,15 @@
 use alloc::{string::String, vec::Vec};
 use core::cell::SyncUnsafeCell;
 
-use amd64::paging::{pml4::PML4, PageTableEntry};
+use amd64::paging::pml4::PML4;
 use hashbrown::HashMap;
 
 use crate::{
-    system::{gdt::PrivilegeLevel, tss::TaskSegmentSelector, RegisterState},
+    system::{
+        gdt::{PrivilegeLevel, SegmentSelector},
+        tss::TaskSegmentSelector,
+        RegisterState,
+    },
     timer::Timer,
 };
 
@@ -17,14 +21,19 @@ pub struct Scheduler {
     pub processes: HashMap<u64, super::Process>,
     pub thread_ids: Vec<u64>,
     pub threads: HashMap<u64, super::Thread>,
-    pub current_thread_id: Option<u64>,
+    pub current_tid: Option<u64>,
+    pub current_pid: Option<u64>,
     pub kern_stack: Vec<u8>,
     pub providers: HashMap<u64, u64>,
     pub irq_handlers: HashMap<u8, u64>,
     pub message_sources: HashMap<u64, u64>,
-    pub proc_id_gen: crate::utils::incr_id::IncrementalIDGen,
-    pub thread_id_gen: crate::utils::incr_id::IncrementalIDGen,
-    pub message_id_gen: crate::utils::incr_id::IncrementalIDGen,
+    pub pid_gen: crate::utils::incr_id::IncrementalIDGen,
+    pub tid_gen: crate::utils::incr_id::IncrementalIDGen,
+    pub msg_id_gen: crate::utils::incr_id::IncrementalIDGen,
+}
+
+extern "C" fn idle() {
+    crate::hlt_loop!();
 }
 
 pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
@@ -33,17 +42,31 @@ pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
 
     if let Some(old_thread) = this.current_thread_mut() {
         old_thread.regs = *state;
-        old_thread.state = super::ThreadState::Inactive;
+        if old_thread.state != super::ThreadState::Suspended {
+            old_thread.state = super::ThreadState::Inactive;
+        }
     }
 
-    if let Some((id, thread)) = this.next_thread_mut() {
+    if let Some(thread) = this.next_thread_mut() {
         *state = thread.regs;
         thread.state = super::ThreadState::Active;
-        let proc_id = thread.proc_id;
-        this.processes.get_mut(&proc_id).unwrap().cr3.set();
-        this.current_thread_id = Some(id);
+        let pid = thread.pid;
+        let tid = Some(thread.id);
+        this.processes.get_mut(&pid).unwrap().cr3.set();
+        this.current_tid = tid;
+        this.current_pid = Some(pid);
     } else {
-        this.current_thread_id = None;
+        *state = RegisterState {
+            rip: idle as usize as _,
+            cs: SegmentSelector::new(1, PrivilegeLevel::Supervisor).0.into(),
+            rflags: 0x202,
+            rsp: this.kern_stack.as_ptr() as u64 + this.kern_stack.len() as u64,
+            ss: SegmentSelector::new(2, PrivilegeLevel::Supervisor).0.into(),
+            ..Default::default()
+        };
+        sys_state.pml4.as_mut().unwrap().set();
+        this.current_tid = None;
+        this.current_pid = None;
     }
 }
 
@@ -80,14 +103,15 @@ impl Scheduler {
             processes: HashMap::new(),
             thread_ids: Vec::new(),
             threads: HashMap::new(),
-            current_thread_id: None,
+            current_tid: None,
+            current_pid: None,
             kern_stack,
             providers: HashMap::new(),
             irq_handlers: HashMap::new(),
             message_sources: HashMap::new(),
-            proc_id_gen: crate::utils::incr_id::IncrementalIDGen::new(),
-            thread_id_gen: crate::utils::incr_id::IncrementalIDGen::new(),
-            message_id_gen: crate::utils::incr_id::IncrementalIDGen::new(),
+            pid_gen: crate::utils::incr_id::IncrementalIDGen::new(),
+            tid_gen: crate::utils::incr_id::IncrementalIDGen::new(),
+            msg_id_gen: crate::utils::incr_id::IncrementalIDGen::new(),
         }
     }
 
@@ -141,37 +165,33 @@ impl Scheduler {
             *ptr = target;
         }
 
-        let proc_id = self.proc_id_gen.next();
+        let pid = self.pid_gen.next();
         self.processes
-            .insert(proc_id, super::Process::new(proc_id, String::new()));
-        let proc = self.processes.get_mut(&proc_id).unwrap();
+            .insert(pid, super::Process::new(pid, String::new()));
+        let proc = self.processes.get_mut(&pid).unwrap();
         unsafe { proc.cr3.map_higher_half() }
         proc.track_alloc(virt_addr, data.len() as _, Some(true));
-        let id = self.thread_id_gen.next();
-        let thread = super::Thread::new(proc_id, virt_addr + exec.entry);
-        unsafe {
-            let stack_addr = thread.stack.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
-            proc.cr3.map_pages(
-                stack_addr + tungstenkit::USER_PHYS_VIRT_OFFSET,
-                stack_addr,
-                (thread.stack.len() as u64 + 0xFFF) / 0x1000,
-                PageTableEntry::new()
-                    .with_present(true)
-                    .with_writable(true)
-                    .with_user(true),
-            );
-        }
-        self.threads.insert(id, thread);
-        self.thread_ids.push(id);
+        let tid = self.tid_gen.next();
+        proc.tids.push(tid);
+        self.threads.insert(
+            tid,
+            super::Thread::new(
+                tid,
+                pid,
+                virt_addr + exec.entry,
+                proc.allocate(super::STACK_SIZE),
+            ),
+        );
+        self.thread_ids.push(tid);
     }
 
     pub fn current_thread_mut(&mut self) -> Option<&mut super::Thread> {
-        self.threads.get_mut(&self.current_thread_id?)
+        self.threads.get_mut(&self.current_tid?)
     }
 
-    pub fn next_thread_mut(&mut self) -> Option<(u64, &mut super::Thread)> {
+    pub fn next_thread_mut(&mut self) -> Option<&mut super::Thread> {
         let mut i = self
-            .current_thread_id
+            .current_tid
             .and_then(|id| self.thread_ids.iter().position(|v| *v == id).map(|i| i + 1))
             .unwrap_or_default();
         if i >= self.threads.len() {
@@ -181,6 +201,6 @@ impl Scheduler {
         let id = *self.thread_ids[i..]
             .iter()
             .find(|v| self.threads.get(*v).unwrap().state == super::ThreadState::Inactive)?;
-        Some((id, self.threads.get_mut(&id)?))
+        self.threads.get_mut(&id)
     }
 }

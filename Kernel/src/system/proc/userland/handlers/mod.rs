@@ -2,8 +2,6 @@
 
 use core::fmt::Write;
 
-use tungstenkit::syscall::SystemCallStatus;
-
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
 
 pub mod alloc;
@@ -12,7 +10,8 @@ pub mod message;
 pub mod port;
 pub mod provider;
 
-pub fn kprint(state: &mut RegisterState) -> SystemCallStatus {
+pub fn kprint(state: &mut RegisterState) {
+    // TODO: kill process on failure
     let s = unsafe { core::slice::from_raw_parts(state.rsi as *const u8, state.rdx as usize) };
     let s = unsafe { core::str::from_utf8_unchecked(s) };
 
@@ -23,21 +22,19 @@ pub fn kprint(state: &mut RegisterState) -> SystemCallStatus {
     if let Some(terminal) = &mut sys_state.terminal {
         write!(terminal, "{s}").unwrap();
     }
-
-    SystemCallStatus::Success
 }
 
 pub fn process_teardown(scheduler: &mut Scheduler) {
-    let id = scheduler.current_thread_id.unwrap();
-    let proc_id = scheduler.current_thread_mut().unwrap().proc_id;
+    let id = scheduler.current_tid.unwrap();
+    let pid = scheduler.current_pid.unwrap();
     let index = scheduler.thread_ids.iter().position(|v| *v == id).unwrap();
     scheduler.threads.remove(&id);
     scheduler.thread_ids.remove(index);
-    scheduler.thread_id_gen.free(id);
-    scheduler.current_thread_id = None;
+    scheduler.tid_gen.free(id);
+    scheduler.current_tid = None;
 
-    if !scheduler.threads.iter().any(|(_, v)| v.proc_id == proc_id) {
-        scheduler.processes.remove(&proc_id);
-        scheduler.proc_id_gen.free(proc_id);
+    if !scheduler.threads.iter().any(|(_, v)| v.pid == pid) {
+        scheduler.processes.remove(&pid);
+        scheduler.pid_gen.free(pid);
     }
 }

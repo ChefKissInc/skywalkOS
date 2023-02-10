@@ -5,14 +5,13 @@ use core::mem::size_of;
 
 use amd64::paging::pml4::PML4;
 
-// Track allocations in order to free them on process exit.
 #[repr(C)]
 pub struct UserPML4(amd64::paging::PageTable, u64);
 
 impl UserPML4 {
     #[inline]
-    pub const fn new(proc_id: u64) -> Self {
-        Self(amd64::paging::PageTable::new(), proc_id)
+    pub const fn new(pid: u64) -> Self {
+        Self(amd64::paging::PageTable::new(), pid)
     }
 }
 

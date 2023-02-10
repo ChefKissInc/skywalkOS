@@ -9,7 +9,7 @@ struct Allocator;
 
 unsafe impl core::alloc::GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        SystemCall::allocate(layout.size() as u64).unwrap()
+        SystemCall::allocate(layout.size() as u64)
     }
 
     unsafe fn alloc_zeroed(&self, layout: core::alloc::Layout) -> *mut u8 {
@@ -17,7 +17,7 @@ unsafe impl core::alloc::GlobalAlloc for Allocator {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: core::alloc::Layout) {
-        SystemCall::free(ptr).unwrap();
+        SystemCall::free(ptr);
     }
 }
 
