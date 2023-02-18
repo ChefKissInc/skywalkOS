@@ -4,8 +4,7 @@ use crate::system::{proc::scheduler::Scheduler, RegisterState};
 
 pub fn alloc(scheduler: &mut Scheduler, state: &mut RegisterState) {
     let size = state.rsi;
-    let pid = scheduler.current_pid.unwrap();
-    let process = scheduler.processes.get_mut(&pid).unwrap();
+    let process = scheduler.current_process_mut().unwrap();
     let addr = process.allocate(size);
 
     unsafe {
@@ -16,9 +15,8 @@ pub fn alloc(scheduler: &mut Scheduler, state: &mut RegisterState) {
 }
 
 pub fn free(scheduler: &mut Scheduler, state: &mut RegisterState) {
-    let addr = state.rsi;
-
-    let pid = scheduler.current_pid.unwrap();
-    let process = scheduler.processes.get_mut(&pid).unwrap();
-    process.free_alloc(addr);
+    scheduler
+        .current_process_mut()
+        .unwrap()
+        .free_alloc(state.rsi);
 }

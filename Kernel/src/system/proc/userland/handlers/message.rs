@@ -25,8 +25,7 @@ pub fn send(scheduler: &mut Scheduler, state: &mut RegisterState) {
 }
 
 pub fn receive(scheduler: &mut Scheduler, state: &mut RegisterState) {
-    let pid = scheduler.current_pid.unwrap();
-    let process = scheduler.processes.get_mut(&pid).unwrap();
+    let process = scheduler.current_process_mut().unwrap();
     if let Some(msg) = process.messages.pop_back() {
         state.rdi = msg.id;
         state.rsi = msg.pid;
@@ -43,14 +42,14 @@ pub fn ack(scheduler: &mut Scheduler, state: &mut RegisterState) {
     let Some(&src) = scheduler.message_sources.get(&id) else {
         todo!()
     };
-    let pid = scheduler.current_pid.unwrap();
-    let process = scheduler.processes.get_mut(&pid).unwrap();
+
+    let process = scheduler.current_process_mut().unwrap();
     if src == 0 {
-        let addr = *process.message_allocations.get(&id).unwrap();
-        let (size, _) = *process.allocations.get(&addr).unwrap();
-        let data = addr as *const u8;
-        let msg: KernelMessage =
-            unsafe { postcard::from_bytes(core::slice::from_raw_parts(data, size as _)).unwrap() };
+        let addr = process.message_allocations.get(&id).cloned().unwrap();
+        let (size, _) = process.allocations.get(&addr).cloned().unwrap();
+        let msg: KernelMessage = unsafe {
+            postcard::from_bytes(core::slice::from_raw_parts(addr as *const _, size as _)).unwrap()
+        };
         let KernelMessage::IRQFired(irq) = msg;
         crate::acpi::ioapic::set_irq_mask(irq, false);
     }

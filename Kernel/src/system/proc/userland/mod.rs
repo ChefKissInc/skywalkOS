@@ -12,7 +12,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     crate::acpi::ioapic::set_irq_mask(irq, true);
     let sys_state = &mut *crate::system::state::SYS_STATE.get();
     let mut scheduler = sys_state.scheduler.as_ref().unwrap().lock();
-    let pid = *scheduler.irq_handlers.get(&irq).unwrap();
+    let pid = scheduler.irq_handlers.get(&irq).cloned().unwrap();
     let s = postcard::to_allocvec(&KernelMessage::IRQFired(irq))
         .unwrap()
         .leak();

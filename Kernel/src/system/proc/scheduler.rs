@@ -189,6 +189,10 @@ impl Scheduler {
         self.threads.get_mut(&self.current_tid?)
     }
 
+    pub fn current_process_mut(&mut self) -> Option<&mut super::Process> {
+        self.processes.get_mut(&self.current_pid?)
+    }
+
     pub fn next_thread_mut(&mut self) -> Option<&mut super::Thread> {
         let mut i = self
             .current_tid
