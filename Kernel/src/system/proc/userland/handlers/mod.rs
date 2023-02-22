@@ -26,15 +26,14 @@ pub fn kprint(state: &mut RegisterState) {
 
 pub fn thread_teardown(scheduler: &mut Scheduler) {
     let id = scheduler.current_tid.unwrap();
-    let pid = scheduler.current_pid.unwrap();
-    let index = scheduler.thread_ids.iter().position(|v| *v == id).unwrap();
     scheduler.threads.remove(&id);
-    scheduler.thread_ids.remove(index);
     scheduler.tid_gen.free(id);
     scheduler.current_tid = None;
 
+    let pid = scheduler.current_pid.unwrap();
     if !scheduler.threads.iter().any(|(_, v)| v.pid == pid) {
         scheduler.processes.remove(&pid);
         scheduler.pid_gen.free(pid);
+        scheduler.current_pid = None;
     }
 }

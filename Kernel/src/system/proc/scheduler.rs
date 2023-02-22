@@ -19,7 +19,6 @@ static TSS: SyncUnsafeCell<TaskSegmentSelector> = SyncUnsafeCell::new(TaskSegmen
 
 pub struct Scheduler {
     pub processes: HashMap<u64, super::Process>,
-    pub thread_ids: Vec<u64>,
     pub threads: HashMap<u64, super::Thread>,
     pub current_tid: Option<u64>,
     pub current_pid: Option<u64>,
@@ -101,7 +100,6 @@ impl Scheduler {
 
         Self {
             processes: HashMap::new(),
-            thread_ids: Vec::new(),
             threads: HashMap::new(),
             current_tid: None,
             current_pid: None,
@@ -182,7 +180,6 @@ impl Scheduler {
                 proc.allocate(super::STACK_SIZE),
             ),
         );
-        self.thread_ids.push(tid);
     }
 
     pub fn current_thread_mut(&mut self) -> Option<&mut super::Thread> {
@@ -194,17 +191,14 @@ impl Scheduler {
     }
 
     pub fn next_thread_mut(&mut self) -> Option<&mut super::Thread> {
-        let mut i = self
-            .current_tid
-            .and_then(|id| self.thread_ids.iter().position(|v| *v == id).map(|i| i + 1))
-            .unwrap_or_default();
-        if i >= self.threads.len() {
+        let mut i = self.current_tid.map(|v| v + 1).unwrap_or_default() as usize;
+        if i > self.threads.len() {
             i = 0;
         }
 
-        let id = *self.thread_ids[i..]
-            .iter()
-            .find(|v| self.threads.get(*v).unwrap().state == super::ThreadState::Inactive)?;
-        self.threads.get_mut(&id)
+        self.threads
+            .values_mut()
+            .skip(i)
+            .find(|v| v.state == super::ThreadState::Inactive)
     }
 }
