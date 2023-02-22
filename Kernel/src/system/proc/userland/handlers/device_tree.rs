@@ -1,17 +1,19 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
+use core::ops::ControlFlow;
+
 use tungstenkit::syscall::OSDTEntryReqType;
 
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
 
-pub fn get_entry_info(scheduler: &mut Scheduler, state: &mut RegisterState) {
+pub fn get_entry_info(scheduler: &mut Scheduler, state: &mut RegisterState) -> ControlFlow<bool> {
     let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     let dt_index = sys_state.dt_index.as_ref().unwrap().read();
     let Ok(info_type) = OSDTEntryReqType::try_from(state.rdx) else {
-        todo!()
+        return ControlFlow::Break(true);
     };
     let Some(ent) = dt_index.get(&state.rsi) else {
-        todo!()
+        return ControlFlow::Break(true);
     };
     let data = match info_type {
         OSDTEntryReqType::Parent => postcard::to_allocvec(&ent.lock().parent),
@@ -21,7 +23,7 @@ pub fn get_entry_info(scheduler: &mut Scheduler, state: &mut RegisterState) {
             let Ok(k) = core::str::from_utf8(unsafe {
                 core::slice::from_raw_parts(state.rcx as *const _, state.r8 as _)
             }) else {
-                todo!()
+                return ControlFlow::Break(true);
             };
             postcard::to_allocvec(&ent.lock().properties.get(k))
         }
@@ -29,11 +31,11 @@ pub fn get_entry_info(scheduler: &mut Scheduler, state: &mut RegisterState) {
     .unwrap()
     .leak();
 
-    let virt = scheduler
+    state.rax = scheduler
         .current_process_mut()
         .unwrap()
         .track_kernelside_alloc(data.as_ptr() as _, data.len() as _);
+    state.rdi = data.len() as _;
 
-    state.rdi = virt;
-    state.rsi = data.len() as u64;
+    ControlFlow::Continue(())
 }

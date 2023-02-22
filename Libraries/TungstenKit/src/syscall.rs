@@ -25,10 +25,10 @@ impl Message {
         core::arch::asm!(
             "int 249",
             in("rdi") SystemCall::ReceiveMessage as u64,
-            lateout("rdi") id,
-            out("rsi") pid,
-            out("rdx") ptr,
-            out("rcx") len,
+            out("rax") id,
+            lateout("rdi") pid,
+            out("rsi") ptr,
+            out("rdx") len,
             options(nostack, preserves_flags),
         );
         Self {
@@ -146,7 +146,7 @@ impl SystemCall {
             in("rdi") Self::PortIn as u64,
             in("rsi") port,
             in("rdx") AccessSize::Byte as u64,
-            lateout("dil") val, // TODO: switch to rax
+            out("al") val,
             options(nostack, preserves_flags),
         );
         val
@@ -170,7 +170,7 @@ impl SystemCall {
             in("rdi") Self::PortIn as u64,
             in("rsi") port,
             in("rdx") AccessSize::Word as u64,
-            lateout("rdi") val, // TODO: switch to rax
+            out("rax") val,
             options(nostack, preserves_flags),
         );
         val
@@ -182,7 +182,7 @@ impl SystemCall {
             in("rdi") Self::PortOut as u64,
             in("rsi") port,
             in("rdx") val,
-            in("rcx") AccessSize::Word as u64,
+            in("rax") AccessSize::Word as u64,
             options(nostack, preserves_flags),
         );
     }
@@ -194,7 +194,7 @@ impl SystemCall {
             in("rdi") Self::PortIn as u64,
             in("rsi") port,
             in("rdx") AccessSize::DWord as u64,
-            lateout("edi") val, // TODO: switch to rax
+            out("rax") val,
             options(nostack, preserves_flags),
         );
         val
@@ -226,7 +226,7 @@ impl SystemCall {
             "int 249",
             in("rdi") Self::Allocate as u64,
             in("rsi") size,
-            lateout("rdi") ptr, // TODO: switch to rax
+            out("rax") ptr,
             options(nostack, preserves_flags),
         );
         ptr as *mut u8
@@ -250,8 +250,8 @@ impl SystemCall {
             in("rdx") ty as u64,
             in("rcx") k.map_or(0, |s| s.as_ptr() as u64),
             in("r8") k.map_or(0, |s| s.len() as u64),
-            lateout("rdi") ptr, // TODO: switch to rax
-            lateout("rsi") len, // TODO: switch to rdi
+            out("rax") ptr,
+            lateout("rdi") len,
             options(nostack, preserves_flags),
         );
         Vec::from_raw_parts(ptr as *mut u8, len as _, len as _)

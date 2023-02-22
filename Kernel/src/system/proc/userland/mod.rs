@@ -1,5 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
+use core::ops::ControlFlow;
+
 use tungstenkit::syscall::{KernelMessage, Message, SystemCall};
 
 use crate::system::{gdt::PrivilegeLevel, RegisterState};
@@ -44,10 +46,10 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
             if idle {
                 drop(scheduler);
                 super::scheduler::schedule(state);
-                state.rdi = msg.id;
-                state.rsi = msg.pid;
-                state.rdx = msg.data.as_ptr() as _;
-                state.rcx = msg.data.len() as _;
+                state.rax = msg.id;
+                state.rdi = msg.pid;
+                state.rsi = msg.data.as_ptr() as _;
+                state.rdx = msg.data.len() as _;
                 return;
             }
             break;
@@ -63,56 +65,42 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
     let mut scheduler = sys_state.scheduler.as_ref().unwrap().lock();
 
     let Ok(v) = SystemCall::try_from(state.rdi) else {
-        todo!();
-        // return;
+        handlers::process_teardown(&mut scheduler);
+        drop(scheduler);
+        super::scheduler::schedule(state);
+        return;
     };
 
-    match v {
+    let mut flow = match v {
         SystemCall::KPrint => handlers::kprint(state),
         SystemCall::ReceiveMessage => handlers::message::receive(&mut scheduler, state),
         SystemCall::SendMessage => handlers::message::send(&mut scheduler, state),
         SystemCall::Quit => {
             handlers::thread_teardown(&mut scheduler);
-            drop(scheduler);
-            super::scheduler::schedule(state);
-            return;
+            ControlFlow::Break(false)
         }
-        SystemCall::Yield => {
-            drop(scheduler);
-            super::scheduler::schedule(state);
-            return;
-        }
+        SystemCall::Yield => ControlFlow::Break(false),
         SystemCall::RegisterProvider => handlers::provider::register(&mut scheduler, state),
         SystemCall::GetProvidingProcess => handlers::provider::get(&mut scheduler, state),
         SystemCall::PortIn => handlers::port::port_in(state),
         SystemCall::PortOut => handlers::port::port_out(state),
-        SystemCall::RegisterIRQHandler => {
-            let irq = state.rsi as u8;
-            if irq > 0xDF {
-                todo!()
-            }
-            let pid = scheduler.current_pid.unwrap();
-            if scheduler.irq_handlers.try_insert(irq, pid).is_err() {
-                todo!()
-            }
-
-            crate::acpi::ioapic::wire_legacy_irq(irq, false);
-            crate::intrs::idt::set_handler(
-                irq + 0x20,
-                1,
-                PrivilegeLevel::Supervisor,
-                irq_handler,
-                true,
-                true,
-            );
-        }
+        SystemCall::RegisterIRQHandler => handlers::register_irq_handler(&mut scheduler, state),
         SystemCall::Allocate => handlers::alloc::alloc(&mut scheduler, state),
         SystemCall::Free => handlers::alloc::free(&mut scheduler, state),
         SystemCall::AckMessage => handlers::message::ack(&mut scheduler, state),
         SystemCall::GetDTEntryInfo => handlers::device_tree::get_entry_info(&mut scheduler, state),
+    };
+
+    if scheduler.current_thread_mut().unwrap().state == super::ThreadState::Suspended
+        && flow == ControlFlow::Continue(())
+    {
+        flow = ControlFlow::Break(false);
     }
 
-    if scheduler.current_thread_mut().unwrap().state == super::ThreadState::Suspended {
+    if let ControlFlow::Break(kill) = flow {
+        if kill {
+            handlers::process_teardown(&mut scheduler);
+        }
         drop(scheduler);
         super::scheduler::schedule(state);
     }
