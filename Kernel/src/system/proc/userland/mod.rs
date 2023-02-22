@@ -91,8 +91,8 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         SystemCall::GetDTEntryInfo => handlers::device_tree::get_entry_info(&mut scheduler, state),
     };
 
-    if scheduler.current_thread_mut().unwrap().state == super::ThreadState::Suspended
-        && flow == ControlFlow::Continue(())
+    if flow == ControlFlow::Continue(())
+        && scheduler.current_thread_mut().unwrap().state == super::ThreadState::Suspended
     {
         flow = ControlFlow::Break(false);
     }
