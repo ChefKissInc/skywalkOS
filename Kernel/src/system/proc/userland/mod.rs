@@ -10,14 +10,21 @@ pub mod page_table;
 unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let irq = (state.int_num - 0x20) as u8;
     crate::acpi::ioapic::set_irq_mask(irq, true);
-    let sys_state = &mut *crate::system::state::SYS_STATE.get();
-    let mut scheduler = sys_state.scheduler.as_ref().unwrap().lock();
+    let mut scheduler = (*crate::system::state::SYS_STATE.get())
+        .scheduler
+        .as_ref()
+        .unwrap()
+        .lock();
     let pid = scheduler.irq_handlers.get(&irq).cloned().unwrap();
     let s = postcard::to_allocvec(&KernelMessage::IRQFired(irq))
         .unwrap()
         .leak();
-    let ptr = s.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET;
-    let virt = ptr + tungstenkit::USER_PHYS_VIRT_OFFSET;
+
+    let virt = scheduler
+        .processes
+        .get_mut(&pid)
+        .unwrap()
+        .track_kernelside_alloc(s.as_ptr() as _, s.len() as _);
 
     let msg = Message::new(
         scheduler.msg_id_gen.next(),
@@ -26,7 +33,6 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     );
     scheduler.message_sources.insert(msg.id, 0);
     let process = scheduler.processes.get_mut(&pid).unwrap();
-    process.track_alloc(virt, s.len() as u64, Some(false));
     process.track_msg(msg.id, virt);
 
     let tids = process.tids.clone();
@@ -40,8 +46,8 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
                 super::scheduler::schedule(state);
                 state.rdi = msg.id;
                 state.rsi = msg.pid;
-                state.rdx = msg.data.as_ptr() as u64;
-                state.rcx = msg.data.len() as u64;
+                state.rdx = msg.data.as_ptr() as _;
+                state.rcx = msg.data.len() as _;
                 return;
             }
             break;
@@ -65,8 +71,8 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
         SystemCall::KPrint => handlers::kprint(state),
         SystemCall::ReceiveMessage => handlers::message::receive(&mut scheduler, state),
         SystemCall::SendMessage => handlers::message::send(&mut scheduler, state),
-        SystemCall::Exit => {
-            handlers::process_teardown(&mut scheduler);
+        SystemCall::Quit => {
+            handlers::thread_teardown(&mut scheduler);
             drop(scheduler);
             super::scheduler::schedule(state);
             return;

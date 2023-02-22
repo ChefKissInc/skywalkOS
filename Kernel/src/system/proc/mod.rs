@@ -94,6 +94,12 @@ impl Process {
         }
     }
 
+    pub fn track_kernelside_alloc(&mut self, addr: u64, size: u64) -> u64 {
+        let addr = addr - amd64::paging::PHYS_VIRT_OFFSET + tungstenkit::USER_PHYS_VIRT_OFFSET;
+        self.track_alloc(addr, size, Some(false));
+        addr
+    }
+
     pub fn free_alloc(&mut self, addr: u64) {
         let (size, mapped) = self.allocations.remove(&addr).unwrap();
 

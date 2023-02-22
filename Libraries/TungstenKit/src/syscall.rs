@@ -65,7 +65,7 @@ pub enum SystemCall {
     KPrint,
     ReceiveMessage,
     SendMessage,
-    Exit,
+    Quit,
     Yield,
     RegisterProvider,
     GetProvidingProcess,
@@ -106,11 +106,11 @@ impl SystemCall {
         );
     }
 
-    pub unsafe fn exit() -> ! {
-        core::arch::asm!("int 249", in("rdi") Self::Exit as u64, options(nostack, preserves_flags, noreturn));
+    pub unsafe fn quit() -> ! {
+        core::arch::asm!("int 249", in("rdi") Self::Quit as u64, options(nostack, preserves_flags, noreturn));
     }
 
-    pub unsafe fn skip() {
+    pub unsafe fn r#yield() {
         core::arch::asm!("int 249", in("rdi") Self::Yield as u64, options(nostack, preserves_flags));
     }
 

@@ -31,13 +31,10 @@ pub fn get_entry_info(scheduler: &mut Scheduler, state: &mut RegisterState) {
     .unwrap()
     .leak();
 
-    let virt =
-        data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET + tungstenkit::USER_PHYS_VIRT_OFFSET;
-
-    scheduler
+    let virt = scheduler
         .current_process_mut()
         .unwrap()
-        .track_alloc(virt, data.len() as u64, Some(false));
+        .track_kernelside_alloc(data.as_ptr() as _, data.len() as _);
 
     state.rdi = virt;
     state.rsi = data.len() as u64;

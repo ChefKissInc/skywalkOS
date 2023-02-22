@@ -13,7 +13,6 @@ pub fn send(scheduler: &mut Scheduler, state: &mut RegisterState) {
     }
 
     let src = scheduler.current_pid.unwrap();
-
     let msg = Message::new(scheduler.msg_id_gen.next(), src, unsafe {
         core::slice::from_raw_parts(state.rcx as *const _, state.r8 as _)
     });
