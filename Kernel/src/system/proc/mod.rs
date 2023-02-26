@@ -20,6 +20,18 @@ pub enum ThreadState {
     Suspended,
 }
 
+impl ThreadState {
+    #[inline]
+    pub fn is_suspended(&self) -> bool {
+        *self == Self::Suspended
+    }
+
+    #[inline]
+    pub fn is_inactive(&self) -> bool {
+        *self == Self::Inactive
+    }
+}
+
 pub struct Thread {
     pub id: u64,
     pub pid: u64,

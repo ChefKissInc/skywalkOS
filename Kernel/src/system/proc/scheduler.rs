@@ -41,7 +41,7 @@ pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
 
     if let Some(old_thread) = this.current_thread_mut() {
         old_thread.regs = *state;
-        if old_thread.state != super::ThreadState::Suspended {
+        if !old_thread.state.is_suspended() {
             old_thread.state = super::ThreadState::Inactive;
         }
     }
@@ -199,6 +199,6 @@ impl Scheduler {
         self.threads
             .values_mut()
             .skip(i)
-            .find(|v| v.state == super::ThreadState::Inactive)
+            .find(|v| v.state.is_inactive())
     }
 }

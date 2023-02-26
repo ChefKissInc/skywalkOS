@@ -41,7 +41,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     let idle = scheduler.current_tid.is_none();
     for tid in tids.into_iter() {
         let thread = scheduler.threads.get_mut(&tid).unwrap();
-        if thread.state == super::ThreadState::Suspended {
+        if thread.state.is_suspended() {
             thread.state = super::ThreadState::Inactive;
             if idle {
                 drop(scheduler);
@@ -93,7 +93,7 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
     };
 
     if flow == ControlFlow::Continue(())
-        && scheduler.current_thread_mut().unwrap().state == super::ThreadState::Suspended
+        && scheduler.current_thread_mut().unwrap().state.is_suspended()
     {
         flow = ControlFlow::Break(false);
     }
