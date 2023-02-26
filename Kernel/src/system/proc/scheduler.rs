@@ -121,7 +121,7 @@ impl Scheduler {
         unsafe { core::arch::asm!("int 128", options(nostack, preserves_flags)) }
     }
 
-    pub fn spawn_proc(&mut self, exec_data: &[u8]) {
+    pub fn spawn_proc(&mut self, exec_data: &[u8]) -> &mut super::Thread {
         let exec = goblin::elf::Elf::parse(exec_data).unwrap();
         assert_eq!(exec.header.e_type, goblin::elf::header::ET_DYN);
         assert!(exec.is_64);
@@ -180,6 +180,8 @@ impl Scheduler {
                 proc.allocate(super::STACK_SIZE),
             ),
         );
+
+        self.threads.get_mut(&tid).unwrap()
     }
 
     pub fn current_thread_mut(&mut self) -> Option<&mut super::Thread> {

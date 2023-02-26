@@ -33,8 +33,9 @@ pub fn spawn_new_matches() {
                 "Loading TungstenKit extension {} <{}> (matched <{}>)",
                 info.name, info.identifier, ent.id
             );
+            let id = dt_id_gen.next();
             let new = super::state::OSDTEntry {
-                id: dt_id_gen.next(),
+                id,
                 parent: Some(ent.id),
                 properties: HashMap::from([
                     ("Name".to_owned(), info.name.clone().into()),
@@ -42,9 +43,10 @@ pub fn spawn_new_matches() {
                 ]),
                 children: vec![],
             };
-            ent.children.push(new.id);
-            newly_matched.push((new.id, spin::Mutex::new(new)));
-            scheduler.spawn_proc(payload);
+            ent.children.push(id);
+            newly_matched.push((id, spin::Mutex::new(new)));
+            let thread = scheduler.spawn_proc(payload);
+            thread.regs.rdi = id;
         }
     }
     dt_index.write().extend(newly_matched);

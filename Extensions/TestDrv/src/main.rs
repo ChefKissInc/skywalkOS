@@ -135,13 +135,16 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
 }
 
 #[no_mangle]
-extern "C" fn _start() -> ! {
+extern "C" fn _start(matching: u64) -> ! {
     logger::init();
     // unsafe { SystemCall::register_provider(PS2_SERVICE).unwrap() };
     // let target = unsafe { SystemCall::get_providing_process(PS2_SERVICE).unwrap() };
 
     info!("TestDrv loaded");
+    info!("Device Tree:");
     print_ent(OSDTEntry::from_id(0), 0);
+    info!("Matching: {:#X}", matching);
+    print_ent(OSDTEntry::from_id(matching), 0);
 
     let this = PS2Ctl::new();
     this.init();

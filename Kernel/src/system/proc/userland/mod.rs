@@ -100,6 +100,10 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
 
     if let ControlFlow::Break(kill) = flow {
         if kill {
+            debug!(
+                "Process {} caused error, killing",
+                scheduler.current_pid.unwrap()
+            );
             handlers::process_teardown(&mut scheduler);
         }
         drop(scheduler);
