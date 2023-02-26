@@ -64,31 +64,32 @@ unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
     let sys_state = &mut *crate::system::state::SYS_STATE.get();
     let mut scheduler = sys_state.scheduler.as_ref().unwrap().lock();
 
-    let Ok(v) = SystemCall::try_from(state.rdi) else {
-        handlers::process_teardown(&mut scheduler);
-        drop(scheduler);
-        super::scheduler::schedule(state);
-        return;
-    };
+    let mut flow = 'flow: {
+        let Ok(v) = SystemCall::try_from(state.rdi) else {
+            break 'flow ControlFlow::Break(true);
+        };
 
-    let mut flow = match v {
-        SystemCall::KPrint => handlers::kprint(state),
-        SystemCall::ReceiveMessage => handlers::message::receive(&mut scheduler, state),
-        SystemCall::SendMessage => handlers::message::send(&mut scheduler, state),
-        SystemCall::Quit => {
-            handlers::thread_teardown(&mut scheduler);
-            ControlFlow::Break(false)
+        match v {
+            SystemCall::KPrint => handlers::kprint(state),
+            SystemCall::ReceiveMessage => handlers::message::receive(&mut scheduler, state),
+            SystemCall::SendMessage => handlers::message::send(&mut scheduler, state),
+            SystemCall::Quit => {
+                handlers::thread_teardown(&mut scheduler);
+                ControlFlow::Break(false)
+            }
+            SystemCall::Yield => ControlFlow::Break(false),
+            SystemCall::RegisterProvider => handlers::provider::register(&mut scheduler, state),
+            SystemCall::GetProvidingProcess => handlers::provider::get(&mut scheduler, state),
+            SystemCall::PortIn => handlers::port::port_in(state),
+            SystemCall::PortOut => handlers::port::port_out(state),
+            SystemCall::RegisterIRQHandler => handlers::register_irq_handler(&mut scheduler, state),
+            SystemCall::Allocate => handlers::alloc::alloc(&mut scheduler, state),
+            SystemCall::Free => handlers::alloc::free(&mut scheduler, state),
+            SystemCall::AckMessage => handlers::message::ack(&mut scheduler, state),
+            SystemCall::GetDTEntryInfo => {
+                handlers::device_tree::get_entry_info(&mut scheduler, state)
+            }
         }
-        SystemCall::Yield => ControlFlow::Break(false),
-        SystemCall::RegisterProvider => handlers::provider::register(&mut scheduler, state),
-        SystemCall::GetProvidingProcess => handlers::provider::get(&mut scheduler, state),
-        SystemCall::PortIn => handlers::port::port_in(state),
-        SystemCall::PortOut => handlers::port::port_out(state),
-        SystemCall::RegisterIRQHandler => handlers::register_irq_handler(&mut scheduler, state),
-        SystemCall::Allocate => handlers::alloc::alloc(&mut scheduler, state),
-        SystemCall::Free => handlers::alloc::free(&mut scheduler, state),
-        SystemCall::AckMessage => handlers::message::ack(&mut scheduler, state),
-        SystemCall::GetDTEntryInfo => handlers::device_tree::get_entry_info(&mut scheduler, state),
     };
 
     if flow == ControlFlow::Continue(())
