@@ -12,7 +12,7 @@ filename = "BOOTX64"
 
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
-goblin = { version = "0.6.0", default-features = false, features = [
+goblin = { version = "0.6.1", default-features = false, features = [
     "elf32",
     "elf64",
     "endian_fd",
@@ -22,10 +22,10 @@ log = { version = "0.4.17", default-features = false, features = [
     "release_max_level_debug",
 ] }
 sulphur-dioxide = { path = "../Libraries/SulphurDioxide" }
-uefi = { version = "0.19.1", default-features = false, features = [
+uefi = { version = "0.20.0", default-features = false, features = [
     "alloc",
     "global_allocator",
     "unstable",
     "logger",
 ] }
-uefi-services = "0.16.0"
+uefi-services = "0.17.0"

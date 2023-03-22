@@ -106,18 +106,13 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
 
     trace!("Exiting boot services and jumping to kernel...");
     let sizes = system_table.boot_services().memory_map_size();
-    let mut mmap_buf = vec![0; sizes.map_size + 4 * sizes.entry_size];
-    let mut memory_map_entries = Vec::with_capacity(sizes.map_size / sizes.entry_size + 2);
+    let mut memory_map_entries = Vec::with_capacity(sizes.map_size / sizes.entry_size + 8);
 
-    system_table
-        .exit_boot_services(image_handle, &mut mmap_buf)
-        .unwrap()
-        .1
-        .for_each(|v| {
-            if let Some(v) = mem_mgr.mem_type_from_desc(v) {
-                memory_map_entries.push(v);
-            }
-        });
+    system_table.exit_boot_services().1.entries().for_each(|v| {
+        if let Some(v) = mem_mgr.mem_type_from_desc(v) {
+            memory_map_entries.push(v);
+        }
+    });
     boot_info.memory_map = helpers::phys_to_kern_slice_ref(memory_map_entries.leak());
 
     unsafe {

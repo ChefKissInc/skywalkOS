@@ -13,7 +13,7 @@ filename = "Kernel"
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
 tungstenkit = { path = "../Libraries/TungstenKit" }
-goblin = { version = "0.6.0", default-features = false, features = [
+goblin = { version = "0.6.1", default-features = false, features = [
     "elf32",
     "elf64",
     "endian_fd",
@@ -24,12 +24,12 @@ log = { version = "0.4.17", default-features = false, features = [
     "release_max_level_debug",
 ] }
 modular-bitfield = { version = "0.11.2", git = "https://github.com/ChefKissInc/modular-bitfield" }
-num_enum = { version = "0.5.10", default-features = false }
+num_enum = { version = "0.5.11", default-features = false }
 paper-fb = { path = "../Libraries/PaperFrameBuffer" }
 rustc-demangle = "0.1.21"
 postcard = { version = "1.0.4", default-features = false, features = ["alloc"] }
-seq-macro = "0.3.2"
-spin = { version = "0.9.5", default-features = false, features = [
+seq-macro = "0.3.3"
+spin = { version = "0.9.6", default-features = false, features = [
     "barrier",
     "lock_api",
     "mutex",
@@ -46,4 +46,4 @@ unwinding = { version = "0.1.5", default-features = false, features = [
     "personality",
     "unwinder",
 ] }
-serde = { version = "1.0.152", default-features = false, features = ["derive"] }
+serde = { version = "1.0.158", default-features = false, features = ["derive"] }

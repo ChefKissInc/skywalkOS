@@ -37,7 +37,7 @@ pub fn setup() {
     unsafe { super::PML4::get().map_higher_half() }
 }
 
-pub fn get_gop<'a>() -> ScopedProtocol<'a, GraphicsOutput<'a>> {
+pub fn get_gop<'a>() -> ScopedProtocol<'a, GraphicsOutput> {
     let system_table = unsafe { uefi_services::system_table().as_mut() };
     let handle = system_table
         .boot_services()

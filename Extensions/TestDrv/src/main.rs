@@ -177,7 +177,7 @@ extern "C" fn _start(matching: u64) -> ! {
                 if let Ps2Event::Pressed(ch) = event {
                     write!(logger::KWriter, "{ch}").unwrap();
                     if ch == '\n' {
-                        info!("You typed: {}", s);
+                        info!("You typed: {s}");
                         write!(logger::KWriter, "Tungsten / ").unwrap();
                         s.clear();
                     } else {
