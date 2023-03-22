@@ -11,6 +11,7 @@
     const_mut_refs,
     sync_unsafe_cell
 )]
+#![allow(clippy::multiple_crate_versions)]
 
 #[macro_use]
 extern crate alloc;
