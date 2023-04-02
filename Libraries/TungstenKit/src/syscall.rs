@@ -214,8 +214,13 @@ impl SystemCall {
         );
     }
 
-    pub unsafe fn get_dt_entry_info(id: u64, ty: OSDTEntryReqType, k: Option<&str>) -> Vec<u8> {
+    pub unsafe fn get_dt_entry_info(
+        ent: &crate::dt::OSDTEntry,
+        ty: OSDTEntryReqType,
+        k: Option<&str>,
+    ) -> Vec<u8> {
         let (mut ptr, mut len): (u64, u64);
+        let id: u64 = ent.into();
         core::arch::asm!(
             "int 249",
             in("rdi") Self::GetDTEntryInfo as u64,

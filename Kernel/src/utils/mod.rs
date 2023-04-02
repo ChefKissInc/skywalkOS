@@ -75,7 +75,7 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     let mut dt_id_gen = IncrementalIDGen::new();
     let product = OSDTEntry {
         id: dt_id_gen.next(),
-        parent: Some(root.id),
+        parent: Some(root.id.into()),
         properties: HashMap::from([
             ("Name".to_owned(), "Product".into()),
             ("CPUType".to_owned(), "x86_64".into()),
@@ -83,7 +83,7 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
         ]),
         ..Default::default()
     };
-    root.children.push(product.id);
+    root.children.push(product.id.into());
 
     state.dt_index = Some(spin::RwLock::new(HashMap::from([
         (root.id, spin::Mutex::new(root)),

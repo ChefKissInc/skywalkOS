@@ -36,14 +36,14 @@ pub fn spawn_new_matches() {
             let id = dt_id_gen.next();
             let new = super::state::OSDTEntry {
                 id,
-                parent: Some(ent.id),
+                parent: Some(ent.id.into()),
                 properties: HashMap::from([
                     ("Name".to_owned(), info.name.clone().into()),
                     ("TKExtMatch".to_owned(), info.identifier.clone().into()),
                 ]),
                 children: vec![],
             };
-            ent.children.push(id);
+            ent.children.push(id.into());
             newly_matched.push((id, spin::Mutex::new(new)));
             let thread = scheduler.spawn_proc(payload);
             thread.regs.rdi = id;

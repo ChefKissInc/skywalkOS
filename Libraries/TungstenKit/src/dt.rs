@@ -182,71 +182,57 @@ impl TryFrom<OSValue> for HashMap<String, OSValue> {
 }
 
 #[cfg(target_arch = "x86_64")]
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
+#[repr(transparent)]
+#[serde(transparent)]
 pub struct OSDTEntry(u64);
 
 #[cfg(target_arch = "x86_64")]
 impl OSDTEntry {
-    #[inline]
-    #[must_use]
-    pub const fn from_id(id: u64) -> Self {
-        Self(id)
-    }
-
-    #[must_use]
-    pub const fn id(&self) -> u64 {
-        self.0
-    }
-
     #[must_use]
     pub fn parent(&self) -> Option<Self> {
-        unsafe {
-            postcard::from_bytes::<Option<u64>>(&SystemCall::get_dt_entry_info(
-                self.0,
-                OSDTEntryReqType::Parent,
-                None,
-            ))
-            .unwrap()
-            .map(Self::from_id)
-        }
+        let data = unsafe { SystemCall::get_dt_entry_info(self, OSDTEntryReqType::Parent, None) };
+        postcard::from_bytes(&data).unwrap()
     }
 
     #[must_use]
     pub fn children(&self) -> Vec<Self> {
-        unsafe {
-            postcard::from_bytes::<Vec<u64>>(&SystemCall::get_dt_entry_info(
-                self.0,
-                OSDTEntryReqType::Children,
-                None,
-            ))
-            .unwrap()
-            .into_iter()
-            .map(Self::from_id)
-            .collect()
-        }
+        let data = unsafe { SystemCall::get_dt_entry_info(self, OSDTEntryReqType::Children, None) };
+        postcard::from_bytes(&data).unwrap()
     }
 
     #[must_use]
     pub fn properties(&self) -> HashMap<String, OSValue> {
-        unsafe {
-            postcard::from_bytes(&SystemCall::get_dt_entry_info(
-                self.0,
-                OSDTEntryReqType::Properties,
-                None,
-            ))
-            .unwrap()
-        }
+        let data =
+            unsafe { SystemCall::get_dt_entry_info(self, OSDTEntryReqType::Properties, None) };
+        postcard::from_bytes(&data).unwrap()
     }
 
     #[must_use]
     pub fn get_property(&self, k: &str) -> Option<OSValue> {
-        unsafe {
-            postcard::from_bytes(&SystemCall::get_dt_entry_info(
-                self.0,
-                OSDTEntryReqType::Property,
-                Some(k),
-            ))
-            .unwrap()
-        }
+        let data =
+            unsafe { SystemCall::get_dt_entry_info(self, OSDTEntryReqType::Property, Some(k)) };
+        postcard::from_bytes(&data).unwrap()
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+impl From<u64> for OSDTEntry {
+    fn from(value: u64) -> Self {
+        Self(value)
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+impl From<OSDTEntry> for u64 {
+    fn from(val: OSDTEntry) -> Self {
+        val.0
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+impl From<&OSDTEntry> for u64 {
+    fn from(val: &OSDTEntry) -> Self {
+        val.0
     }
 }

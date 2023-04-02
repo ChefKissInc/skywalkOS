@@ -121,7 +121,8 @@ impl PS2Ctl {
 fn print_ent(ent: OSDTEntry, ident: usize) {
     let spacing = " ".repeat(ident);
 
-    writeln!(logger::KWriter, "{spacing}+ {}", ent.id()).unwrap();
+    let id: u64 = ent.into();
+    writeln!(logger::KWriter, "{spacing}+ {}", id).unwrap();
 
     for (k, v) in ent.properties() {
         writeln!(logger::KWriter, "{spacing}|- {k}: {v:X?}").unwrap();
@@ -133,14 +134,13 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
 }
 
 #[no_mangle]
-extern "C" fn _start(matching: u64) -> ! {
+extern "C" fn _start(matching: OSDTEntry) -> ! {
     logger::init();
 
     info!("TestDrv loaded");
     info!("Device Tree:");
-    print_ent(OSDTEntry::from_id(0), 0);
-    info!("Matching: {:#X}", matching);
-    print_ent(OSDTEntry::from_id(matching), 0);
+    print_ent(OSDTEntry::default(), 0);
+    print_ent(matching, 0);
 
     let this = PS2Ctl::new();
     this.init();
