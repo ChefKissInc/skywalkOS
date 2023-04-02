@@ -33,10 +33,10 @@ jobs:
         with:
           crate: cargo-make
           use-tool-cache: true
-      - name: Install cargo-sarif
+      - name: Install clippy-sarif
         uses: actions-rs/install@v0.1
         with:
-          crate: cargo-sarif
+          crate: clippy-sarif
           use-tool-cache: true
       - name: Install sarif-fmt
         uses: actions-rs/install@v0.1
