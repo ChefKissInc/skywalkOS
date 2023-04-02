@@ -35,7 +35,7 @@ extern "C" fn idle() {
     crate::hlt_loop!();
 }
 
-pub unsafe extern "C" fn schedule(state: &mut RegisterState) {
+pub unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
     let sys_state = &mut *crate::system::state::SYS_STATE.get();
     let mut this = sys_state.scheduler.as_ref().unwrap().lock();
 

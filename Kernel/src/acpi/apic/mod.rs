@@ -235,7 +235,7 @@ impl LocalAPIC {
     }
 }
 
-unsafe extern "C" fn lapic_error_handler(_state: &mut RegisterState) {
+unsafe extern "sysv64" fn lapic_error_handler(_state: &mut RegisterState) {
     let lapic = (*crate::system::state::SYS_STATE.get())
         .lapic
         .as_ref()
@@ -247,7 +247,7 @@ unsafe extern "C" fn lapic_error_handler(_state: &mut RegisterState) {
     error!("APIC error: {:#X?}", lapic.error());
 }
 
-unsafe extern "C" fn spurious_vector_handler(_state: &mut RegisterState) {
+unsafe extern "sysv64" fn spurious_vector_handler(_state: &mut RegisterState) {
     error!("Spurious APIC vector");
 }
 

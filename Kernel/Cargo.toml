@@ -26,10 +26,10 @@ log = { version = "0.4.17", default-features = false, features = [
 modular-bitfield = { version = "0.11.2", git = "https://github.com/ChefKissInc/modular-bitfield" }
 num_enum = { version = "0.5.11", default-features = false }
 paper-fb = { path = "../Libraries/PaperFrameBuffer" }
-rustc-demangle = "0.1.21"
+rustc-demangle = "0.1.22"
 postcard = { version = "1.0.4", default-features = false, features = ["alloc"] }
 seq-macro = "0.3.3"
-spin = { version = "0.9.6", default-features = false, features = [
+spin = { version = "0.9.7", default-features = false, features = [
     "barrier",
     "lock_api",
     "mutex",
@@ -39,11 +39,11 @@ spin = { version = "0.9.6", default-features = false, features = [
     "use_ticket_mutex",
 ] }
 sulphur-dioxide = { path = "../Libraries/SulphurDioxide" }
-unwinding = { version = "0.1.5", default-features = false, features = [
+unwinding = { version = "0.1.6", default-features = false, features = [
     "fde-static",
     "hide-trace",
     "panic",
     "personality",
     "unwinder",
 ] }
-serde = { version = "1.0.158", default-features = false, features = ["derive"] }
+serde = { version = "1.0.159", default-features = false, features = ["derive"] }

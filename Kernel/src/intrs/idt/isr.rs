@@ -47,7 +47,7 @@ macro_rules! isr_stub {
     };
 }
 
-unsafe extern "C" fn isr_handler(regs: &mut crate::system::RegisterState) {
+unsafe extern "sysv64" fn isr_handler(regs: &mut crate::system::RegisterState) {
     let n = regs.int_num as u8;
     let handler = &(*super::HANDLERS.get())[n as usize];
     (handler.func)(regs);
@@ -63,7 +63,7 @@ unsafe extern "C" fn isr_handler(regs: &mut crate::system::RegisterState) {
 macro_rules! isr_noerr {
     ($func_name:ident, $i:tt) => {
         #[naked]
-        pub(super) unsafe extern "C" fn $func_name() {
+        pub(super) unsafe extern "sysv64" fn $func_name() {
             isr_stub!("push 0", $i)
         }
     };
@@ -72,7 +72,7 @@ macro_rules! isr_noerr {
 macro_rules! isr_err {
     ($func_name:ident, $i:tt) => {
         #[naked]
-        pub(super) unsafe extern "C" fn $func_name() {
+        pub(super) unsafe extern "sysv64" fn $func_name() {
             isr_stub!("", $i)
         }
     };

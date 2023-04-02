@@ -7,7 +7,7 @@ use crate::system::{gdt::PrivilegeLevel, RegisterState};
 pub mod idt;
 pub mod pic;
 
-unsafe extern "C" fn irq7_quirk(_state: &mut RegisterState) {
+unsafe extern "sysv64" fn irq7_quirk(_state: &mut RegisterState) {
     let p = Port::<u8, u8>::new(0x20);
     p.write(0x0B);
     if p.read() & 0x80 != 0 {

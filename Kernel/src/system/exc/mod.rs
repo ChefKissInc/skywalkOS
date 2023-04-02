@@ -19,7 +19,7 @@ macro_rules! exc_msg {
 
 macro_rules! generic_exception {
     ($ident:ident, $name:expr) => {
-        pub unsafe extern "C" fn $ident(regs: &mut crate::system::RegisterState) {
+        pub unsafe extern "sysv64" fn $ident(regs: &mut crate::system::RegisterState) {
             exc_msg!($name, "<No Additional Information>", regs);
         }
     };

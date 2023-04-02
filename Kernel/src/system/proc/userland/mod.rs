@@ -9,7 +9,7 @@ use crate::system::{gdt::PrivilegeLevel, RegisterState};
 mod handlers;
 pub mod page_table;
 
-unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
+unsafe extern "sysv64" fn irq_handler(state: &mut RegisterState) {
     let irq = (state.int_num - 0x20) as u8;
     crate::acpi::ioapic::set_irq_mask(irq, true);
     let mut scheduler = (*crate::system::state::SYS_STATE.get())
@@ -60,7 +60,7 @@ unsafe extern "C" fn irq_handler(state: &mut RegisterState) {
     process.messages.push_front(msg);
 }
 
-unsafe extern "C" fn syscall_handler(state: &mut RegisterState) {
+unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
     let sys_state = &mut *crate::system::state::SYS_STATE.get();
     let mut scheduler = sys_state.scheduler.as_ref().unwrap().lock();
 
