@@ -26,8 +26,6 @@ mod allocator;
 mod logger;
 mod panic;
 
-// const PS2_SERVICE: uuid::Uuid = uuid!("e8f08fbc-b0a3-4365-b91e-12dbfeec6586");
-
 #[derive(IntoPrimitive)]
 #[repr(u8)]
 enum PS2CtlCmd {
@@ -137,8 +135,6 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
 #[no_mangle]
 extern "C" fn _start(matching: u64) -> ! {
     logger::init();
-    // unsafe { SystemCall::register_provider(PS2_SERVICE).unwrap() };
-    // let target = unsafe { SystemCall::get_providing_process(PS2_SERVICE).unwrap() };
 
     info!("TestDrv loaded");
     info!("Device Tree:");

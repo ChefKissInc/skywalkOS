@@ -78,8 +78,6 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
                 ControlFlow::Break(false)
             }
             SystemCall::Yield => ControlFlow::Break(false),
-            SystemCall::RegisterProvider => handlers::provider::register(&mut scheduler, state),
-            SystemCall::GetProvidingProcess => handlers::provider::get(&mut scheduler, state),
             SystemCall::PortIn => handlers::port::port_in(state),
             SystemCall::PortOut => handlers::port::port_out(state),
             SystemCall::RegisterIRQHandler => handlers::register_irq_handler(&mut scheduler, state),

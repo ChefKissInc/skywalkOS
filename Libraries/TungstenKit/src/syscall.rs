@@ -67,8 +67,6 @@ pub enum SystemCall {
     SendMessage,
     Quit,
     Yield,
-    RegisterProvider,
-    GetProvidingProcess,
     PortIn,
     PortOut,
     RegisterIRQHandler,
@@ -112,31 +110,6 @@ impl SystemCall {
 
     pub unsafe fn r#yield() {
         core::arch::asm!("int 249", in("rdi") Self::Yield as u64, options(nostack, preserves_flags));
-    }
-
-    pub unsafe fn register_provider(provider: u64) {
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::RegisterProvider as u64,
-            in("rsi") provider,
-            options(nostack, preserves_flags),
-        );
-    }
-
-    pub unsafe fn get_providing_process(provider: u64) -> Option<u64> {
-        let mut id: u64;
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::GetProvidingProcess as u64,
-            in("rsi") provider,
-            out("rax") id,
-            options(nostack, preserves_flags),
-        );
-        if id == 0 {
-            None
-        } else {
-            Some(id)
-        }
     }
 
     pub unsafe fn port_in_byte(port: u16) -> u8 {

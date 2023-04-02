@@ -8,7 +8,6 @@ pub mod alloc;
 pub mod device_tree;
 pub mod message;
 pub mod port;
-pub mod provider;
 
 pub fn kprint(state: &mut RegisterState) -> ControlFlow<bool> {
     // TODO: kill process on failure
