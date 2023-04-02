@@ -33,6 +33,16 @@ jobs:
         with:
           crate: cargo-make
           use-tool-cache: true
+      - name: Install cargo-sarif
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-sarif
+          use-tool-cache: true
+      - name: Install sarif-fmt
+        uses: actions-rs/install@v0.1
+        with:
+          crate: sarif-fmt
+          use-tool-cache: true
       - name: Check formatting
         uses: actions-rs/cargo@v1
         with:
