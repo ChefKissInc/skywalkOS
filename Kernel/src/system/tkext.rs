@@ -25,7 +25,7 @@ pub fn spawn_new_matches() {
         for ent in dt_index.read().values() {
             let mut ent = ent.lock();
 
-            if !is_subset(&info.matching_props, &ent.properties) {
+            if !is_subset(&info.matching, &ent.properties) {
                 continue;
             }
 
@@ -45,8 +45,7 @@ pub fn spawn_new_matches() {
             };
             ent.children.push(id.into());
             newly_matched.push((id, spin::Mutex::new(new)));
-            let thread = scheduler.spawn_proc(payload);
-            thread.regs.rdi = id;
+            scheduler.spawn_proc(payload).regs.rdi = id;
         }
     }
     dt_index.write().extend(newly_matched);

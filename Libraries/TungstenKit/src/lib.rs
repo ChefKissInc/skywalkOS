@@ -26,7 +26,7 @@ pub struct TKInfo {
     pub name: String,
     pub version: String,
     pub description: String,
-    pub matching_props: HashMap<String, dt::OSValue>,
+    pub matching: HashMap<String, dt::OSValue>,
     pub dependencies: HashMap<String, String>,
 }
 
