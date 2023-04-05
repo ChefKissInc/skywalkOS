@@ -18,21 +18,26 @@ pub fn parse_elf(
         "Only higher-half kernels"
     );
 
-    let (symtab, strtab) = elf.symbol_table().unwrap().unwrap();
-    let symbols = symtab
-        .iter()
-        .map(|v| sulphur_dioxide::KernSymbol {
-            start: v.st_value,
-            end: v.st_value + v.st_size,
-            name: Box::leak(
-                strtab
-                    .get(v.st_name as _)
-                    .unwrap_or("<unknown>")
-                    .to_owned()
-                    .into_boxed_str(),
-            ),
+    let symbols = elf
+        .symbol_table()
+        .unwrap()
+        .map(|(symtab, strtab)| {
+            symtab
+                .iter()
+                .map(|v| sulphur_dioxide::KernSymbol {
+                    start: v.st_value,
+                    end: v.st_value + v.st_size,
+                    name: Box::leak(
+                        strtab
+                            .get(v.st_name as _)
+                            .unwrap_or("<unknown>")
+                            .to_owned()
+                            .into_boxed_str(),
+                    ),
+                })
+                .collect()
         })
-        .collect();
+        .unwrap_or_default();
 
     trace!("Parsing program headers: ");
     let system_table = unsafe { uefi_services::system_table().as_mut() };
