@@ -57,7 +57,8 @@ impl Terminal {
     pub fn draw_char(&mut self, c: char, colour: Colour) {
         let x = self.x * 8;
         let mut y = self.y * 16;
-        let Some(v) = font::FONT_BITMAP.get(c as usize - 0x21) else {
+        let Some(v) = (c as usize).checked_sub(0x20).and_then(|v| font::FONT_BITMAP.get(v)) else {
+            trace!("Invalid character: {:X?}", c as usize);
             return;
         };
         for &x_bit in v {
