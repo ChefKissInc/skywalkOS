@@ -1,7 +1,4 @@
-/*
-    Copyright (c) ChefKiss Inc 2021-2023.
-    This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
-*/
+/* Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details. */
 
 ENTRY(kernel_main)
 OUTPUT_ARCH(x86-64)
