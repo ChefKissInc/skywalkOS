@@ -9,26 +9,24 @@ pub fn parse_elf(
     sulphur_dioxide::EntryPoint,
     Vec<sulphur_dioxide::KernSymbol>,
 ) {
-    let elf = goblin::elf::Elf::parse(buffer).unwrap();
+    let elf = elf::ElfBytes::<elf::endian::LittleEndian>::minimal_parse(buffer).unwrap();
 
-    trace!("{:X?}", elf.header);
-    assert!(elf.is_64, "Only ELF64");
-    assert_eq!(elf.header.e_machine, goblin::elf::header::EM_X86_64);
-    assert!(elf.little_endian, "Only little-endian ELFs");
+    assert_eq!(elf.ehdr.class, elf::file::Class::ELF64);
+    assert_eq!(elf.ehdr.e_machine, elf::abi::EM_X86_64);
     assert!(
-        elf.entry >= amd64::paging::KERNEL_VIRT_OFFSET,
+        elf.ehdr.e_entry >= amd64::paging::KERNEL_VIRT_OFFSET,
         "Only higher-half kernels"
     );
 
-    let symbols = elf
-        .syms
+    let (symtab, strtab) = elf.symbol_table().unwrap().unwrap();
+    let symbols = symtab
         .iter()
         .map(|v| sulphur_dioxide::KernSymbol {
             start: v.st_value,
             end: v.st_value + v.st_size,
             name: Box::leak(
-                elf.strtab
-                    .get_at(v.st_name)
+                strtab
+                    .get(v.st_name as _)
                     .unwrap_or("<unknown>")
                     .to_owned()
                     .into_boxed_str(),
@@ -39,9 +37,10 @@ pub fn parse_elf(
     trace!("Parsing program headers: ");
     let system_table = unsafe { uefi_services::system_table().as_mut() };
     for phdr in elf
-        .program_headers
+        .segments()
+        .unwrap()
         .iter()
-        .filter(|phdr| phdr.p_type == goblin::elf::program_header::PT_LOAD)
+        .filter(|phdr| phdr.p_type == elf::abi::PT_LOAD)
     {
         assert!(
             phdr.p_vaddr >= amd64::paging::KERNEL_VIRT_OFFSET,
@@ -93,7 +92,7 @@ pub fn parse_elf(
     }
 
     (
-        unsafe { core::mem::transmute(elf.entry as *const ()) },
+        unsafe { core::mem::transmute(elf.ehdr.e_entry as *const ()) },
         symbols,
     )
 }

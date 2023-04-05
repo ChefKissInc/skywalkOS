@@ -12,11 +12,7 @@ filename = "BOOTX64"
 
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
-goblin = { version = "0.6.1", default-features = false, features = [
-    "elf32",
-    "elf64",
-    "endian_fd",
-] }
+elf = { version = "0.7.2", default-features = false, features = ["nightly"] }
 log = { version = "0.4.17", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",

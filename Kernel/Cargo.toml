@@ -13,11 +13,6 @@ filename = "Kernel"
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
 tungstenkit = { path = "../Libraries/TungstenKit" }
-goblin = { version = "0.6.1", default-features = false, features = [
-    "elf32",
-    "elf64",
-    "endian_fd",
-] }
 hashbrown = { version = "0.13.2", features = ["nightly", "serde"] }
 log = { version = "0.4.17", default-features = false, features = [
     "max_level_trace",
@@ -47,3 +42,4 @@ unwinding = { version = "0.1.6", default-features = false, features = [
     "unwinder",
 ] }
 serde = { version = "1.0.159", default-features = false, features = ["derive"] }
+elf = { version = "0.7.2", default-features = false, features = ["nightly"] }

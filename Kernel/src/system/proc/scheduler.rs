@@ -120,22 +120,25 @@ impl Scheduler {
     }
 
     pub fn spawn_proc(&mut self, exec_data: &[u8]) -> &mut super::Thread {
-        let exec = goblin::elf::Elf::parse(exec_data).unwrap();
-        assert_eq!(exec.header.e_type, goblin::elf::header::ET_DYN);
-        assert!(exec.is_64);
-        assert_ne!(exec.entry, 0);
+        let exec = elf::ElfBytes::<elf::endian::NativeEndian>::minimal_parse(exec_data).unwrap();
+        // exec.find_common_data().unwrap().
+        assert_eq!(exec.ehdr.e_type, elf::abi::ET_DYN);
+        assert_eq!(exec.ehdr.class, elf::file::Class::ELF64);
+        assert_ne!(exec.ehdr.e_entry, 0);
 
         let max_vaddr = exec
-            .program_headers
+            .segments()
+            .unwrap()
             .iter()
             .map(|v| v.p_vaddr + v.p_memsz)
             .max()
             .unwrap();
-        let mut data = vec![0; max_vaddr as usize];
+        let data = vec![0; max_vaddr as usize].leak();
         for hdr in exec
-            .program_headers
+            .segments()
+            .unwrap()
             .iter()
-            .filter(|v| v.p_type == goblin::elf::program_header::PT_LOAD)
+            .filter(|v| v.p_type == elf::abi::PT_LOAD)
         {
             let fsz = hdr.p_filesz as usize;
             let foff = hdr.p_offset as usize;
@@ -143,22 +146,20 @@ impl Scheduler {
             data[ext_vaddr..ext_vaddr + fsz].copy_from_slice(&exec_data[foff..foff + fsz]);
         }
 
-        let data = data.leak();
         let virt_addr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET
             + tungstenkit::USER_PHYS_VIRT_OFFSET;
-        for reloc in exec.dynrelas.iter() {
-            let ptr = unsafe { &mut *data.as_mut_ptr().add(reloc.r_offset as _).cast::<u64>() };
-            let target = reloc.r_addend.map_or_else(
-                || virt_addr + *ptr,
-                |addend| {
-                    if addend.is_negative() {
-                        virt_addr - addend.wrapping_abs() as u64
-                    } else {
-                        virt_addr + addend as u64
-                    }
-                },
-            );
-            *ptr = target;
+        for v in exec.section_headers().unwrap().iter() {
+            let Ok(relas) = exec.section_data_as_relas(&v) else {
+                    continue;
+                };
+            for reloc in relas {
+                let ptr = unsafe { &mut *data.as_mut_ptr().add(reloc.r_offset as _).cast::<u64>() };
+                *ptr = if reloc.r_addend.is_negative() {
+                    virt_addr - reloc.r_addend.wrapping_abs() as u64
+                } else {
+                    virt_addr + reloc.r_addend as u64
+                };
+            }
         }
 
         let pid = self.pid_gen.next();
@@ -174,7 +175,7 @@ impl Scheduler {
             super::Thread::new(
                 tid,
                 pid,
-                virt_addr + exec.entry,
+                virt_addr + exec.ehdr.e_entry,
                 proc.allocate(super::STACK_SIZE),
             ),
         );
