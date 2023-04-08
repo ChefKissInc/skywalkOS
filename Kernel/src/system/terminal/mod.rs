@@ -21,8 +21,8 @@ unsafe impl Sync for Terminal {}
 impl Terminal {
     #[inline]
     pub const fn new(fb: FrameBuffer) -> Self {
-        let width = fb.width / 8;
-        let height = fb.height / 16;
+        let width = fb.width / font::FONT_WIDTH;
+        let height = fb.height / font::FONT_HEIGHT;
         Self {
             x: 0,
             y: 0,
@@ -61,11 +61,13 @@ impl Terminal {
         let Some(v) = c.checked_sub(0x20).and_then(|v| font::FONT_BITMAP.get(v as usize)) else {
             return;
         };
-        let (x, y) = (self.x * 8, self.y * 16);
+        let (x, y) = (self.x * font::FONT_WIDTH, self.y * font::FONT_HEIGHT);
         let colour = colour.as_u32(self.fb.bitmask);
         for (i, &x_bit) in v.iter().enumerate() {
-            for bit in (0..8).filter(|bit| x_bit & (1 << bit) != 0) {
-                self.fb.plot_pixel(x + 8 - bit, y + i, colour).unwrap();
+            for bit in (0..font::FONT_WIDTH).filter(|bit| x_bit & (1 << bit) != 0) {
+                self.fb
+                    .plot_pixel(x + font::FONT_WIDTH - bit, y + i, colour)
+                    .unwrap();
             }
         }
     }
@@ -73,10 +75,11 @@ impl Terminal {
     #[inline]
     fn handle_scrollback(&mut self) {
         if self.y >= self.height {
-            self.fb
-                .base
-                .copy_within(self.fb.stride * 16..self.fb.stride * self.fb.height, 0);
-            self.fb.base[self.fb.stride * (self.fb.height - 16)..].fill(0);
+            self.fb.base.copy_within(
+                self.fb.stride * font::FONT_HEIGHT..self.fb.stride * self.fb.height,
+                0,
+            );
+            self.fb.base[self.fb.stride * (self.fb.height - font::FONT_HEIGHT)..].fill(0);
             self.y -= 1;
             self.x = 0;
         }

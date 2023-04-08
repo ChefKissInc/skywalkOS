@@ -1,6 +1,9 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-pub static FONT_BITMAP: &[[u8; 17]] = &[
+pub const FONT_WIDTH: usize = 8;
+pub const FONT_HEIGHT: usize = 17;
+
+pub static FONT_BITMAP: &[[u8; FONT_HEIGHT]] = &[
     // 0x20 'space'
     // width 8, bbx 0, bby 0, bbw 0, bbh 0
     [
