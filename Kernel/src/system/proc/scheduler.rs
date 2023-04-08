@@ -121,7 +121,6 @@ impl Scheduler {
 
     pub fn spawn_proc(&mut self, exec_data: &[u8]) -> &mut super::Thread {
         let exec = elf::ElfBytes::<elf::endian::NativeEndian>::minimal_parse(exec_data).unwrap();
-        // exec.find_common_data().unwrap().
         assert_eq!(exec.ehdr.e_type, elf::abi::ET_DYN);
         assert_eq!(exec.ehdr.class, elf::file::Class::ELF64);
         assert_ne!(exec.ehdr.e_entry, 0);

@@ -2,7 +2,10 @@
 
 use core::ops::ControlFlow;
 
-use tungstenkit::syscall::{KernelMessage, Message, SystemCall};
+use tungstenkit::{
+    syscall::{KernelMessage, Message, SystemCall},
+    ExitReason,
+};
 
 use crate::system::{gdt::PrivilegeLevel, RegisterState};
 
@@ -66,7 +69,7 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
 
     let mut flow = 'flow: {
         let Ok(v) = SystemCall::try_from(state.rdi) else {
-            break 'flow ControlFlow::Break(true);
+            break 'flow ControlFlow::Break(Some(ExitReason::InvalidArgument));
         };
 
         match v {
@@ -75,9 +78,9 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             SystemCall::SendMessage => handlers::message::send(&mut scheduler, state),
             SystemCall::Quit => {
                 handlers::thread_teardown(&mut scheduler);
-                ControlFlow::Break(false)
+                ControlFlow::Break(None)
             }
-            SystemCall::Yield => ControlFlow::Break(false),
+            SystemCall::Yield => ControlFlow::Break(None),
             SystemCall::PortIn => handlers::port::port_in(state),
             SystemCall::PortOut => handlers::port::port_out(state),
             SystemCall::RegisterIRQHandler => handlers::register_irq_handler(&mut scheduler, state),
@@ -93,13 +96,13 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
     if flow == ControlFlow::Continue(())
         && scheduler.current_thread_mut().unwrap().state.is_suspended()
     {
-        flow = ControlFlow::Break(false);
+        flow = ControlFlow::Break(None);
     }
 
-    if let ControlFlow::Break(kill) = flow {
-        if kill {
+    if let ControlFlow::Break(reason) = flow {
+        if let Some(reason) = reason {
             debug!(
-                "Process {} caused error, killing",
+                "PID {} performed illegal action (<{reason:?}>), terminating.",
                 scheduler.current_pid.unwrap()
             );
             handlers::process_teardown(&mut scheduler);

@@ -32,3 +32,11 @@ pub struct TKInfo {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct TKCache(pub Vec<(TKInfo, Vec<u8>)>);
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ExitReason {
+    Unspecified,
+    InvalidArgument,
+    InvalidAddress,
+    InsufficientPermissions,
+}

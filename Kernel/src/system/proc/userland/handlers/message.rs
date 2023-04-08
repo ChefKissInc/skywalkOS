@@ -2,16 +2,22 @@
 
 use core::ops::ControlFlow;
 
-use tungstenkit::syscall::{KernelMessage, Message};
+use tungstenkit::{
+    syscall::{KernelMessage, Message},
+    ExitReason,
+};
 
 use crate::system::{
     proc::{scheduler::Scheduler, ThreadState},
     RegisterState,
 };
 
-pub fn send(scheduler: &mut Scheduler, state: &mut RegisterState) -> ControlFlow<bool> {
+pub fn send(
+    scheduler: &mut Scheduler,
+    state: &mut RegisterState,
+) -> ControlFlow<Option<ExitReason>> {
     if !scheduler.processes.contains_key(&state.rsi) {
-        return ControlFlow::Break(true);
+        return ControlFlow::Break(Some(ExitReason::InvalidArgument));
     }
 
     let src = scheduler.current_pid.unwrap();
@@ -27,7 +33,10 @@ pub fn send(scheduler: &mut Scheduler, state: &mut RegisterState) -> ControlFlow
     ControlFlow::Continue(())
 }
 
-pub fn receive(scheduler: &mut Scheduler, state: &mut RegisterState) -> ControlFlow<bool> {
+pub fn receive(
+    scheduler: &mut Scheduler,
+    state: &mut RegisterState,
+) -> ControlFlow<Option<ExitReason>> {
     let process = scheduler.current_process_mut().unwrap();
     if let Some(msg) = process.messages.pop_back() {
         state.rax = msg.id;
@@ -41,11 +50,14 @@ pub fn receive(scheduler: &mut Scheduler, state: &mut RegisterState) -> ControlF
     ControlFlow::Continue(())
 }
 
-pub fn ack(scheduler: &mut Scheduler, state: &mut RegisterState) -> ControlFlow<bool> {
+pub fn ack(
+    scheduler: &mut Scheduler,
+    state: &mut RegisterState,
+) -> ControlFlow<Option<ExitReason>> {
     let id = state.rsi;
 
     let Some(&src) = scheduler.message_sources.get(&id) else {
-        return ControlFlow::Break(true);
+        return ControlFlow::Break(Some(ExitReason::InvalidArgument));
     };
 
     let process = scheduler.current_process_mut().unwrap();
