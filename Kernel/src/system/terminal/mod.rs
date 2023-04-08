@@ -32,6 +32,7 @@ impl Terminal {
         }
     }
 
+    #[inline]
     pub fn map_fb(&self) {
         unsafe {
             let state = &mut *super::state::SYS_STATE.get();
@@ -48,17 +49,19 @@ impl Terminal {
         }
     }
 
+    #[inline]
     pub fn clear(&mut self) {
         self.fb.clear(0);
         self.x = 0;
         self.y = 0;
     }
 
-    pub fn draw_char(&mut self, c: char, colour: Colour) {
+    #[inline]
+    pub fn draw_char(&mut self, c: u8, colour: Colour) {
         let x = self.x * 8;
         let mut y = self.y * 16;
-        let Some(v) = (c as usize).checked_sub(0x20).and_then(|v| font::FONT_BITMAP.get(v)) else {
-            trace!("Invalid character: {:X?}", c as usize);
+        let Some(v) = c.checked_sub(0x20).and_then(|v| font::FONT_BITMAP.get(v as usize)) else {
+            trace!("Invalid character: {c:X?}");
             return;
         };
         let colour = colour.as_u32(self.fb.bitmask);
@@ -70,6 +73,7 @@ impl Terminal {
         }
     }
 
+    #[inline]
     fn handle_scrollback(&mut self) {
         if self.y >= self.height {
             self.fb
@@ -84,8 +88,8 @@ impl Terminal {
 
 impl Write for Terminal {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        for c in s.chars() {
-            if c == '\n' {
+        for c in s.bytes() {
+            if c == b'\n' {
                 self.y += 1;
                 self.x = 0;
                 self.handle_scrollback();
