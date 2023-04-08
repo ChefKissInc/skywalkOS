@@ -61,11 +61,10 @@ impl Terminal {
             trace!("Invalid character: {:X?}", c as usize);
             return;
         };
+        let colour = colour.as_u32(self.fb.bitmask);
         for &x_bit in v {
             for bit in (0..8).filter(|bit| x_bit & (1 << bit) != 0) {
-                self.fb
-                    .plot_pixel(x + 8 - bit, y, colour.as_u32(self.fb.bitmask))
-                    .unwrap();
+                self.fb.plot_pixel(x + 8 - bit, y, colour).unwrap();
             }
             y += 1;
         }
