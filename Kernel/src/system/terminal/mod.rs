@@ -62,12 +62,10 @@ impl Terminal {
             return;
         };
         for &x_bit in v {
-            for bit in 0..8 {
-                if x_bit & (1 << bit) != 0 {
-                    self.fb
-                        .plot_pixel(x + 8 - bit, y, colour.as_u32(self.fb.bitmask))
-                        .unwrap();
-                }
+            for bit in (0..8).filter(|bit| x_bit & (1 << bit) != 0) {
+                self.fb
+                    .plot_pixel(x + 8 - bit, y, colour.as_u32(self.fb.bitmask))
+                    .unwrap();
             }
             y += 1;
         }
