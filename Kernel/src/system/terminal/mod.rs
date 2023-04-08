@@ -58,18 +58,15 @@ impl Terminal {
 
     #[inline]
     pub fn draw_char(&mut self, c: u8, colour: Colour) {
-        let x = self.x * 8;
-        let mut y = self.y * 16;
         let Some(v) = c.checked_sub(0x20).and_then(|v| font::FONT_BITMAP.get(v as usize)) else {
-            trace!("Invalid character: {c:X?}");
             return;
         };
+        let (x, y) = (self.x * 8, self.y * 16);
         let colour = colour.as_u32(self.fb.bitmask);
-        for &x_bit in v {
+        for (i, &x_bit) in v.iter().enumerate() {
             for bit in (0..8).filter(|bit| x_bit & (1 << bit) != 0) {
-                self.fb.plot_pixel(x + 8 - bit, y, colour).unwrap();
+                self.fb.plot_pixel(x + 8 - bit, y + i, colour).unwrap();
             }
-            y += 1;
         }
     }
 
