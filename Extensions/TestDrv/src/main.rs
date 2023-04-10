@@ -146,12 +146,12 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
 }
 
 #[no_mangle]
-extern "C" fn _start(matching: OSDTEntry) -> ! {
+extern "C" fn _start(instance: OSDTEntry) -> ! {
     logger::init();
 
     info!("TestDrv loaded");
     info!("Device Tree:");
-    let test = matching.new_child();
+    let test = instance.new_child(Some("Testing123"));
     test.set_property("HelloWorld", true.into());
     print_ent(OSDTEntry::default(), 0);
 

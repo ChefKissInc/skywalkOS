@@ -45,7 +45,7 @@ impl OSDTEntry {
     }
 
     #[must_use]
-    pub fn new_child(&self) -> Self {
+    pub fn new_child(&self, name: Option<&str>) -> Self {
         let mut id: u64;
         unsafe {
             core::arch::asm!(
@@ -56,7 +56,11 @@ impl OSDTEntry {
                 options(nostack, preserves_flags),
             );
         }
-        id.into()
+        let ret: Self = id.into();
+        if let Some(name) = name {
+            ret.set_property("Name", name.into());
+        }
+        ret
     }
 
     #[must_use]
