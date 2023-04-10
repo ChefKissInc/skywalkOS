@@ -84,14 +84,12 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             SystemCall::Allocate => handlers::alloc::alloc(&mut scheduler, state),
             SystemCall::Free => handlers::alloc::free(&mut scheduler, state),
             SystemCall::AckMessage => handlers::message::ack(&mut scheduler, state),
-            SystemCall::GetDTEntryInfo => handlers::device_tree::get_info(&mut scheduler, state),
-            SystemCall::NewDTEntry => handlers::device_tree::new_entry(state),
+            SystemCall::NewDTEntry => handlers::dt::new_entry(state),
+            SystemCall::GetDTEntryInfo => handlers::dt::get_info(&mut scheduler, state),
         }
     };
 
-    if flow == ControlFlow::Continue(())
-        && scheduler.current_thread_mut().unwrap().state.is_suspended()
-    {
+    if flow.is_continue() && scheduler.current_thread_mut().unwrap().state.is_suspended() {
         flow = ControlFlow::Break(None);
     }
 

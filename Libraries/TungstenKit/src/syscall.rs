@@ -71,8 +71,8 @@ pub enum SystemCall {
     Allocate,
     Free,
     AckMessage,
-    GetDTEntryInfo,
     NewDTEntry,
+    GetDTEntryInfo,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
@@ -81,15 +81,6 @@ pub enum AccessSize {
     Byte,
     Word,
     DWord,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
-#[repr(u64)]
-pub enum OSDTEntryReqType {
-    Parent,
-    Children,
-    Properties,
-    Property,
 }
 
 impl SystemCall {

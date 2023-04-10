@@ -7,7 +7,7 @@ use tungstenkit::TerminationReason;
 use crate::system::{gdt::PrivilegeLevel, proc::scheduler::Scheduler, RegisterState};
 
 pub mod alloc;
-pub mod device_tree;
+pub mod dt;
 pub mod message;
 pub mod port;
 
