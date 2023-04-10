@@ -22,12 +22,12 @@ pub fn send(
 
     let src = scheduler.current_pid.unwrap();
     let msg = Message::new(scheduler.msg_id_gen.next(), src, unsafe {
-        core::slice::from_raw_parts(state.rcx as *const _, state.r8 as _)
+        core::slice::from_raw_parts(state.rdx as *const _, state.rcx as _)
     });
     scheduler.message_sources.insert(msg.id, src);
 
     let process = scheduler.processes.get_mut(&state.rsi).unwrap();
-    process.track_msg(msg.id, state.rcx);
+    process.track_msg(msg.id, state.rdx);
     process.messages.push_front(msg);
 
     ControlFlow::Continue(())
