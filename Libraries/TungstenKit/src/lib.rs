@@ -10,7 +10,9 @@ use hashbrown::HashMap;
 
 extern crate alloc;
 
+#[cfg(target_arch = "x86_64")]
 pub mod dt;
+pub mod osvalue;
 #[cfg(target_arch = "x86_64")]
 pub mod port;
 #[cfg(target_arch = "x86_64")]
@@ -26,7 +28,7 @@ pub struct TKInfo {
     pub name: String,
     pub version: String,
     pub description: String,
-    pub matching: HashMap<String, dt::OSValue>,
+    pub matching: HashMap<String, osvalue::OSValue>,
     pub dependencies: HashMap<String, String>,
 }
 
