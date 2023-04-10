@@ -1,6 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use alloc::{string::String, vec::Vec};
+use alloc::{borrow::ToOwned, string::String, vec::Vec};
 
 use hashbrown::HashMap;
 use num_enum::TryFromPrimitive;
@@ -22,13 +22,16 @@ pub enum GetOSDTEntryReqType {
     Property,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SetOSDTEntryPropReq(pub String, pub OSValue);
+
 impl OSDTEntry {
     fn get_info(&self, ty: GetOSDTEntryReqType, k: Option<&str>) -> Vec<u8> {
         let (mut ptr, mut len): (u64, u64);
         unsafe {
             core::arch::asm!(
                 "int 249",
-                in("rdi") SystemCall::GetDTEntryInfo as u64,
+                in("rdi") SystemCall::GetOSDTEntryInfo as u64,
                 in("rsi") self.0,
                 in("rdx") ty as u64,
                 in("rcx") k.map_or(0, |s| s.as_ptr() as u64),
@@ -47,7 +50,7 @@ impl OSDTEntry {
         unsafe {
             core::arch::asm!(
                 "int 249",
-                in("rdi") SystemCall::NewDTEntry as u64,
+                in("rdi") SystemCall::NewOSDTEntry as u64,
                 in("rsi") self.0,
                 out("rax") id,
                 options(nostack, preserves_flags),
@@ -74,6 +77,20 @@ impl OSDTEntry {
     #[must_use]
     pub fn get_property(&self, k: &str) -> Option<OSValue> {
         postcard::from_bytes(&self.get_info(GetOSDTEntryReqType::Property, Some(k))).unwrap()
+    }
+
+    pub fn set_property(&self, k: &str, v: OSValue) {
+        let req = postcard::to_allocvec(&SetOSDTEntryPropReq(k.to_owned(), v)).unwrap();
+        unsafe {
+            core::arch::asm!(
+                "int 249",
+                in("rdi") SystemCall::SetOSDTEntryProp as u64,
+                in("rsi") self.0,
+                in("rdx") req.as_ptr() as u64,
+                in("rcx") req.len() as u64,
+                options(nostack, preserves_flags),
+            );
+        }
     }
 }
 

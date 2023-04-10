@@ -71,8 +71,9 @@ pub enum SystemCall {
     Allocate,
     Free,
     AckMessage,
-    NewDTEntry,
-    GetDTEntryInfo,
+    NewOSDTEntry,
+    GetOSDTEntryInfo,
+    SetOSDTEntryProp,
 }
 
 impl SystemCall {

@@ -151,7 +151,8 @@ extern "C" fn _start(matching: OSDTEntry) -> ! {
 
     info!("TestDrv loaded");
     info!("Device Tree:");
-    let _ = matching.new_child();
+    let test = matching.new_child();
+    test.set_property("HelloWorld", true.into());
     print_ent(OSDTEntry::default(), 0);
 
     let this = PS2Ctl::new();

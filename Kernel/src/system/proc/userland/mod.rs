@@ -84,8 +84,9 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             SystemCall::Allocate => handlers::alloc::alloc(&mut scheduler, state),
             SystemCall::Free => handlers::alloc::free(&mut scheduler, state),
             SystemCall::AckMessage => handlers::message::ack(&mut scheduler, state),
-            SystemCall::NewDTEntry => handlers::osdtentry::new_entry(state),
-            SystemCall::GetDTEntryInfo => handlers::osdtentry::get_info(&mut scheduler, state),
+            SystemCall::NewOSDTEntry => handlers::osdtentry::new_entry(state),
+            SystemCall::GetOSDTEntryInfo => handlers::osdtentry::get_info(&mut scheduler, state),
+            SystemCall::SetOSDTEntryProp => handlers::osdtentry::set_property(state),
         }
     };
 

@@ -2,7 +2,10 @@
 
 use core::ops::ControlFlow;
 
-use tungstenkit::{osdtentry::GetOSDTEntryReqType, TerminationReason};
+use tungstenkit::{
+    osdtentry::{GetOSDTEntryReqType, SetOSDTEntryPropReq},
+    TerminationReason,
+};
 
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
 
@@ -61,6 +64,21 @@ pub fn get_info(
         .unwrap()
         .track_kernelside_alloc(data.as_ptr() as _, data.len() as _);
     state.rdi = data.len() as _;
+
+    ControlFlow::Continue(())
+}
+
+pub fn set_property(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
+    let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
+    let dt_index = sys_state.dt_index.as_ref().unwrap().read();
+    let Some(ent) = dt_index.get(&state.rsi) else {
+        return ControlFlow::Break(Some(TerminationReason::NotFound));
+    };
+    let data = unsafe { core::slice::from_raw_parts(state.rdx as *const _, state.rcx as _) };
+    let Ok(v): Result<SetOSDTEntryPropReq, _> = postcard::from_bytes(data) else {
+        return ControlFlow::Break(Some(TerminationReason::MalformedAddress));
+    };
+    ent.lock().properties.insert(v.0, v.1);
 
     ControlFlow::Continue(())
 }
