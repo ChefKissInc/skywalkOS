@@ -6,7 +6,7 @@ use tungstenkit::{syscall::OSDTEntryReqType, TerminationReason};
 
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
 
-pub fn get_entry_info(
+pub fn get_info(
     scheduler: &mut Scheduler,
     state: &mut RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
@@ -39,6 +39,28 @@ pub fn get_entry_info(
         .unwrap()
         .track_kernelside_alloc(data.as_ptr() as _, data.len() as _);
     state.rdi = data.len() as _;
+
+    ControlFlow::Continue(())
+}
+
+pub fn new_entry(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
+    let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
+    let dt_index = sys_state.dt_index.as_ref().unwrap();
+    let new = {
+        let dt_index = dt_index.read();
+        let Some(parent) = dt_index.get(&state.rsi) else {
+            return ControlFlow::Break(Some(TerminationReason::NotFound));
+        };
+        let v = crate::system::state::OSDTEntry {
+            id: sys_state.dt_id_gen.as_ref().unwrap().lock().next(),
+            parent: Some(state.rsi.into()),
+            ..Default::default()
+        };
+        parent.lock().children.push(v.id.into());
+        v
+    };
+    state.rax = new.id;
+    dt_index.write().insert(new.id, new.into());
 
     ControlFlow::Continue(())
 }

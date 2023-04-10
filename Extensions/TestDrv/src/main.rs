@@ -17,7 +17,7 @@ use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 use tungstenkit::{
-    dt::OSDTEntry,
+    dt::{OSDTEntry, OSValue},
     port::Port,
     syscall::{Message, SystemCall},
 };
@@ -122,14 +122,25 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
     let spacing = " ".repeat(ident);
 
     let id: u64 = ent.into();
-    writeln!(logger::KWriter, "{spacing}+ {}", id).unwrap();
+    let props = ent.properties();
+    writeln!(
+        logger::KWriter,
+        "{spacing}+ {} <{}>",
+        if let Some(OSValue::String(v)) = props.get("Name") {
+            v.as_str()
+        } else {
+            "Unknown"
+        },
+        id
+    )
+    .unwrap();
 
-    for (k, v) in ent.properties() {
+    for (k, v) in props.into_iter().filter(|(k, _)| k != "Name") {
         writeln!(logger::KWriter, "{spacing}|- {k}: {v:X?}").unwrap();
     }
 
     for child in ent.children() {
-        print_ent(child, ident + 4);
+        print_ent(child, ident + 2);
     }
 }
 
@@ -139,8 +150,8 @@ extern "C" fn _start(matching: OSDTEntry) -> ! {
 
     info!("TestDrv loaded");
     info!("Device Tree:");
+    let _ = matching.new_child();
     print_ent(OSDTEntry::default(), 0);
-    print_ent(matching, 0);
 
     let this = PS2Ctl::new();
     this.init();

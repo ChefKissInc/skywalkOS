@@ -76,10 +76,7 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             SystemCall::KPrint => handlers::kprint(state),
             SystemCall::ReceiveMessage => handlers::message::receive(&mut scheduler, state),
             SystemCall::SendMessage => handlers::message::send(&mut scheduler, state),
-            SystemCall::Quit => {
-                handlers::thread_teardown(&mut scheduler);
-                ControlFlow::Break(None)
-            }
+            SystemCall::Quit => handlers::thread_teardown(&mut scheduler),
             SystemCall::Yield => ControlFlow::Break(None),
             SystemCall::PortIn => handlers::port::port_in(state),
             SystemCall::PortOut => handlers::port::port_out(state),
@@ -87,9 +84,8 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             SystemCall::Allocate => handlers::alloc::alloc(&mut scheduler, state),
             SystemCall::Free => handlers::alloc::free(&mut scheduler, state),
             SystemCall::AckMessage => handlers::message::ack(&mut scheduler, state),
-            SystemCall::GetDTEntryInfo => {
-                handlers::device_tree::get_entry_info(&mut scheduler, state)
-            }
+            SystemCall::GetDTEntryInfo => handlers::device_tree::get_info(&mut scheduler, state),
+            SystemCall::NewDTEntry => handlers::device_tree::new_entry(state),
         }
     };
 

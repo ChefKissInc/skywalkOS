@@ -1,7 +1,5 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use alloc::vec::Vec;
-
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
@@ -74,6 +72,7 @@ pub enum SystemCall {
     Free,
     AckMessage,
     GetDTEntryInfo,
+    NewDTEntry,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
@@ -212,27 +211,6 @@ impl SystemCall {
             in("rsi") ptr as u64,
             options(nostack, preserves_flags),
         );
-    }
-
-    pub unsafe fn get_dt_entry_info(
-        ent: &crate::dt::OSDTEntry,
-        ty: OSDTEntryReqType,
-        k: Option<&str>,
-    ) -> Vec<u8> {
-        let (mut ptr, mut len): (u64, u64);
-        let id: u64 = ent.into();
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::GetDTEntryInfo as u64,
-            in("rsi") id,
-            in("rdx") ty as u64,
-            in("rcx") k.map_or(0, |s| s.as_ptr() as u64),
-            in("r8") k.map_or(0, |s| s.len() as u64),
-            out("rax") ptr,
-            lateout("rdi") len,
-            options(nostack, preserves_flags),
-        );
-        Vec::from_raw_parts(ptr as *mut u8, len as _, len as _)
     }
 }
 

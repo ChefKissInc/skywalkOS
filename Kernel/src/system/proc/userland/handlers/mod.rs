@@ -54,7 +54,7 @@ pub fn register_irq_handler(
     ControlFlow::Continue(())
 }
 
-pub fn thread_teardown(scheduler: &mut Scheduler) {
+pub fn thread_teardown(scheduler: &mut Scheduler) -> ControlFlow<Option<TerminationReason>> {
     let id = scheduler.current_tid.unwrap();
     scheduler.threads.remove(&id);
     scheduler.tid_gen.free(id);
@@ -66,6 +66,8 @@ pub fn thread_teardown(scheduler: &mut Scheduler) {
         scheduler.pid_gen.free(pid);
         scheduler.current_pid = None;
     }
+
+    ControlFlow::Break(None)
 }
 
 pub fn process_teardown(scheduler: &mut Scheduler) {
