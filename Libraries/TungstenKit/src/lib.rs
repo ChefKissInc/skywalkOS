@@ -11,7 +11,7 @@ use hashbrown::HashMap;
 extern crate alloc;
 
 #[cfg(target_arch = "x86_64")]
-pub mod dt;
+pub mod osdtentry;
 pub mod osvalue;
 #[cfg(target_arch = "x86_64")]
 pub mod port;

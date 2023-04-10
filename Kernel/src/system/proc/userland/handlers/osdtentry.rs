@@ -2,7 +2,7 @@
 
 use core::ops::ControlFlow;
 
-use tungstenkit::{dt::GetOSDTEntryReqType, TerminationReason};
+use tungstenkit::{osdtentry::GetOSDTEntryReqType, TerminationReason};
 
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
 

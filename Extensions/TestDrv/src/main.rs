@@ -17,7 +17,7 @@ use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 use tungstenkit::{
-    dt::OSDTEntry,
+    osdtentry::OSDTEntry,
     osvalue::OSValue,
     port::Port,
     syscall::{Message, SystemCall},

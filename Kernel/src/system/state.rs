@@ -17,10 +17,10 @@ pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemSt
 
 #[derive(Debug, Default, Clone)]
 pub struct OSDTEntry {
-    pub parent: Option<tungstenkit::dt::OSDTEntry>,
+    pub parent: Option<tungstenkit::osdtentry::OSDTEntry>,
     pub id: u64,
     pub properties: HashMap<String, tungstenkit::osvalue::OSValue>,
-    pub children: Vec<tungstenkit::dt::OSDTEntry>,
+    pub children: Vec<tungstenkit::osdtentry::OSDTEntry>,
 }
 
 pub struct SystemState {

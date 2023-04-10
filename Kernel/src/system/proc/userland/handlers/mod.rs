@@ -7,8 +7,8 @@ use tungstenkit::TerminationReason;
 use crate::system::{gdt::PrivilegeLevel, proc::scheduler::Scheduler, RegisterState};
 
 pub mod alloc;
-pub mod dt;
 pub mod message;
+pub mod osdtentry;
 pub mod port;
 
 pub fn kprint(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
