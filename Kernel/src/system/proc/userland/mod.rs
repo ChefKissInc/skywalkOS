@@ -4,7 +4,7 @@ use core::ops::ControlFlow;
 
 use tungstenkit::{
     syscall::{KernelMessage, Message, SystemCall},
-    ExitReason,
+    TerminationReason,
 };
 
 use crate::system::{gdt::PrivilegeLevel, RegisterState};
@@ -69,7 +69,7 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
 
     let mut flow = 'flow: {
         let Ok(v) = SystemCall::try_from(state.rdi) else {
-            break 'flow ControlFlow::Break(Some(ExitReason::InvalidArgument));
+            break 'flow ControlFlow::Break(Some(TerminationReason::MalformedArgument));
         };
 
         match v {

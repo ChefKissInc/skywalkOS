@@ -2,14 +2,14 @@
 
 use core::ops::ControlFlow;
 
-use tungstenkit::ExitReason;
+use tungstenkit::TerminationReason;
 
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
 
 pub fn alloc(
     scheduler: &mut Scheduler,
     state: &mut RegisterState,
-) -> ControlFlow<Option<ExitReason>> {
+) -> ControlFlow<Option<TerminationReason>> {
     let size = state.rsi;
     let process = scheduler.current_process_mut().unwrap();
     let addr = process.allocate(size);
@@ -25,7 +25,7 @@ pub fn alloc(
 pub fn free(
     scheduler: &mut Scheduler,
     state: &mut RegisterState,
-) -> ControlFlow<Option<ExitReason>> {
+) -> ControlFlow<Option<TerminationReason>> {
     scheduler
         .current_process_mut()
         .unwrap()

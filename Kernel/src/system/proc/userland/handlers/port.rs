@@ -3,14 +3,14 @@
 use core::ops::ControlFlow;
 
 use amd64::io::port::PortIO;
-use tungstenkit::{syscall::AccessSize, ExitReason};
+use tungstenkit::{syscall::AccessSize, TerminationReason};
 
 use crate::system::RegisterState;
 
-pub fn port_in(state: &mut RegisterState) -> ControlFlow<Option<ExitReason>> {
+pub fn port_in(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
     let port = state.rsi as u16;
     let Ok(access_size) = AccessSize::try_from(state.rdx) else {
-        return ControlFlow::Break(Some(ExitReason::InvalidArgument));
+        return ControlFlow::Break(Some(TerminationReason::MalformedArgument));
     };
     unsafe {
         state.rax = match access_size {
@@ -22,10 +22,10 @@ pub fn port_in(state: &mut RegisterState) -> ControlFlow<Option<ExitReason>> {
     ControlFlow::Continue(())
 }
 
-pub fn port_out(state: &mut RegisterState) -> ControlFlow<Option<ExitReason>> {
+pub fn port_out(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
     let port = state.rsi as u16;
     let Ok(access_size) = AccessSize::try_from(state.rcx) else {
-        return ControlFlow::Break(Some(ExitReason::InvalidArgument));
+        return ControlFlow::Break(Some(TerminationReason::MalformedArgument));
     };
     unsafe {
         match access_size {

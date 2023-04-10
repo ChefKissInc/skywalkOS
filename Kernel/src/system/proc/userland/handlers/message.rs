@@ -4,7 +4,7 @@ use core::ops::ControlFlow;
 
 use tungstenkit::{
     syscall::{KernelMessage, Message},
-    ExitReason,
+    TerminationReason,
 };
 
 use crate::system::{
@@ -15,9 +15,9 @@ use crate::system::{
 pub fn send(
     scheduler: &mut Scheduler,
     state: &mut RegisterState,
-) -> ControlFlow<Option<ExitReason>> {
+) -> ControlFlow<Option<TerminationReason>> {
     if !scheduler.processes.contains_key(&state.rsi) {
-        return ControlFlow::Break(Some(ExitReason::InvalidArgument));
+        return ControlFlow::Break(Some(TerminationReason::NotFound));
     }
 
     let src = scheduler.current_pid.unwrap();
@@ -36,7 +36,7 @@ pub fn send(
 pub fn receive(
     scheduler: &mut Scheduler,
     state: &mut RegisterState,
-) -> ControlFlow<Option<ExitReason>> {
+) -> ControlFlow<Option<TerminationReason>> {
     let process = scheduler.current_process_mut().unwrap();
     if let Some(msg) = process.messages.pop_back() {
         state.rax = msg.id;
@@ -53,11 +53,11 @@ pub fn receive(
 pub fn ack(
     scheduler: &mut Scheduler,
     state: &mut RegisterState,
-) -> ControlFlow<Option<ExitReason>> {
+) -> ControlFlow<Option<TerminationReason>> {
     let id = state.rsi;
 
     let Some(&src) = scheduler.message_sources.get(&id) else {
-        return ControlFlow::Break(Some(ExitReason::InvalidArgument));
+        return ControlFlow::Break(Some(TerminationReason::NotFound));
     };
 
     let process = scheduler.current_process_mut().unwrap();

@@ -2,7 +2,7 @@
 
 use core::{fmt::Write, ops::ControlFlow};
 
-use tungstenkit::ExitReason;
+use tungstenkit::TerminationReason;
 
 use crate::system::{gdt::PrivilegeLevel, proc::scheduler::Scheduler, RegisterState};
 
@@ -11,7 +11,7 @@ pub mod device_tree;
 pub mod message;
 pub mod port;
 
-pub fn kprint(state: &mut RegisterState) -> ControlFlow<Option<ExitReason>> {
+pub fn kprint(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
     // TODO: kill process on failure
     let s = unsafe { core::slice::from_raw_parts(state.rsi as *const u8, state.rdx as usize) };
     let s = unsafe { core::str::from_utf8_unchecked(s) };
@@ -30,14 +30,14 @@ pub fn kprint(state: &mut RegisterState) -> ControlFlow<Option<ExitReason>> {
 pub fn register_irq_handler(
     scheduler: &mut Scheduler,
     state: &mut RegisterState,
-) -> ControlFlow<Option<ExitReason>> {
+) -> ControlFlow<Option<TerminationReason>> {
     let irq = state.rsi as u8;
     if irq > 0xDF {
-        return ControlFlow::Break(Some(ExitReason::InvalidArgument));
+        return ControlFlow::Break(Some(TerminationReason::MalformedArgument));
     }
     let pid = scheduler.current_pid.unwrap();
     if scheduler.irq_handlers.try_insert(irq, pid).is_err() {
-        return ControlFlow::Break(Some(ExitReason::InvalidArgument));
+        return ControlFlow::Break(Some(TerminationReason::AlreadyExists));
     }
 
     crate::acpi::ioapic::wire_legacy_irq(irq, false);
