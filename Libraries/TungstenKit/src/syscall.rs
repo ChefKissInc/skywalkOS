@@ -75,14 +75,6 @@ pub enum SystemCall {
     GetDTEntryInfo,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
-#[repr(u64)]
-pub enum AccessSize {
-    Byte,
-    Word,
-    DWord,
-}
-
 impl SystemCall {
     pub unsafe fn kprint(s: &str) {
         core::arch::asm!(
@@ -100,78 +92,6 @@ impl SystemCall {
 
     pub unsafe fn r#yield() {
         core::arch::asm!("int 249", in("rdi") Self::Yield as u64, options(nostack, preserves_flags));
-    }
-
-    pub unsafe fn port_in_byte(port: u16) -> u8 {
-        let mut val: u8;
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::PortIn as u64,
-            in("rsi") port,
-            in("rdx") AccessSize::Byte as u64,
-            out("al") val,
-            options(nostack, preserves_flags),
-        );
-        val
-    }
-
-    pub unsafe fn port_out_byte(port: u16, val: u8) {
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::PortOut as u64,
-            in("rsi") port,
-            in("dl") val,
-            in("rcx") AccessSize::Byte as u64,
-            options(nostack, preserves_flags),
-        );
-    }
-
-    pub unsafe fn port_in_word(port: u16) -> u16 {
-        let mut val: u16;
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::PortIn as u64,
-            in("rsi") port,
-            in("rdx") AccessSize::Word as u64,
-            out("rax") val,
-            options(nostack, preserves_flags),
-        );
-        val
-    }
-
-    pub unsafe fn port_out_word(port: u16, val: u16) {
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::PortOut as u64,
-            in("rsi") port,
-            in("rdx") val,
-            in("rax") AccessSize::Word as u64,
-            options(nostack, preserves_flags),
-        );
-    }
-
-    pub unsafe fn port_in_dword(port: u16) -> u32 {
-        let mut val: u32;
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::PortIn as u64,
-            in("rsi") port,
-            in("rdx") AccessSize::DWord as u64,
-            out("rax") val,
-            options(nostack, preserves_flags),
-        );
-        val
-    }
-
-    pub unsafe fn port_out_dword(port: u16, val: u32) {
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::PortOut as u64,
-            in("rsi") port,
-            in("rdx") val,
-            in("rcx") AccessSize::DWord as u64,
-            options(nostack, preserves_flags),
-        );
     }
 
     pub unsafe fn register_irq_handler(irq: u8) {
