@@ -12,6 +12,7 @@ pub trait PML4: Sized {
     }
 
     #[inline]
+    #[must_use]
     unsafe fn get() -> &'static mut Self {
         let pml4: *mut Self;
         core::arch::asm!("mov {}, cr3", out(reg) pml4, options(nostack, preserves_flags));

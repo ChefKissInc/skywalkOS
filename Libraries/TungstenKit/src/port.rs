@@ -51,7 +51,7 @@ impl PortIO for u8 {
     }
 
     unsafe fn write(port: u16, value: Self) {
-        PortIOSystemCallOut!("cl", port, value, AccessSize::Byte)
+        PortIOSystemCallOut!("cl", port, value, AccessSize::Byte);
     }
 }
 
@@ -61,7 +61,7 @@ impl PortIO for u16 {
     }
 
     unsafe fn write(port: u16, value: Self) {
-        PortIOSystemCallOut!("cx", port, value, AccessSize::Word)
+        PortIOSystemCallOut!("cx", port, value, AccessSize::Word);
     }
 }
 
@@ -71,7 +71,7 @@ impl PortIO for u32 {
     }
 
     unsafe fn write(port: u16, value: Self) {
-        PortIOSystemCallOut!("ecx", port, value, AccessSize::DWord)
+        PortIOSystemCallOut!("ecx", port, value, AccessSize::DWord);
     }
 }
 

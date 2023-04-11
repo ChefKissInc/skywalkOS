@@ -20,7 +20,7 @@ unsafe extern "sysv64" fn irq_handler(state: &mut RegisterState) {
         .as_ref()
         .unwrap()
         .lock();
-    let pid = scheduler.irq_handlers.get(&irq).cloned().unwrap();
+    let pid = scheduler.irq_handlers.get(&irq).copied().unwrap();
     let s = postcard::to_allocvec(&KernelMessage::IRQFired(irq))
         .unwrap()
         .leak();
@@ -42,7 +42,7 @@ unsafe extern "sysv64" fn irq_handler(state: &mut RegisterState) {
 
     let tids = process.tids.clone();
     let idle = scheduler.current_tid.is_none();
-    for tid in tids.into_iter() {
+    for tid in tids {
         let thread = scheduler.threads.get_mut(&tid).unwrap();
         if thread.state.is_suspended() {
             thread.state = super::ThreadState::Inactive;

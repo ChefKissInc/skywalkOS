@@ -17,6 +17,7 @@ impl Message {
         Self { id, pid, data }
     }
 
+    #[must_use]
     pub unsafe fn receive() -> Self {
         let (mut id, mut pid): (u64, u64);
         let (mut ptr, mut len): (u64, u64);
@@ -104,6 +105,7 @@ impl SystemCall {
         );
     }
 
+    #[must_use]
     pub unsafe fn allocate(size: u64) -> *mut u8 {
         let mut ptr: u64;
         core::arch::asm!(

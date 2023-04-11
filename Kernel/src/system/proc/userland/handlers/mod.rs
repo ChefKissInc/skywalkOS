@@ -13,7 +13,7 @@ pub mod port;
 
 pub fn kprint(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
     // TODO: kill process on failure
-    let s = unsafe { core::slice::from_raw_parts(state.rsi as *const u8, state.rdx as usize) };
+    let s = unsafe { core::slice::from_raw_parts(state.rsi as *const _, state.rdx as _) };
     let Ok(s) = core::str::from_utf8(s) else {
         return ControlFlow::Break(Some(TerminationReason::MalformedBody));
     };
@@ -22,7 +22,7 @@ pub fn kprint(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason
     write!(crate::system::serial::SERIAL.lock(), "{s}").unwrap();
 
     if let Some(v) = unsafe { (*crate::system::state::SYS_STATE.get()).terminal.as_mut() } {
-        write!(v, "{s}").unwrap()
+        write!(v, "{s}").unwrap();
     }
 
     ControlFlow::Continue(())

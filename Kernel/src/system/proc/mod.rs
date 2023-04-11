@@ -165,7 +165,7 @@ impl Process {
 
 impl Drop for Process {
     fn drop(&mut self) {
-        let addrs: Vec<_> = self.allocations.keys().cloned().collect();
+        let addrs: Vec<_> = self.allocations.keys().copied().collect();
         for addr in addrs {
             self.free_alloc(addr);
         }

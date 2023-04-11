@@ -62,8 +62,8 @@ pub fn ack(
 
     let process = scheduler.current_process_mut().unwrap();
     if src == 0 {
-        let addr = process.message_allocations.get(&id).cloned().unwrap();
-        let (size, _) = process.allocations.get(&addr).cloned().unwrap();
+        let addr = process.message_allocations.get(&id).copied().unwrap();
+        let (size, _) = process.allocations.get(&addr).copied().unwrap();
         let msg: KernelMessage = unsafe {
             postcard::from_bytes(core::slice::from_raw_parts(addr as *const _, size as _)).unwrap()
         };

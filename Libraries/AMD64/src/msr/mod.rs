@@ -8,6 +8,7 @@ pub mod vm_cr;
 pub trait ModelSpecificReg: Sized + From<u64> {
     const MSR_NUM: u32;
 
+    #[must_use]
     unsafe fn read() -> Self {
         let (low, high): (u32, u32);
         core::arch::asm!("rdmsr", in("ecx") Self::MSR_NUM, out("eax") low, out("edx") high, options(nostack, preserves_flags));
