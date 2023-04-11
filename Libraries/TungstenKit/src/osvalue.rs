@@ -6,172 +6,69 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[repr(C)]
 pub enum OSValue {
-    Boolean(bool),
+    Bool(bool),
     String(String),
     USize(usize),
     U64(u64),
     U32(u32),
     U16(u16),
     U8(u8),
+    ISize(isize),
+    I64(i64),
+    I32(i32),
+    I16(i16),
+    I8(i8),
     Vec(Vec<Self>),
     Dictionary(HashMap<String, Self>),
 }
 
-impl From<bool> for OSValue {
-    fn from(val: bool) -> Self {
-        Self::Boolean(val)
-    }
+macro_rules! OSValueImplFor {
+    ($variant:ident, $target:ty) => {
+        impl From<$target> for OSValue {
+            fn from(val: $target) -> Self {
+                Self::$variant(val)
+            }
+        }
+
+        impl TryFrom<OSValue> for $target {
+            type Error = ();
+
+            fn try_from(val: OSValue) -> Result<Self, Self::Error> {
+                match val {
+                    OSValue::$variant(d) => Ok(d),
+                    _ => Err(()),
+                }
+            }
+        }
+    };
 }
 
+OSValueImplFor!(Bool, bool);
+OSValueImplFor!(String, String);
 impl From<&str> for OSValue {
     fn from(val: &str) -> Self {
         Self::String(val.to_owned())
     }
 }
-
-impl From<String> for OSValue {
-    fn from(val: String) -> Self {
-        Self::String(val)
-    }
-}
-
-impl From<usize> for OSValue {
-    fn from(val: usize) -> Self {
-        Self::USize(val)
-    }
-}
-
-impl From<u64> for OSValue {
-    fn from(val: u64) -> Self {
-        Self::U64(val)
-    }
-}
-
-impl From<u32> for OSValue {
-    fn from(val: u32) -> Self {
-        Self::U32(val)
-    }
-}
-
-impl From<u16> for OSValue {
-    fn from(val: u16) -> Self {
-        Self::U16(val)
-    }
-}
-
-impl From<u8> for OSValue {
-    fn from(val: u8) -> Self {
-        Self::U8(val)
-    }
-}
-
-impl From<Vec<Self>> for OSValue {
-    fn from(val: Vec<Self>) -> Self {
-        Self::Vec(val)
-    }
-}
-
-impl From<HashMap<String, Self>> for OSValue {
-    fn from(val: HashMap<String, Self>) -> Self {
-        Self::Dictionary(val)
-    }
-}
-
-impl TryFrom<OSValue> for bool {
+impl<'a> TryFrom<&'a OSValue> for &'a str {
     type Error = ();
 
-    fn try_from(val: OSValue) -> Result<Self, Self::Error> {
+    fn try_from(val: &'a OSValue) -> Result<Self, Self::Error> {
         match val {
-            OSValue::Boolean(b) => Ok(b),
+            OSValue::String(d) => Ok(d.as_str()),
             _ => Err(()),
         }
     }
 }
-
-impl TryFrom<OSValue> for String {
-    type Error = ();
-
-    fn try_from(val: OSValue) -> Result<Self, Self::Error> {
-        match val {
-            OSValue::String(s) => Ok(s),
-            _ => Err(()),
-        }
-    }
-}
-
-impl TryFrom<OSValue> for usize {
-    type Error = ();
-
-    fn try_from(val: OSValue) -> Result<Self, Self::Error> {
-        match val {
-            OSValue::USize(u) => Ok(u),
-            _ => Err(()),
-        }
-    }
-}
-
-impl TryFrom<OSValue> for u64 {
-    type Error = ();
-
-    fn try_from(val: OSValue) -> Result<Self, Self::Error> {
-        match val {
-            OSValue::U64(u) => Ok(u),
-            _ => Err(()),
-        }
-    }
-}
-
-impl TryFrom<OSValue> for u32 {
-    type Error = ();
-
-    fn try_from(val: OSValue) -> Result<Self, Self::Error> {
-        match val {
-            OSValue::U32(u) => Ok(u),
-            _ => Err(()),
-        }
-    }
-}
-
-impl TryFrom<OSValue> for u16 {
-    type Error = ();
-
-    fn try_from(val: OSValue) -> Result<Self, Self::Error> {
-        match val {
-            OSValue::U16(u) => Ok(u),
-            _ => Err(()),
-        }
-    }
-}
-
-impl TryFrom<OSValue> for u8 {
-    type Error = ();
-
-    fn try_from(val: OSValue) -> Result<Self, Self::Error> {
-        match val {
-            OSValue::U8(u) => Ok(u),
-            _ => Err(()),
-        }
-    }
-}
-
-impl TryFrom<OSValue> for Vec<OSValue> {
-    type Error = ();
-
-    fn try_from(val: OSValue) -> Result<Self, Self::Error> {
-        match val {
-            OSValue::Vec(v) => Ok(v),
-            _ => Err(()),
-        }
-    }
-}
-
-impl TryFrom<OSValue> for HashMap<String, OSValue> {
-    type Error = ();
-
-    fn try_from(val: OSValue) -> Result<Self, Self::Error> {
-        match val {
-            OSValue::Dictionary(d) => Ok(d),
-            _ => Err(()),
-        }
-    }
-}
+OSValueImplFor!(USize, usize);
+OSValueImplFor!(U64, u64);
+OSValueImplFor!(U32, u32);
+OSValueImplFor!(U16, u16);
+OSValueImplFor!(U8, u8);
+OSValueImplFor!(ISize, isize);
+OSValueImplFor!(I64, i64);
+OSValueImplFor!(I32, i32);
+OSValueImplFor!(I16, i16);
+OSValueImplFor!(I8, i8);
+OSValueImplFor!(Vec, Vec<OSValue>);
+OSValueImplFor!(Dictionary, HashMap<String, OSValue>);
