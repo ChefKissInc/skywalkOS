@@ -12,6 +12,34 @@ pub enum AccessSize {
     DWord,
 }
 
+macro_rules! PortIOSystemCallIn {
+    ($out:tt, $port:expr, $size:expr) => {{
+        let mut val: Self;
+        core::arch::asm!(
+            "int 249",
+            in("rdi") SystemCall::PortIn as u64,
+            in("rsi") $port,
+            in("rdx") $size as u64,
+            out($out) val,
+            options(nostack, preserves_flags),
+        );
+        val
+    }};
+}
+
+macro_rules! PortIOSystemCallOut {
+    ($in_:tt, $port:expr, $value:expr, $size:expr) => {
+        core::arch::asm!(
+            "int 249",
+            in("rdi") SystemCall::PortOut as u64,
+            in("rsi") $port,
+            in("rdx") $size as u64,
+            in($in_) $value,
+            options(nostack, preserves_flags),
+        )
+    };
+}
+
 pub trait PortIO: Sized {
     unsafe fn read(port: u16) -> Self;
     unsafe fn write(port: u16, value: Self);
@@ -19,79 +47,31 @@ pub trait PortIO: Sized {
 
 impl PortIO for u8 {
     unsafe fn read(port: u16) -> Self {
-        let mut val: Self;
-        core::arch::asm!(
-            "int 249",
-            in("rdi") SystemCall::PortIn as u64,
-            in("rsi") port,
-            in("rdx") AccessSize::Byte as u64,
-            out("al") val,
-            options(nostack, preserves_flags),
-        );
-        val
+        PortIOSystemCallIn!("al", port, AccessSize::Byte)
     }
 
     unsafe fn write(port: u16, value: Self) {
-        core::arch::asm!(
-            "int 249",
-            in("rdi") SystemCall::PortOut as u64,
-            in("rsi") port,
-            in("dl") value,
-            in("rcx") AccessSize::Byte as u64,
-            options(nostack, preserves_flags),
-        );
+        PortIOSystemCallOut!("cl", port, value, AccessSize::Byte)
     }
 }
 
 impl PortIO for u16 {
     unsafe fn read(port: u16) -> Self {
-        let mut val: Self;
-        core::arch::asm!(
-            "int 249",
-            in("rdi") SystemCall::PortIn as u64,
-            in("rsi") port,
-            in("rdx") AccessSize::Word as u64,
-            out("rax") val,
-            options(nostack, preserves_flags),
-        );
-        val
+        PortIOSystemCallIn!("ax", port, AccessSize::Word)
     }
 
     unsafe fn write(port: u16, value: Self) {
-        core::arch::asm!(
-            "int 249",
-            in("rdi") SystemCall::PortOut as u64,
-            in("rsi") port,
-            in("rdx") value,
-            in("rax") AccessSize::Word as u64,
-            options(nostack, preserves_flags),
-        );
+        PortIOSystemCallOut!("cx", port, value, AccessSize::Word)
     }
 }
 
 impl PortIO for u32 {
     unsafe fn read(port: u16) -> Self {
-        let mut val: Self;
-        core::arch::asm!(
-            "int 249",
-            in("rdi") SystemCall::PortIn as u64,
-            in("rsi") port,
-            in("rdx") AccessSize::DWord as u64,
-            out("rax") val,
-            options(nostack, preserves_flags),
-        );
-        val
+        PortIOSystemCallIn!("eax", port, AccessSize::DWord)
     }
 
     unsafe fn write(port: u16, value: Self) {
-        core::arch::asm!(
-            "int 249",
-            in("rdi") SystemCall::PortOut as u64,
-            in("rsi") port,
-            in("rdx") value,
-            in("rcx") AccessSize::DWord as u64,
-            options(nostack, preserves_flags),
-        );
+        PortIOSystemCallOut!("ecx", port, value, AccessSize::DWord)
     }
 }
 

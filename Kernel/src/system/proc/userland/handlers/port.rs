@@ -24,14 +24,14 @@ pub fn port_in(state: &mut RegisterState) -> ControlFlow<Option<TerminationReaso
 
 pub fn port_out(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
     let port = state.rsi as u16;
-    let Ok(access_size) = AccessSize::try_from(state.rcx) else {
+    let Ok(access_size) = AccessSize::try_from(state.rdx) else {
         return ControlFlow::Break(Some(TerminationReason::MalformedArgument));
     };
     unsafe {
         match access_size {
-            AccessSize::Byte => u8::write(port, state.rdx as u8),
-            AccessSize::Word => u16::write(port, state.rdx as u16),
-            AccessSize::DWord => u32::write(port, state.rdx as u32),
+            AccessSize::Byte => u8::write(port, state.rcx as u8),
+            AccessSize::Word => u16::write(port, state.rcx as u16),
+            AccessSize::DWord => u32::write(port, state.rcx as u32),
         };
     }
     ControlFlow::Continue(())
