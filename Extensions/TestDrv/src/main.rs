@@ -149,11 +149,8 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
 extern "C" fn _start(instance: OSDTEntry) -> ! {
     logger::init();
 
-    info!("TestDrv loaded");
-    info!("Device Tree:");
     let test = instance.new_child(Some("Testing123"));
     test.set_property("HelloWorld", true.into());
-    print_ent(OSDTEntry::default(), 0);
 
     let this = PS2Ctl::new();
     this.init();
@@ -186,7 +183,11 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                 if let Ps2Event::Pressed(ch) = event {
                     write!(logger::KWriter, "{ch}").unwrap();
                     if ch == '\n' {
-                        info!("You typed: {s}");
+                        if s == "dumposdtentrytree" {
+                            print_ent(OSDTEntry::default(), 0);
+                        } else {
+                            writeln!(logger::KWriter, "{s}").unwrap();
+                        }
                         write!(logger::KWriter, "Tungsten / ").unwrap();
                         s.clear();
                     } else {

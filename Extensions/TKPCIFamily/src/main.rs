@@ -1,0 +1,211 @@
+// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
+
+#![no_std]
+#![no_main]
+#![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
+#![allow(clippy::multiple_crate_versions)]
+#![feature(alloc_error_handler)]
+
+#[macro_use]
+extern crate log;
+// #[macro_use]
+extern crate alloc;
+
+use alloc::{boxed::Box, format};
+
+use tkpcifamily::{PCIAddress, PCICfgOffset};
+use tungstenkit::{osdtentry::OSDTEntry, port::Port, syscall::Message};
+
+mod allocator;
+mod logger;
+mod panic;
+
+trait PCIControllerIO: Sync {
+    unsafe fn cfg_read8(&self, addr: PCIAddress, off: u8) -> u8;
+    unsafe fn cfg_read16(&self, addr: PCIAddress, off: u8) -> u16;
+    unsafe fn cfg_read32(&self, addr: PCIAddress, off: u8) -> u32;
+    unsafe fn cfg_write8(&self, addr: PCIAddress, off: u8, value: u8);
+    unsafe fn cfg_write16(&self, addr: PCIAddress, off: u8, value: u16);
+    unsafe fn cfg_write32(&self, addr: PCIAddress, off: u8, value: u32);
+}
+
+struct PCIDevice<'a> {
+    addr: PCIAddress,
+    controller: &'a PCIController,
+}
+
+#[allow(dead_code)]
+impl<'a> PCIDevice<'a> {
+    #[inline]
+    #[must_use]
+    pub const fn new(addr: PCIAddress, controller: &'a PCIController) -> Self {
+        Self { addr, controller }
+    }
+
+    pub unsafe fn is_multifunction(&self) -> bool {
+        self.cfg_read8::<_, u8>(PCICfgOffset::HeaderType) & 0x80 != 0
+    }
+
+    pub unsafe fn cfg_read8<A: Into<u8>, R: From<u8>>(&self, off: A) -> R {
+        self.controller.cfg_read8(self.addr, off.into()).into()
+    }
+
+    pub unsafe fn cfg_read16<A: Into<u8>, R: From<u16>>(&self, off: A) -> R {
+        self.controller.cfg_read16(self.addr, off.into()).into()
+    }
+
+    pub unsafe fn cfg_read32<A: Into<u8>, R: From<u32>>(&self, off: A) -> R {
+        self.controller.cfg_read32(self.addr, off.into()).into()
+    }
+
+    pub unsafe fn cfg_write8<A: Into<u8>, R: Into<u8>>(&self, off: A, value: R) {
+        self.controller
+            .cfg_write8(self.addr, off.into(), value.into());
+    }
+
+    pub unsafe fn cfg_write16<A: Into<u8>, R: Into<u16>>(&self, off: A, value: R) {
+        self.controller
+            .cfg_write16(self.addr, off.into(), value.into());
+    }
+
+    pub unsafe fn cfg_write32<A: Into<u8>, R: Into<u32>>(&self, off: A, value: R) {
+        self.controller
+            .cfg_write32(self.addr, off.into(), value.into());
+    }
+}
+
+struct PCIController;
+
+impl PCIController {
+    unsafe fn cfg_read8(&self, addr: PCIAddress, off: u8) -> u8 {
+        PCIPortIO::new().cfg_read8(addr, off)
+    }
+
+    unsafe fn cfg_read16(&self, addr: PCIAddress, off: u8) -> u16 {
+        PCIPortIO::new().cfg_read16(addr, off)
+    }
+
+    unsafe fn cfg_read32(&self, addr: PCIAddress, off: u8) -> u32 {
+        PCIPortIO::new().cfg_read32(addr, off)
+    }
+
+    unsafe fn cfg_write8(&self, addr: PCIAddress, off: u8, value: u8) {
+        PCIPortIO::new().cfg_write8(addr, off, value);
+    }
+
+    unsafe fn cfg_write16(&self, addr: PCIAddress, off: u8, value: u16) {
+        PCIPortIO::new().cfg_write16(addr, off, value);
+    }
+
+    unsafe fn cfg_write32(&self, addr: PCIAddress, off: u8, value: u32) {
+        PCIPortIO::new().cfg_write32(addr, off, value);
+    }
+}
+
+#[derive(Clone)]
+struct PCIPortIO;
+
+impl PCIPortIO {
+    #[inline]
+    #[must_use]
+    pub const fn new() -> Self {
+        Self
+    }
+
+    unsafe fn send_addr(addr: PCIAddress, off: u8) {
+        assert_eq!(addr.segment, 0, "Using segments on PCI non-express");
+
+        Port::<u32, u32>::new(0xCF8).write(
+            (u32::from(addr.bus) << 16)
+                | (u32::from(addr.slot) << 11)
+                | (u32::from(addr.func) << 8)
+                | (u32::from(off) & !3u32)
+                | 0x8000_0000,
+        );
+    }
+}
+
+impl PCIControllerIO for PCIPortIO {
+    unsafe fn cfg_read8(&self, addr: PCIAddress, off: u8) -> u8 {
+        Self::send_addr(addr, off);
+        Port::<u8, u8>::new(0xCFC + (u16::from(off) & 3)).read()
+    }
+
+    unsafe fn cfg_read16(&self, addr: PCIAddress, off: u8) -> u16 {
+        Self::send_addr(addr, off);
+        Port::<u16, u16>::new(0xCFC + (u16::from(off) & 3)).read()
+    }
+
+    unsafe fn cfg_read32(&self, addr: PCIAddress, off: u8) -> u32 {
+        Self::send_addr(addr, off);
+        Port::<u32, u32>::new(0xCFC + (u16::from(off) & 3)).read()
+    }
+
+    unsafe fn cfg_write8(&self, addr: PCIAddress, off: u8, value: u8) {
+        Self::send_addr(addr, off);
+        Port::<u8, u8>::new(0xCFC + (u16::from(off) & 3)).write(value);
+    }
+
+    unsafe fn cfg_write16(&self, addr: PCIAddress, off: u8, value: u16) {
+        Self::send_addr(addr, off);
+        Port::<u16, u16>::new(0xCFC + (u16::from(off) & 3)).write(value);
+    }
+
+    unsafe fn cfg_write32(&self, addr: PCIAddress, off: u8, value: u32) {
+        Self::send_addr(addr, off);
+        Port::<u32, u32>::new(0xCFC + (u16::from(off) & 3)).write(value);
+    }
+}
+
+#[no_mangle]
+extern "C" fn _start(instance: OSDTEntry) -> ! {
+    logger::init();
+
+    let controller = Box::new(PCIController);
+    for bus in 0..=255 {
+        for slot in 0..32 {
+            for func in 0..8 {
+                let addr = PCIAddress {
+                    segment: 0,
+                    bus,
+                    slot,
+                    func,
+                };
+                let is_multifunction = unsafe {
+                    controller.cfg_read8(addr, PCICfgOffset::HeaderType as u8) & 0x80 != 0
+                };
+                let vendor_id =
+                    unsafe { controller.cfg_read16(addr, PCICfgOffset::VendorID as u8) };
+                if vendor_id == 0xFFFF || vendor_id == 0x0000 {
+                    if is_multifunction {
+                        continue;
+                    }
+                    break;
+                }
+
+                let device_id =
+                    unsafe { controller.cfg_read16(addr, PCICfgOffset::DeviceID as u8) };
+                let class_code =
+                    unsafe { controller.cfg_read8(addr, PCICfgOffset::ClassCode as u8) };
+
+                let ent = instance.new_child(Some(&format!(
+                    "PCIRoot({:04x})/PCI({:02x})/PCI({:02x})/PCI({:02x})",
+                    addr.segment, addr.bus, addr.slot, addr.func
+                )));
+                ent.set_property("VendorID", vendor_id.into());
+                ent.set_property("DeviceID", device_id.into());
+                ent.set_property("ClassCode", class_code.into());
+
+                if !is_multifunction {
+                    break;
+                }
+            }
+        }
+    }
+
+    loop {
+        let msg = unsafe { Message::receive() };
+        // if msg.pid == 0 {}
+        unsafe { msg.ack() }
+    }
+}
