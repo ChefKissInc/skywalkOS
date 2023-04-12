@@ -28,21 +28,6 @@ jobs:
           toolchain: nightly
           override: true
           components: rust-src, rustfmt, clippy
-      - name: Install cargo-make
-        uses: actions-rs/install@v0.1
-        with:
-          crate: cargo-make
-          use-tool-cache: true
-      - name: Install clippy-sarif
-        uses: actions-rs/install@v0.1
-        with:
-          crate: clippy-sarif
-          use-tool-cache: true
-      - name: Install sarif-fmt
-        uses: actions-rs/install@v0.1
-        with:
-          crate: sarif-fmt
-          use-tool-cache: true
       - name: Check formatting
         uses: actions-rs/cargo@v1
         with:
@@ -50,10 +35,11 @@ jobs:
           command: fmt
           args: --all -- --check
       - name: Run lints
-        run:
-          cargo clippy
-          -Zbuild-std=core,compiler_builtins,alloc -Zbuild-std-features=compiler-builtins-mem --target x86_64-unknown-uefi
-          --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
+        uses: actions-rs/cargo@v1
+        with:
+          toolchain: nightly
+          command: clippy
+          args: -Zbuild-std=core,compiler_builtins,alloc -Zbuild-std-features=compiler-builtins-mem --target x86_64-unknown-uefi
         continue-on-error: true
       - name: Upload analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v2
