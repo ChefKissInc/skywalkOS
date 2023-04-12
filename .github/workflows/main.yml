@@ -40,12 +40,6 @@ jobs:
           toolchain: nightly
           command: clippy
           args: -Zbuild-std=core,compiler_builtins,alloc -Zbuild-std-features=compiler-builtins-mem --target x86_64-unknown-uefi
-        continue-on-error: true
-      - name: Upload analysis results to GitHub
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: rust-clippy-results.sarif
-          wait-for-processing: true
   test:
     name: Test suite
     runs-on: ubuntu-latest
