@@ -5,3 +5,4 @@ publish = false
 version = "0.1.0"
 
 [dependencies]
+paper-fb = { path = "../PaperFrameBuffer" }

@@ -1,11 +1,11 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-#[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
-pub struct BitMask {
-    pub r: u32,
-    pub g: u32,
-    pub b: u32,
-    pub a: u32,
+#[repr(C)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum PixelBitMask {
+    RGBA,
+    BGRA,
+    Custom { r: u32, g: u32, b: u32, a: u32 },
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
@@ -24,15 +24,21 @@ impl Colour {
     }
 
     #[must_use]
-    pub const fn as_u32(&self, bitmask: BitMask) -> u32 {
-        let red_pixel = bitmask.r.leading_zeros();
-        let green_pixel = bitmask.g.leading_zeros();
-        let blue_pixel = bitmask.b.leading_zeros();
-        let alpha_pixel = bitmask.a.leading_zeros();
+    pub const fn as_u32(&self, bitmask: PixelBitMask) -> u32 {
+        let (r_shift, g_shift, b_shift, a_shift) = match bitmask {
+            PixelBitMask::BGRA => (16, 8, 0, 24),
+            PixelBitMask::RGBA => (0, 8, 16, 24),
+            PixelBitMask::Custom { r, g, b, a } => (
+                r.leading_zeros(),
+                g.leading_zeros(),
+                b.leading_zeros(),
+                a.leading_zeros(),
+            ),
+        };
 
-        ((self.r as u32) << red_pixel)
-            | ((self.g as u32) << green_pixel)
-            | ((self.b as u32) << blue_pixel)
-            | ((self.a as u32) << alpha_pixel)
+        ((self.r as u32) << r_shift)
+            | ((self.g as u32) << g_shift)
+            | ((self.b as u32) << b_shift)
+            | ((self.a as u32) << a_shift)
     }
 }

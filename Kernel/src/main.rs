@@ -40,12 +40,7 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
                 fb_info.resolution.width,
                 fb_info.resolution.height,
                 fb_info.pitch,
-                paper_fb::pixel::BitMask {
-                    r: fb_info.pixel_bitmask.red,
-                    g: fb_info.pixel_bitmask.green,
-                    b: fb_info.pixel_bitmask.blue,
-                    a: fb_info.pixel_bitmask.alpha,
-                },
+                fb_info.pixel_bitmask,
             )
         });
         terminal.clear();

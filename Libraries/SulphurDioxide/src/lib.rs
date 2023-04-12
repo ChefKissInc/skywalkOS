@@ -3,6 +3,8 @@
 #![no_std]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 
+use paper_fb::pixel::PixelBitMask;
+
 pub const CURRENT_REVISION: u64 = 0x1A;
 
 pub type EntryPoint = extern "sysv64" fn(&'static BootInfo) -> !;
@@ -42,15 +44,6 @@ pub enum PixelFormat {
 
 #[repr(C)]
 #[derive(Debug)]
-pub struct PixelBitmask {
-    pub red: u32,
-    pub green: u32,
-    pub blue: u32,
-    pub alpha: u32,
-}
-
-#[repr(C)]
-#[derive(Debug)]
 pub struct ScreenRes {
     pub width: usize,
     pub height: usize,
@@ -71,8 +64,7 @@ impl ScreenRes {
 #[derive(Debug)]
 pub struct FrameBufferInfo {
     pub resolution: ScreenRes,
-    pub pixel_format: PixelFormat,
-    pub pixel_bitmask: PixelBitmask,
+    pub pixel_bitmask: PixelBitMask,
     pub pitch: usize,
     pub base: *mut u32,
 }
