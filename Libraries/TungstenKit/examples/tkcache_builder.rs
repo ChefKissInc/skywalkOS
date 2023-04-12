@@ -25,7 +25,7 @@ fn main() {
         cache.0.push((info, payload));
     }
     std::fs::write(
-        "Drive/System/Extensions.dccache",
+        "Drive/System/Extensions.tkcache",
         postcard::to_allocvec(&cache).unwrap(),
     )
     .unwrap();

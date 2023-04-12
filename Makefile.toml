@@ -56,9 +56,9 @@ args = [
     "--release",
 ]
 
-[tasks.make-dccache]
+[tasks.make-tkcache]
 command = "cargo"
-args = ["run", "--example", "dc_cache_builder", "--release"]
+args = ["run", "--example", "tkcache_builder", "--release"]
 
 [tasks.make-boot-exts]
 command = "cargo"
@@ -69,14 +69,14 @@ command = "cargo"
 args = ["make", "--cwd", "Extensions", "make-release"]
 
 [tasks.make]
-dependencies = ["build-xboot", "build-kernel", "make-boot-exts", "make-dccache"]
+dependencies = ["build-xboot", "build-kernel", "make-boot-exts", "make-tkcache"]
 
 [tasks.make-release]
 dependencies = [
     "build-xboot-release",
     "build-kernel-release",
     "make-boot-exts-release",
-    "make-dccache",
+    "make-tkcache",
 ]
 
 [tasks.run]

@@ -76,16 +76,16 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
     )
     .leak();
 
-    let dc_ext_buffer = helpers::file::load(
+    let tkcache_buffer = helpers::file::load(
         &mut esp,
-        cstr16!("\\System\\Extensions.dccache"),
+        cstr16!("\\System\\Extensions.tkcache"),
         FileMode::Read,
         FileAttribute::empty(),
     )
     .leak();
 
     let mut mem_mgr = helpers::mem::MemoryManager::new();
-    mem_mgr.allocate((dc_ext_buffer.as_ptr() as _, dc_ext_buffer.len() as _));
+    mem_mgr.allocate((tkcache_buffer.as_ptr() as _, tkcache_buffer.len() as _));
 
     let (kernel_main, symbols) = helpers::parse_elf::parse_elf(&mut mem_mgr, kernel_buffer);
 
@@ -102,7 +102,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
         verbose,
         Some(fbinfo),
         rsdp,
-        helpers::phys_to_kern_slice_ref(dc_ext_buffer),
+        helpers::phys_to_kern_slice_ref(tkcache_buffer),
     )));
 
     trace!("Exiting boot services and jumping to kernel...");

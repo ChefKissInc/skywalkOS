@@ -86,7 +86,7 @@ pub struct BootInfo {
     pub memory_map: &'static [MemoryEntry],
     pub frame_buffer: Option<&'static FrameBufferInfo>,
     pub acpi_rsdp: *const u8,
-    pub dc_cache: &'static [u8],
+    pub tkcache: &'static [u8],
 }
 
 impl BootInfo {
@@ -97,7 +97,7 @@ impl BootInfo {
         verbose: bool,
         frame_buffer: Option<&'static FrameBufferInfo>,
         acpi_rsdp: *const u8,
-        dc_cache: &'static [u8],
+        tkcache: &'static [u8],
     ) -> Self {
         Self {
             revision: CURRENT_REVISION,
@@ -106,7 +106,7 @@ impl BootInfo {
             memory_map: Default::default(),
             frame_buffer,
             acpi_rsdp,
-            dc_cache,
+            tkcache,
         }
     }
 }

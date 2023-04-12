@@ -60,7 +60,7 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
     system::proc::userland::setup();
 
     state.tkcache = Some(spin::Mutex::new(
-        postcard::from_bytes(boot_info.dc_cache).unwrap(),
+        postcard::from_bytes(boot_info.tkcache).unwrap(),
     ));
     state.scheduler = Some(spin::Mutex::new(system::proc::scheduler::Scheduler::new(
         &acpi::get_hpet(state),
