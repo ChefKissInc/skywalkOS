@@ -3,6 +3,7 @@
 use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 
 use hashbrown::HashMap;
+use tungstenkit::osdtentry::OSDTENTRY_NAME_KEY;
 
 use crate::{
     acpi::{tables::rsdp::RootSystemDescPtr, ACPIState},
@@ -49,7 +50,7 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
         crate::system::exc::init();
     }
 
-    state.pmm = Some(spin::Mutex::new(BitmapAllocator::new(boot_info.memory_map)));
+    state.pmm = Some(BitmapAllocator::new(boot_info.memory_map).into());
 
     // Switch ownership of symbol data to kernel
     state.kern_symbols = Some(
@@ -65,10 +66,9 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     );
 
     let mut root = OSDTEntry {
-        id: 0,
         properties: HashMap::from([
-            ("Name".to_owned(), "Root".into()),
-            ("Version".to_owned(), "0.0.1".into()),
+            (OSDTENTRY_NAME_KEY.into(), "Root".into()),
+            ("Version".into(), "0.0.1".into()),
         ]),
         ..Default::default()
     };
@@ -77,20 +77,18 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
         id: dt_id_gen.next(),
         parent: Some(root.id.into()),
         properties: HashMap::from([
-            ("Name".to_owned(), "Product".into()),
-            ("CPUType".to_owned(), "x86_64".into()),
-            ("Vendor".to_owned(), "Generic".into()),
+            (OSDTENTRY_NAME_KEY.into(), "Product".into()),
+            ("CPUType".into(), "x86_64".into()),
+            ("Vendor".into(), "Generic".into()),
         ]),
         ..Default::default()
     };
     root.children.push(product.id.into());
 
-    state.dt_index = Some(spin::RwLock::new(HashMap::from([
-        (root.id, spin::Mutex::new(root)),
-        (product.id, spin::Mutex::new(product)),
-    ])));
+    state.dt_index =
+        Some(HashMap::from([(root.id, root.into()), (product.id, product.into())]).into());
 
-    state.dt_id_gen = Some(spin::Mutex::new(dt_id_gen));
+    state.dt_id_gen = Some(dt_id_gen.into());
 
     unsafe {
         state.acpi = Some(ACPIState::new(

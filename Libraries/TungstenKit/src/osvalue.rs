@@ -1,4 +1,4 @@
-use alloc::{borrow::ToOwned, string::String, vec::Vec};
+use alloc::{string::String, vec::Vec};
 
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
@@ -47,7 +47,7 @@ OSValueImplFor!(Bool, bool);
 OSValueImplFor!(String, String);
 impl From<&str> for OSValue {
     fn from(val: &str) -> Self {
-        Self::String(val.to_owned())
+        Self::String(val.into())
     }
 }
 impl<'a> TryFrom<&'a OSValue> for &'a str {

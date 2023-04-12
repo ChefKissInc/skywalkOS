@@ -18,7 +18,7 @@ use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 use tungstenkit::{
-    osdtentry::OSDTEntry,
+    osdtentry::{OSDTEntry, OSDTENTRY_NAME_KEY},
     osvalue::OSValue,
     port::Port,
     syscall::{Message, SystemCall},
@@ -127,17 +127,17 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
     let props = ent.properties();
     writeln!(
         logger::KWriter,
-        "{spacing}+ {} <{}>",
-        if let Some(OSValue::String(v)) = props.get("Name") {
+        "{spacing}+ {} (ID: <{}>)",
+        if let Some(OSValue::String(v)) = props.get(OSDTENTRY_NAME_KEY) {
             v.as_str()
         } else {
-            "Unknown"
+            "Unnamed"
         },
         id
     )
     .unwrap();
 
-    for (k, v) in props.into_iter().filter(|(k, _)| k != "Name") {
+    for (k, v) in props.into_iter().filter(|(k, _)| k != OSDTENTRY_NAME_KEY) {
         writeln!(logger::KWriter, "{spacing}|- {k}: {v:X?}").unwrap();
     }
 
@@ -147,11 +147,8 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
 }
 
 #[no_mangle]
-extern "C" fn _start(instance: OSDTEntry) -> ! {
+extern "C" fn _start(/*instance: OSDTEntry*/) -> ! {
     logger::init();
-
-    let test = instance.new_child(Some("Testing123"));
-    test.set_property("HelloWorld", true.into());
 
     let this = PS2Ctl::new();
     this.init();

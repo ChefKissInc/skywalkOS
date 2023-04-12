@@ -42,9 +42,16 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Extensions/TestDrv"
+    directory: "/Extensions/TKTest"
     labels:
       - "Enhancement"
-      - "Project:TestDrv"
+      - "Project:TKTest"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "cargo"
+    directory: "/Extensions/TKPCIFamily"
+    labels:
+      - "Enhancement"
+      - "Project:TKPCIFamily"
     schedule:
       interval: "daily"

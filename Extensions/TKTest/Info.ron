@@ -1,0 +1,10 @@
+TKInfo (
+    identifier: "com.ChefKiss.TKTest",
+    name: "TKTest",
+    version: "0.1.0",
+    description: "The TungstenKit test driver",
+    matching: {
+        "_Name": String("Root"),
+    },
+    dependencies: {},
+)

@@ -68,7 +68,10 @@ pub fn get_info(
     ControlFlow::Continue(())
 }
 
-pub fn set_property(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
+pub fn set_prop(
+    scheduler: &mut Scheduler,
+    state: &mut RegisterState,
+) -> ControlFlow<Option<TerminationReason>> {
     let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     let dt_index = sys_state.dt_index.as_ref().unwrap().read();
     let Some(ent) = dt_index.get(&state.rsi) else {
@@ -79,6 +82,8 @@ pub fn set_property(state: &mut RegisterState) -> ControlFlow<Option<Termination
         return ControlFlow::Break(Some(TerminationReason::MalformedAddress));
     };
     ent.lock().properties.insert(v.0, v.1);
+    drop(dt_index);
+    crate::system::tkext::handle_change(scheduler, state.rsi.into());
 
     ControlFlow::Continue(())
 }

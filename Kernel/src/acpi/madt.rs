@@ -82,5 +82,5 @@ impl MADTData {
 
 pub fn setup(state: &mut crate::system::state::SystemState) {
     let acpi = state.acpi.as_mut().unwrap();
-    state.madt = Some(spin::Mutex::new(MADTData::new(acpi.find("APIC").unwrap())));
+    state.madt = Some(MADTData::new(acpi.find("APIC").unwrap()).into());
 }

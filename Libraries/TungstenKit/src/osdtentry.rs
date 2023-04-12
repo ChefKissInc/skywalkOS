@@ -8,6 +8,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{osvalue::OSValue, syscall::SystemCall};
 
+pub const OSDTENTRY_NAME_KEY: &str = "_Name";
+pub const TKEXT_MATCH_KEY: &str = "_TKExtMatch";
+
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 #[repr(transparent)]
 #[serde(transparent)]
@@ -58,7 +61,7 @@ impl OSDTEntry {
         }
         let ret: Self = id.into();
         if let Some(name) = name {
-            ret.set_property("Name", name.into());
+            ret.set_property(OSDTENTRY_NAME_KEY, name.into());
         }
         ret
     }

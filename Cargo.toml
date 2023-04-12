@@ -3,7 +3,7 @@ members = [
     "Libraries/*",
     "XBoot",
     "Kernel",
-    "Extensions/TestDrv",
+    "Extensions/TKTest",
     "Extensions/TKPCIFamily",
 ]
 resolver = "2"

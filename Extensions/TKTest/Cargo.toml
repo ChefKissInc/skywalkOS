@@ -2,13 +2,13 @@ cargo-features = ["different-binary-name"]
 
 [package]
 edition = "2021"
-name = "testdrv"
+name = "tktest"
 publish = false
 version = "0.1.0"
 
 [[bin]]
-name = "testdrv"
-filename = "TestDrv"
+name = "tktest"
+filename = "TKTest"
 
 [dependencies]
 tungstenkit = { path = "../../Libraries/TungstenKit" }
