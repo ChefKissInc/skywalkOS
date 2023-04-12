@@ -2,12 +2,12 @@ cargo-features = ["different-binary-name"]
 
 [package]
 edition = "2021"
-name = "test-drv"
+name = "testdrv"
 publish = false
 version = "0.1.0"
 
 [[bin]]
-name = "test-drv"
+name = "testdrv"
 filename = "TestDrv"
 
 [dependencies]

@@ -77,4 +77,4 @@ jobs:
         with:
           toolchain: nightly
           command: test
-          args: --workspace --exclude kernel --exclude xboot --exclude test-audio --exclude test-drv
+          args: --workspace --exclude kernel --exclude xboot --exclude tkpcifamily --exclude testdrv
