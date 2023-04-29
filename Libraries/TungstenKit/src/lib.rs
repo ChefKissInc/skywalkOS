@@ -29,7 +29,6 @@ pub struct TKInfo {
     pub version: String,
     pub description: String,
     pub matching: HashMap<String, osvalue::OSValue>,
-    pub dependencies: HashMap<String, String>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

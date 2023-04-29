@@ -6,5 +6,4 @@ TKInfo (
     matching: {
         "_Name": String("Root"),
     },
-    dependencies: {},
 )
