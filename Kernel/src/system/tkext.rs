@@ -23,20 +23,24 @@ fn is_subset<K: Eq + Hash, V: Eq>(a: &HashMap<K, V>, b: &HashMap<K, V>) -> bool 
 fn load_tkext(
     ent: &mut super::state::OSDTEntry,
     info: &TKInfo,
+    personality: &str,
     payload: &[u8],
     dt_id_gen: &mut IncrementalIDGen,
     scheduler: &mut Scheduler,
 ) -> super::state::OSDTEntry {
     debug!(
-        "Loading TungstenKit extension {} <{}> (matched <{}>)",
-        info.name, info.identifier, ent.id
+        "TungstenKit extension {} matched <{}> for personality {personality}",
+        info.identifier, ent.id
     );
     let new = super::state::OSDTEntry {
         id: dt_id_gen.next(),
         parent: Some(ent.id.into()),
         properties: HashMap::from([
-            (OSDTENTRY_NAME_KEY.into(), info.name.clone().into()),
-            (TKEXT_MATCH_KEY.into(), info.identifier.clone().into()),
+            (
+                OSDTENTRY_NAME_KEY.into(),
+                info.identifier.split('.').last().unwrap().into(),
+            ),
+            (TKEXT_MATCH_KEY.into(), info.identifier.as_str().into()),
         ]),
         ..Default::default()
     };
@@ -65,14 +69,18 @@ pub fn handle_change(scheduler: &mut Scheduler, ent: tungstenkit::osdtentry::OSD
                 .iter()
                 .filter_map(|id| dt_index.get::<u64>(&id.into()))
                 .any(|v| v.lock().properties.get(TKEXT_MATCH_KEY) == Some(&identifier));
-            if !attached && is_subset(&info.matching, &ent.properties) {
-                return Some(load_tkext(
-                    &mut ent,
-                    info,
-                    payload,
-                    &mut dt_id_gen,
-                    scheduler,
-                ));
+
+            for (personality, matching) in &info.personalities {
+                if !attached && is_subset(matching, &ent.properties) {
+                    return Some(load_tkext(
+                        &mut ent,
+                        info,
+                        personality,
+                        payload,
+                        &mut dt_id_gen,
+                        scheduler,
+                    ));
+                }
             }
             None
         })
@@ -93,9 +101,18 @@ pub fn spawn_initial_matches() {
     for (info, payload) in &state.tkcache.as_ref().unwrap().lock().0 {
         for ent in dt_index.read().values() {
             let mut ent = ent.lock();
-            if is_subset(&info.matching, &ent.properties) {
-                let new = load_tkext(&mut ent, info, payload, &mut dt_id_gen, &mut scheduler);
-                newly_matched.push((new.id, new.into()));
+            for (personality, matching) in &info.personalities {
+                if is_subset(matching, &ent.properties) {
+                    let new = load_tkext(
+                        &mut ent,
+                        info,
+                        personality,
+                        payload,
+                        &mut dt_id_gen,
+                        &mut scheduler,
+                    );
+                    newly_matched.push((new.id, new.into()));
+                }
             }
         }
     }

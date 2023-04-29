@@ -1,9 +1,8 @@
 TKInfo (
     identifier: "com.ChefKissInc.TKPCIFamily",
-    name: "TKPCIFamily",
-    version: "0.1.0",
-    description: "The TungstenKit PCI driver",
-    matching: {
-        "_Name": String("Root"),
+    personalities: {
+        "TKPCIFamily": {
+            "_Name": String("Root"),
+        },
     },
 )
