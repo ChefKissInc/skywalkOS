@@ -10,6 +10,7 @@ use crate::{osvalue::OSValue, syscall::SystemCall};
 
 pub const OSDTENTRY_NAME_KEY: &str = "_Name";
 pub const TKEXT_MATCH_KEY: &str = "_TKExtMatch";
+pub const TKEXT_PROC_KEY: &str = "_TKExtProc";
 
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 #[repr(transparent)]

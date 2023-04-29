@@ -4,7 +4,7 @@ use core::hash::Hash;
 
 use hashbrown::HashMap;
 use tungstenkit::{
-    osdtentry::{OSDTENTRY_NAME_KEY, TKEXT_MATCH_KEY},
+    osdtentry::{OSDTENTRY_NAME_KEY, TKEXT_MATCH_KEY, TKEXT_PROC_KEY},
     osvalue::OSValue,
     TKInfo,
 };
@@ -32,6 +32,7 @@ fn load_tkext(
         "TungstenKit extension {} matched <{}> for personality {personality}",
         info.identifier, ent.id
     );
+    let thread = scheduler.spawn_proc(payload);
     let new = super::state::OSDTEntry {
         id: dt_id_gen.next(),
         parent: Some(ent.id.into()),
@@ -40,12 +41,16 @@ fn load_tkext(
                 OSDTENTRY_NAME_KEY.into(),
                 info.identifier.split('.').last().unwrap().into(),
             ),
-            (TKEXT_MATCH_KEY.into(), info.identifier.as_str().into()),
+            (
+                TKEXT_MATCH_KEY.into(),
+                (info.identifier.as_str(), personality).into(),
+            ),
+            (TKEXT_PROC_KEY.into(), thread.pid.into()),
         ]),
         ..Default::default()
     };
     ent.children.push(new.id.into());
-    scheduler.spawn_proc(payload).regs.rdi = new.id;
+    thread.regs.rdi = new.id;
     new
 }
 
