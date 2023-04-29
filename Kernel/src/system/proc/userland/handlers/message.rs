@@ -2,6 +2,7 @@
 
 use core::ops::ControlFlow;
 
+use amd64::paging::{pml4::PML4, PageTableEntry};
 use tungstenkit::{
     syscall::{KernelMessage, Message},
     TerminationReason,
@@ -29,6 +30,14 @@ pub fn send(
     let process = scheduler.processes.get_mut(&state.rsi).unwrap();
     process.track_msg(msg.id, state.rdx);
     process.messages.push_front(msg);
+    unsafe {
+        process.cr3.map_pages(
+            state.rdx,
+            state.rdx - tungstenkit::USER_PHYS_VIRT_OFFSET,
+            (state.rcx + 0xFFF) / 0x1000,
+            PageTableEntry::new().with_present(true).with_user(true),
+        );
+    }
 
     ControlFlow::Continue(())
 }
@@ -59,6 +68,7 @@ pub fn ack(
     let Some(&src) = scheduler.message_sources.get(&id) else {
         return ControlFlow::Break(Some(TerminationReason::NotFound));
     };
+    scheduler.message_sources.remove(&id);
 
     let process = scheduler.current_process_mut().unwrap();
     if src == 0 {
