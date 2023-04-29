@@ -1,4 +1,4 @@
-use alloc::{string::String, vec::Vec};
+use alloc::{boxed::Box, string::String, vec::Vec};
 
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
@@ -20,6 +20,7 @@ pub enum OSValue {
     I8(i8),
     Vec(Vec<Self>),
     Dictionary(HashMap<String, Self>),
+    Tuple(Box<(Self, Self)>),
 }
 
 macro_rules! OSValueImplFor {
@@ -34,6 +35,17 @@ macro_rules! OSValueImplFor {
             type Error = ();
 
             fn try_from(val: OSValue) -> Result<Self, Self::Error> {
+                match val {
+                    OSValue::$variant(d) => Ok(d),
+                    _ => Err(()),
+                }
+            }
+        }
+
+        impl<'a> TryFrom<&'a OSValue> for &'a $target {
+            type Error = ();
+
+            fn try_from(val: &'a OSValue) -> Result<Self, Self::Error> {
                 match val {
                     OSValue::$variant(d) => Ok(d),
                     _ => Err(()),
@@ -72,3 +84,20 @@ OSValueImplFor!(I16, i16);
 OSValueImplFor!(I8, i8);
 OSValueImplFor!(Vec, Vec<OSValue>);
 OSValueImplFor!(Dictionary, HashMap<String, OSValue>);
+impl<A: Into<Self>, B: Into<Self>> From<(A, B)> for OSValue {
+    fn from(val: (A, B)) -> Self {
+        Self::Tuple((val.0.into(), val.1.into()).into())
+    }
+}
+impl<'a, A: TryFrom<&'a OSValue, Error = ()>, B: TryFrom<&'a OSValue, Error = ()>>
+    TryFrom<&'a OSValue> for (A, B)
+{
+    type Error = ();
+
+    fn try_from(val: &'a OSValue) -> Result<Self, Self::Error> {
+        match val {
+            OSValue::Tuple(v) => Ok(((&v.0).try_into()?, (&v.1).try_into()?)),
+            _ => Err(()),
+        }
+    }
+}

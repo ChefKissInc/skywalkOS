@@ -59,7 +59,7 @@ pub fn handle_change(scheduler: &mut Scheduler, ent: tungstenkit::osdtentry::OSD
         }
         let tkcache = &state.tkcache.as_ref().unwrap().lock().0;
         tkcache.iter().find_map(|(info, payload)| {
-            let identifier: OSValue = info.identifier.clone().into();
+            let identifier: OSValue = info.identifier.as_str().into();
             let attached = ent
                 .children
                 .iter()
