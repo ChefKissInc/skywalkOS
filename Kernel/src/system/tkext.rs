@@ -1,11 +1,11 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
+use alloc::vec::Vec;
 use core::hash::Hash;
 
 use hashbrown::HashMap;
 use tungstenkit::{
     osdtentry::{OSDTENTRY_NAME_KEY, TKEXT_MATCH_KEY, TKEXT_PROC_KEY},
-    osvalue::OSValue,
     TKInfo,
 };
 
@@ -27,7 +27,7 @@ fn load_tkext(
     payload: &[u8],
     dt_id_gen: &mut IncrementalIDGen,
     scheduler: &mut Scheduler,
-) -> super::state::OSDTEntry {
+) -> (u64, spin::Mutex<super::state::OSDTEntry>) {
     debug!(
         "TungstenKit extension {} matched <{}> for personality {personality}",
         info.identifier, ent.id
@@ -51,7 +51,7 @@ fn load_tkext(
     };
     ent.children.push(new.id.into());
     thread.regs.rdi = new.id;
-    new
+    (new.id, new.into())
 }
 
 pub fn handle_change(scheduler: &mut Scheduler, ent: tungstenkit::osdtentry::OSDTEntry) {
@@ -60,39 +60,37 @@ pub fn handle_change(scheduler: &mut Scheduler, ent: tungstenkit::osdtentry::OSD
     let dt_index = state.dt_index.as_ref().unwrap();
     let mut dt_id_gen = state.dt_id_gen.as_ref().unwrap().lock();
 
-    let new = {
+    let new: Vec<_> = {
         let dt_index = dt_index.read();
         let mut ent = dt_index.get::<u64>(&ent.into()).unwrap().lock();
-        if ent.children.is_empty() {
-            return;
-        }
         let tkcache = &state.tkcache.as_ref().unwrap().lock().0;
-        tkcache.iter().find_map(|(info, payload)| {
-            let identifier: OSValue = info.identifier.as_str().into();
-            let attached = ent
-                .children
-                .iter()
-                .filter_map(|id| dt_index.get::<u64>(&id.into()))
-                .any(|v| v.lock().properties.get(TKEXT_MATCH_KEY) == Some(&identifier));
-
-            for (personality, matching) in &info.personalities {
-                if !attached && is_subset(matching, &ent.properties) {
-                    return Some(load_tkext(
-                        &mut ent,
-                        info,
-                        personality,
-                        payload,
-                        &mut dt_id_gen,
-                        scheduler,
-                    ));
+        tkcache
+            .iter()
+            .filter_map(|(info, payload)| {
+                for (personality, matching) in &info.personalities {
+                    let match_ = (info.identifier.as_str(), personality.as_str()).into();
+                    let attached = ent
+                        .children
+                        .iter()
+                        .filter_map(|id| dt_index.get::<u64>(&id.into()))
+                        .any(|v| v.lock().properties.get(TKEXT_MATCH_KEY) == Some(&match_));
+                    if !attached && is_subset(matching, &ent.properties) {
+                        return Some(load_tkext(
+                            &mut ent,
+                            info,
+                            personality,
+                            payload,
+                            &mut dt_id_gen,
+                            scheduler,
+                        ));
+                    }
                 }
-            }
-            None
-        })
+                None
+            })
+            .collect()
     };
-    if let Some(new) = new {
-        dt_index.write().insert(new.id, new.into());
-    }
+
+    dt_index.write().extend(new);
 }
 
 pub fn spawn_initial_matches() {
@@ -116,7 +114,7 @@ pub fn spawn_initial_matches() {
                         &mut dt_id_gen,
                         &mut scheduler,
                     );
-                    newly_matched.push((new.id, new.into()));
+                    newly_matched.push(new);
                 }
             }
         }
