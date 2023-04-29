@@ -198,6 +198,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
 
     loop {
         let msg = unsafe { Message::receive() };
+        info!("Received message: {:#X?}", msg);
         // if msg.pid == 0 {}
         unsafe { msg.ack() }
     }

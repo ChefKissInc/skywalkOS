@@ -41,33 +41,17 @@ unsafe extern "sysv64" fn irq_handler(state: &mut RegisterState) {
     process.track_msg(msg.id, virt);
 
     let tids = process.tids.clone();
-    let idle = scheduler.current_tid.is_none();
-    for tid in tids {
-        let thread = scheduler.threads.get_mut(&tid).unwrap();
-        if thread.state.is_suspended() {
-            thread.state = super::ThreadState::Inactive;
-            if idle {
-                drop(scheduler);
-                super::scheduler::schedule(state);
-                state.rax = msg.id;
-                state.rdi = msg.pid;
-                state.rsi = msg.data.as_ptr() as _;
-                state.rdx = msg.data.len() as _;
-                return;
-            }
-            break;
-        }
+    if handlers::message::handle_new(&mut scheduler, pid, &tids, msg).is_break() {
+        drop(scheduler);
+        super::scheduler::schedule(state);
     }
-
-    let process = scheduler.processes.get_mut(&pid).unwrap();
-    process.messages.push_front(msg);
 }
 
 unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
     let sys_state = &mut *crate::system::state::SYS_STATE.get();
     let mut scheduler = sys_state.scheduler.as_ref().unwrap().lock();
 
-    let mut flow = 'flow: {
+    let flow = 'flow: {
         let Ok(v) = SystemCall::try_from(state.rdi) else {
             break 'flow ControlFlow::Break(Some(TerminationReason::MalformedArgument));
         };
@@ -89,10 +73,6 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             SystemCall::SetOSDTEntryProp => handlers::osdtentry::set_prop(&mut scheduler, state),
         }
     };
-
-    if flow.is_continue() && scheduler.current_thread_mut().unwrap().state.is_suspended() {
-        flow = ControlFlow::Break(None);
-    }
 
     if let ControlFlow::Break(reason) = flow {
         if let Some(reason) = reason {

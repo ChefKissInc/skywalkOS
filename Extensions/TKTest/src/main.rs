@@ -8,7 +8,7 @@
 
 #[macro_use]
 extern crate log;
-// #[macro_use]
+#[macro_use]
 extern crate alloc;
 
 use alloc::string::String;
@@ -18,7 +18,7 @@ use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 use tungstenkit::{
-    osdtentry::{OSDTEntry, OSDTENTRY_NAME_KEY},
+    osdtentry::{OSDTEntry, OSDTENTRY_NAME_KEY, TKEXT_PROC_KEY},
     osvalue::OSValue,
     port::Port,
     syscall::{Message, SystemCall},
@@ -147,7 +147,7 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
 }
 
 #[no_mangle]
-extern "C" fn _start(/*instance: OSDTEntry*/) -> ! {
+extern "C" fn _start(instance: OSDTEntry) -> ! {
     logger::init();
 
     let this = PS2Ctl::new();
@@ -181,10 +181,24 @@ extern "C" fn _start(/*instance: OSDTEntry*/) -> ! {
                 if let Ps2Event::Pressed(ch) = event {
                     write!(logger::KWriter, "{ch}").unwrap();
                     if ch == '\n' {
-                        if s == "dumposdtentrytree" {
-                            print_ent(OSDTEntry::default(), 0);
-                        } else {
-                            writeln!(logger::KWriter, "{s}").unwrap();
+                        match s.as_str() {
+                            "dumposdtentrytree" => print_ent(OSDTEntry::default(), 0),
+                            "msgparent" => {
+                                let pid: u64 = instance
+                                    .parent()
+                                    .unwrap()
+                                    .parent()
+                                    .unwrap()
+                                    .get_property(TKEXT_PROC_KEY)
+                                    .unwrap()
+                                    .try_into()
+                                    .unwrap();
+
+                                unsafe {
+                                    Message::new(0, pid, vec![1, 2, 3, 4].leak()).send();
+                                }
+                            }
+                            _ => writeln!(logger::KWriter, "{s}").unwrap(),
                         }
                         write!(logger::KWriter, "Tungsten / ").unwrap();
                         s.clear();
