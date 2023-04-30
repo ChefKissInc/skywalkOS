@@ -97,7 +97,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
     let fbinfo = helpers::phys_to_kern_ref(Box::leak(helpers::fb::fbinfo_from_gop(gop)));
     let rsdp = helpers::setup::get_rsdp();
 
-    let mut boot_info = Box::leak(Box::new(sulphur_dioxide::BootInfo::new(
+    let boot_info = Box::leak(Box::new(sulphur_dioxide::BootInfo::new(
         symbols.leak(),
         verbose,
         Some(fbinfo),
