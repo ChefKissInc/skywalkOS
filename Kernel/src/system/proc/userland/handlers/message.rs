@@ -47,26 +47,28 @@ pub fn send(
     scheduler: &mut Scheduler,
     state: &mut RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
-    if !scheduler.processes.contains_key(&state.rsi) {
+    let target = state.rsi;
+
+    if !scheduler.processes.contains_key(&target) {
         return ControlFlow::Break(Some(TerminationReason::NotFound));
     }
 
+    let (addr, size) = (state.rdx, state.rcx);
     let src = scheduler.current_pid.unwrap();
     let msg = Message::new(scheduler.msg_id_gen.next(), src, unsafe {
-        core::slice::from_raw_parts(state.rdx as *const _, state.rcx as _)
+        core::slice::from_raw_parts(addr as *const _, size as _)
     });
     scheduler.message_sources.insert(msg.id, src);
 
-    let target = state.rsi;
     let cur = scheduler.current_process_mut().unwrap();
-    cur.track_msg(msg.id, state.rdx);
+    cur.track_msg(msg.id, addr);
     if target != src {
         let process = scheduler.processes.get_mut(&target).unwrap();
         unsafe {
             process.cr3.map_pages(
-                state.rdx,
-                state.rdx - tungstenkit::USER_PHYS_VIRT_OFFSET,
-                (state.rcx + 0xFFF) / 0x1000,
+                addr,
+                addr - tungstenkit::USER_PHYS_VIRT_OFFSET,
+                (size + 0xFFF) / 0x1000,
                 PageTableEntry::new().with_present(true).with_user(true),
             );
         }
@@ -98,30 +100,27 @@ pub fn ack(
     scheduler: &mut Scheduler,
     state: &mut RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
-    let id = state.rsi;
+    let msg_id = state.rsi;
 
-    let Some(&src) = scheduler.message_sources.get(&id) else {
+    let Some(src_pid) = scheduler.message_sources.remove(&msg_id) else {
         return ControlFlow::Break(Some(TerminationReason::NotFound));
     };
-    scheduler.message_sources.remove(&id);
 
-    let src_process = if src == 0 {
-        scheduler.current_process_mut().unwrap()
-    } else {
-        scheduler.processes.get_mut(&src).unwrap()
-    };
-    let addr = src_process.message_allocations.get(&id).copied().unwrap();
-    let (size, _) = src_process.allocations.get(&addr).copied().unwrap();
-    if src == 0 {
+    let cur_pid = scheduler.current_pid.unwrap();
+    let pid = if src_pid == 0 { cur_pid } else { src_pid };
+    let process = scheduler.processes.get_mut(&pid).unwrap();
+    let addr = *process.message_allocations.get(&msg_id).unwrap();
+    let size = process.allocations.get(&addr).copied().unwrap().0;
+    if src_pid == 0 {
         let msg: KernelMessage = unsafe {
             postcard::from_bytes(core::slice::from_raw_parts(addr as *const _, size as _)).unwrap()
         };
         let KernelMessage::IRQFired(irq) = msg;
         crate::acpi::ioapic::set_irq_mask(irq, false);
     }
-    src_process.free_msg(id);
-    scheduler.msg_id_gen.free(id);
-    if src != 0 && src != scheduler.current_pid.unwrap() {
+    process.free_msg(msg_id);
+    scheduler.msg_id_gen.free(msg_id);
+    if src_pid != 0 && src_pid != cur_pid {
         let process = scheduler.current_process_mut().unwrap();
         unsafe { process.cr3.unmap_pages(addr, (size + 0xFFF) / 0x1000) }
     }

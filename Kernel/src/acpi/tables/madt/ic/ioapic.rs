@@ -87,11 +87,13 @@ impl InputOutputAPIC {
         }
     }
 
+    #[inline]
     pub fn read_redir(&self, num: u32) -> IOAPICRedir {
         let reg = IOAPICReg::IORedirTable as u32 + num * 2;
         IOAPICRedir::from(u64::from(self.read(reg)) | (u64::from(self.read(reg + 1)) << 32))
     }
 
+    #[inline]
     pub fn read_ver(&self) -> IOAPICVer {
         IOAPICVer::from(self.read(IOAPICReg::Ver))
     }
@@ -104,6 +106,7 @@ impl InputOutputAPIC {
         }
     }
 
+    #[inline]
     pub fn write_redir(&self, num: u32, redir: IOAPICRedir) {
         let reg = IOAPICReg::IORedirTable as u32 + num * 2;
         let val = u64::from(redir);

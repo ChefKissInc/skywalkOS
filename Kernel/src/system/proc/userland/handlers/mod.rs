@@ -12,7 +12,6 @@ pub mod osdtentry;
 pub mod port;
 
 pub fn kprint(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
-    // TODO: kill process on failure
     let s = unsafe { core::slice::from_raw_parts(state.rsi as *const _, state.rdx as _) };
     let Ok(s) = core::str::from_utf8(s) else {
         return ControlFlow::Break(Some(TerminationReason::MalformedBody));
