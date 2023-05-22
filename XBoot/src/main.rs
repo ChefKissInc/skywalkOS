@@ -15,10 +15,7 @@ use alloc::{boxed::Box, vec::Vec};
 
 use uefi::{
     prelude::*,
-    proto::{
-        console::text::Key,
-        media::file::{FileAttribute, FileMode},
-    },
+    proto::console::text::Key,
     table::boot::{EventType, TimerTrigger, Tpl},
     Char16,
 };
@@ -66,28 +63,23 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
                 == Some(Key::Printable(Char16::try_from('v').unwrap()))
     };
 
-    let mut esp = helpers::file::open_esp(image_handle);
-
-    let kernel_buffer = helpers::file::load(
-        &mut esp,
-        cstr16!("\\System\\Kernel.exec"),
-        FileMode::Read,
-        FileAttribute::empty(),
-    )
-    .leak();
-
-    let tkcache_buffer = helpers::file::load(
-        &mut esp,
-        cstr16!("\\System\\Extensions.tkcache"),
-        FileMode::Read,
-        FileAttribute::empty(),
-    )
-    .leak();
+    let (kernel_buf, tkcache_buf) = {
+        let mut esp = system_table
+            .boot_services()
+            .get_image_file_system(image_handle)
+            .unwrap();
+        (
+            esp.read(cstr16!("\\System\\Kernel.exec")).unwrap().leak(),
+            esp.read(cstr16!("\\System\\Extensions.tkcache"))
+                .unwrap()
+                .leak(),
+        )
+    };
 
     let mut mem_mgr = helpers::mem::MemoryManager::new();
-    mem_mgr.allocate((tkcache_buffer.as_ptr() as _, tkcache_buffer.len() as _));
+    mem_mgr.allocate((tkcache_buf.as_ptr() as _, tkcache_buf.len() as _));
 
-    let (kernel_main, symbols) = helpers::parse_elf::parse_elf(&mut mem_mgr, kernel_buffer);
+    let (kernel_main, symbols) = helpers::parse_elf::parse_elf(&mut mem_mgr, kernel_buf);
 
     let stack = vec![0u8; 0x14000].leak();
     let stack_ptr = unsafe { helpers::pa_to_kern_va(stack.as_ptr()).add(stack.len()) };
@@ -102,7 +94,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
         verbose,
         Some(fbinfo),
         rsdp,
-        helpers::phys_to_kern_slice_ref(tkcache_buffer),
+        helpers::phys_to_kern_slice_ref(tkcache_buf),
     )));
 
     trace!("Exiting boot services and jumping to kernel...");

@@ -3,7 +3,6 @@
 use alloc::boxed::Box;
 
 pub mod fb;
-pub mod file;
 pub mod mem;
 pub mod parse_elf;
 pub mod setup;
