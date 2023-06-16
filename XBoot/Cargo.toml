@@ -13,16 +13,16 @@ filename = "BOOTX64"
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
 elf = { version = "0.7.2", default-features = false, features = ["nightly"] }
-log = { version = "0.4.18", default-features = false, features = [
+log = { version = "0.4.19", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
 sulphur-dioxide = { path = "../Libraries/SulphurDioxide" }
 paper-fb = { path = "../Libraries/PaperFrameBuffer" }
-uefi = { version = "0.21.0", default-features = false, features = [
+uefi = { version = "0.23.0", default-features = false, features = [
     "alloc",
     "global_allocator",
     "unstable",
     "logger",
 ] }
-uefi-services = "0.18.0"
+uefi-services = "0.20.0"

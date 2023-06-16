@@ -10,8 +10,10 @@
 extern crate log;
 // #[macro_use]
 extern crate alloc;
+#[macro_use]
+extern crate itertools;
 
-use alloc::{boxed::Box, format};
+use alloc::boxed::Box;
 
 use tkpcifamily::{PCIAddress, PCICfgOffset};
 use tungstenkit::{osdtentry::OSDTEntry, port::Port, syscall::Message};
@@ -74,28 +76,34 @@ impl<'a> PCIDevice<'a> {
 struct PCIController;
 
 impl PCIController {
-    unsafe fn read8(&self, addr: PCIAddress, off: u8) -> u8 {
-        PCIPortIO::new().read8(addr, off)
+    fn read8(&self, addr: PCIAddress, off: u8) -> u8 {
+        unsafe { PCIPortIO::new().read8(addr, off) }
     }
 
-    unsafe fn read16(&self, addr: PCIAddress, off: u8) -> u16 {
-        PCIPortIO::new().read16(addr, off)
+    fn read16(&self, addr: PCIAddress, off: u8) -> u16 {
+        unsafe { PCIPortIO::new().read16(addr, off) }
     }
 
-    unsafe fn read32(&self, addr: PCIAddress, off: u8) -> u32 {
-        PCIPortIO::new().read32(addr, off)
+    fn read32(&self, addr: PCIAddress, off: u8) -> u32 {
+        unsafe { PCIPortIO::new().read32(addr, off) }
     }
 
-    unsafe fn write8(&self, addr: PCIAddress, off: u8, value: u8) {
-        PCIPortIO::new().write8(addr, off, value);
+    fn write8(&self, addr: PCIAddress, off: u8, value: u8) {
+        unsafe {
+            PCIPortIO::new().write8(addr, off, value);
+        }
     }
 
-    unsafe fn write16(&self, addr: PCIAddress, off: u8, value: u16) {
-        PCIPortIO::new().write16(addr, off, value);
+    fn write16(&self, addr: PCIAddress, off: u8, value: u16) {
+        unsafe {
+            PCIPortIO::new().write16(addr, off, value);
+        }
     }
 
-    unsafe fn write32(&self, addr: PCIAddress, off: u8, value: u32) {
-        PCIPortIO::new().write32(addr, off, value);
+    fn write32(&self, addr: PCIAddress, off: u8, value: u32) {
+        unsafe {
+            PCIPortIO::new().write32(addr, off, value);
+        }
     }
 }
 
@@ -159,40 +167,27 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
     logger::init();
 
     let controller = Box::new(PCIController);
-    for bus in 0..=255 {
-        for slot in 0..32 {
-            for func in 0..8 {
-                let addr = PCIAddress {
-                    segment: 0,
-                    bus,
-                    slot,
-                    func,
-                };
-                let is_multifunction =
-                    unsafe { controller.read8(addr, PCICfgOffset::HeaderType as u8) & 0x80 != 0 };
-                let vendor_id = unsafe { controller.read16(addr, PCICfgOffset::VendorID as u8) };
-                if vendor_id == 0xFFFF || vendor_id == 0x0000 {
-                    if is_multifunction {
-                        continue;
-                    }
-                    break;
-                }
-
-                let device_id = unsafe { controller.read16(addr, PCICfgOffset::DeviceID as u8) };
-                let class_code = unsafe { controller.read8(addr, PCICfgOffset::ClassCode as u8) };
-
-                let ent = instance.new_child(Some(&format!(
-                    "{:04X}:{:02X}:{:02X}.{}",
-                    addr.segment, addr.bus, addr.slot, addr.func
-                )));
-                ent.set_property("VendorID", vendor_id.into());
-                ent.set_property("DeviceID", device_id.into());
-                ent.set_property("ClassCode", class_code.into());
-
-                if !is_multifunction {
-                    break;
-                }
+    for (bus, slot, func) in iproduct!(0..=255, 0..32, 0..8) {
+        let addr = PCIAddress::new(0, bus, slot, func);
+        let multifunction = (controller.read8(addr, PCICfgOffset::HeaderType as u8) & 0x80) != 0;
+        let vendor_id = controller.read16(addr, PCICfgOffset::VendorID as u8);
+        if vendor_id == 0xFFFF || vendor_id == 0x0000 {
+            if multifunction {
+                continue;
             }
+            break;
+        }
+
+        let device_id = controller.read16(addr, PCICfgOffset::DeviceID as u8);
+        let class_code = controller.read8(addr, PCICfgOffset::ClassCode as u8);
+
+        let ent = instance.new_child(None);
+        ent.set_property("VendorID", vendor_id.into());
+        ent.set_property("DeviceID", device_id.into());
+        ent.set_property("ClassCode", class_code.into());
+
+        if !multifunction {
+            break;
         }
     }
 
