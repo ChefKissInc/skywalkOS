@@ -2,8 +2,7 @@ TKInfo (
     identifier: "com.ChefKiss.TKTest",
     personalities: {
         "TKTest": {
-            // "_Name": String("Root"),
-            "VendorID": U16(0x1234),
+            "_Name": String("Root"),
         },
     },
 )
