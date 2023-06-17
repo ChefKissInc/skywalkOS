@@ -49,9 +49,9 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Extensions/TKPCIFamily"
+    directory: "/Extensions/TKPCI"
     labels:
       - "Enhancement"
-      - "Project:TKPCIFamily"
+      - "Project:TKPCI"
     schedule:
       interval: "daily"
