@@ -198,6 +198,20 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                                     Message::new(0, pid, vec![1, 2, 3, 4].leak()).send();
                                 }
                             }
+                            v if v.starts_with("msg ") => 'a: {
+                                let mut v = v.split_ascii_whitespace().skip(1);
+                                let Some(pid) = v.next().and_then(|v| v.parse().ok()) else {
+                                    writeln!(logger::KWriter, "Expected process id").unwrap();
+                                    break 'a;
+                                };
+                                let Some(data) = v.next().and_then(|v| v.parse::<u64>().ok()) else {
+                                    writeln!(logger::KWriter, "Expected data").unwrap();
+                                    break 'a;
+                                };
+                                unsafe {
+                                    Message::new(0, pid, data.to_be_bytes().to_vec().leak()).send();
+                                }
+                            }
                             _ => writeln!(logger::KWriter, "{s}").unwrap(),
                         }
                         write!(logger::KWriter, "Tungsten / ").unwrap();

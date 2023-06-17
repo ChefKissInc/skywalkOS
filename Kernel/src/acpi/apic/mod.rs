@@ -252,8 +252,22 @@ unsafe extern "sysv64" fn spurious_vector_handler(_state: &mut RegisterState) {
 }
 
 pub fn setup(state: &mut crate::system::state::SystemState) {
-    let addr = state.madt.as_ref().unwrap().lock().lapic_addr;
-    unsafe { APICBase::read().with_apic_base(addr).write() }
+    let addr = unsafe {
+        let madt = state.madt.as_ref().unwrap().lock();
+        let base = APICBase::read();
+        if base.apic_global_enable() && base.apic_base() != 0 {
+            debug!("APIC already enabled, base is {base:#X?}");
+            madt.lapic_addr = base.apic_base() << 12;
+        } else {
+            debug!("Old APIC base is {base:#X?}");
+            let base = base
+                .with_apic_global_enable(true)
+                .with_apic_base(madt.lapic_addr >> 12);
+            debug!("New APIC base is {base:#X?}");
+            base.write();
+        }
+        madt.lapic_addr
+    };
     let pml4 = state.pml4.as_mut().unwrap();
 
     let virt_addr = addr + amd64::paging::PHYS_VIRT_OFFSET;
