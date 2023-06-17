@@ -153,7 +153,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
     let this = PS2Ctl::new();
     this.init();
     let mut s = String::new();
-    write!(logger::KWriter, "Tungsten / ").unwrap();
+    write!(logger::KWriter, "# ").unwrap();
     loop {
         let msg = unsafe { Message::receive() };
         if msg.pid == 0 {
@@ -182,7 +182,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                     write!(logger::KWriter, "{ch}").unwrap();
                     if ch == '\n' {
                         match s.as_str() {
-                            "osdtentrytree" => print_ent(OSDTEntry::default(), 0),
+                            "osdt" => print_ent(OSDTEntry::default(), 0),
                             "msgparent" => {
                                 let pid: u64 = instance
                                     .parent()
@@ -201,7 +201,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                             v if v.starts_with("msg") => 'a: {
                                 let mut v = v.split_whitespace().skip(1);
                                 let Some(pid) = v.next().and_then(|v| v.parse().ok()) else {
-                                    writeln!(logger::KWriter, "Expected process id").unwrap();
+                                    writeln!(logger::KWriter, "Expected PID").unwrap();
                                     break 'a;
                                 };
                                 let Some(data) = v.next().and_then(|v| v.parse::<u64>().ok()) else {
@@ -214,7 +214,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                             }
                             _ => writeln!(logger::KWriter, "{s}").unwrap(),
                         }
-                        write!(logger::KWriter, "Tungsten / ").unwrap();
+                        write!(logger::KWriter, "# ").unwrap();
                         s.clear();
                     } else {
                         s.push(ch);
