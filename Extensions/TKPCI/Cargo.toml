@@ -2,13 +2,13 @@ cargo-features = ["different-binary-name"]
 
 [package]
 edition = "2021"
-name = "tkpcifamily"
+name = "tkpci"
 publish = false
 version = "0.1.0"
 
 [[bin]]
-name = "tkpcifamily"
-filename = "TKPCIFamily"
+name = "tkpci"
+filename = "TKPCI"
 
 [dependencies]
 tungstenkit = { path = "../../Libraries/TungstenKit" }

@@ -1,7 +1,7 @@
 TKInfo (
-    identifier: "com.ChefKissInc.TKPCIFamily",
+    identifier: "com.ChefKiss.TKPCI",
     personalities: {
-        "TKPCIFamily": {
+        "Master": {
             "_Name": String("Root"),
         },
     },

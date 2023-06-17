@@ -1,7 +1,7 @@
 TKInfo (
     identifier: "com.ChefKiss.TKTest",
     personalities: {
-        "TKTest": {
+        "Master": {
             "_Name": String("Root"),
         },
     },

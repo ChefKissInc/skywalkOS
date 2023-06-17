@@ -182,7 +182,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                     write!(logger::KWriter, "{ch}").unwrap();
                     if ch == '\n' {
                         match s.as_str() {
-                            "dumposdtentrytree" => print_ent(OSDTEntry::default(), 0),
+                            "osdtentrytree" => print_ent(OSDTEntry::default(), 0),
                             "msgparent" => {
                                 let pid: u64 = instance
                                     .parent()
@@ -198,8 +198,8 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                                     Message::new(0, pid, vec![1, 2, 3, 4].leak()).send();
                                 }
                             }
-                            v if v.starts_with("msg ") => 'a: {
-                                let mut v = v.split_ascii_whitespace().skip(1);
+                            v if v.starts_with("msg") => 'a: {
+                                let mut v = v.split_whitespace().skip(1);
                                 let Some(pid) = v.next().and_then(|v| v.parse().ok()) else {
                                     writeln!(logger::KWriter, "Expected process id").unwrap();
                                     break 'a;

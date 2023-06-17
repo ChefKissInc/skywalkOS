@@ -15,7 +15,7 @@ extern crate itertools;
 
 use alloc::boxed::Box;
 
-use tkpcifamily::{PCIAddress, PCICfgOffset};
+use tkpci::{PCIAddress, PCICfgOffset};
 use tungstenkit::{osdtentry::OSDTEntry, port::Port, syscall::Message};
 
 mod allocator;
