@@ -167,27 +167,30 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
     logger::init();
 
     let controller = Box::new(PCIController);
-    for (bus, slot, func) in iproduct!(0..=255, 0..32, 0..8) {
-        let addr = PCIAddress::new(0, bus, slot, func);
-        let multifunction = (controller.read8(addr, PCICfgOffset::HeaderType as u8) & 0x80) != 0;
-        let vendor_id = controller.read16(addr, PCICfgOffset::VendorID as u8);
-        if vendor_id == 0xFFFF || vendor_id == 0x0000 {
-            if multifunction {
-                continue;
+    for (bus, slot) in iproduct!(0..=255, 0..32) {
+        for func in 0..8 {
+            let addr = PCIAddress::new(0, bus, slot, func);
+            let multifunction =
+                (controller.read8(addr, PCICfgOffset::HeaderType as u8) & 0x80) != 0;
+            let vendor_id = controller.read16(addr, PCICfgOffset::VendorID as u8);
+            if vendor_id == 0xFFFF || vendor_id == 0x0000 {
+                if multifunction {
+                    continue;
+                }
+                break;
             }
-            break;
-        }
 
-        let device_id = controller.read16(addr, PCICfgOffset::DeviceID as u8);
-        let class_code = controller.read8(addr, PCICfgOffset::ClassCode as u8);
+            let device_id = controller.read16(addr, PCICfgOffset::DeviceID as u8);
+            let class_code = controller.read8(addr, PCICfgOffset::ClassCode as u8);
 
-        let ent = instance.new_child(None);
-        ent.set_property("VendorID", vendor_id.into());
-        ent.set_property("DeviceID", device_id.into());
-        ent.set_property("ClassCode", class_code.into());
+            let ent = instance.new_child(None);
+            ent.set_property("VendorID", vendor_id.into());
+            ent.set_property("DeviceID", device_id.into());
+            ent.set_property("ClassCode", class_code.into());
 
-        if !multifunction {
-            break;
+            if !multifunction {
+                break;
+            }
         }
     }
 
