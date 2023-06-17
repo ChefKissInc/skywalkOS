@@ -113,28 +113,6 @@ impl SystemCall {
             options(nostack, preserves_flags),
         );
     }
-
-    #[must_use]
-    pub unsafe fn allocate(size: u64) -> *mut u8 {
-        let mut ptr: u64;
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::Allocate as u64,
-            in("rsi") size,
-            out("rax") ptr,
-            options(nostack, preserves_flags),
-        );
-        ptr as *mut u8
-    }
-
-    pub unsafe fn free(ptr: *mut u8) {
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::Free as u64,
-            in("rsi") ptr as u64,
-            options(nostack, preserves_flags),
-        );
-    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
