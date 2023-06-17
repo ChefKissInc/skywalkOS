@@ -253,7 +253,7 @@ unsafe extern "sysv64" fn spurious_vector_handler(_state: &mut RegisterState) {
 
 pub fn setup(state: &mut crate::system::state::SystemState) {
     let addr = unsafe {
-        let madt = state.madt.as_ref().unwrap().lock();
+        let mut madt = state.madt.as_ref().unwrap().lock();
         let base = APICBase::read();
         if base.apic_global_enable() && base.apic_base() != 0 {
             debug!("APIC already enabled, base is {base:#X?}");
