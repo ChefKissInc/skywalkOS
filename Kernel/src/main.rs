@@ -19,6 +19,8 @@ use tungstenkit::TKCache;
 extern crate alloc;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate itertools;
 
 mod acpi;
 mod intrs;

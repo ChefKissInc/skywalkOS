@@ -43,3 +43,4 @@ unwinding = { version = "0.1.7", default-features = false, features = [
 ] }
 serde = { version = "1.0.164", default-features = false, features = ["derive"] }
 elf = { version = "0.7.2", default-features = false, features = ["nightly"] }
+itertools = { version = "0.10.5", default-features = false, features = ["use_alloc"] }

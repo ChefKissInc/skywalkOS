@@ -101,21 +101,23 @@ pub fn spawn_initial_matches() {
     let mut scheduler = state.scheduler.as_ref().unwrap().lock();
 
     let mut newly_matched = vec![];
-    for (info, payload) in &state.tkcache.as_ref().unwrap().lock().0 {
-        for ent in dt_index.read().values() {
-            let mut ent = ent.lock();
-            for (personality, matching) in &info.personalities {
-                if is_subset(matching, &ent.properties) {
-                    let new = load_tkext(
-                        &mut ent,
-                        info,
-                        personality,
-                        payload,
-                        &mut dt_id_gen,
-                        &mut scheduler,
-                    );
-                    newly_matched.push(new);
-                }
+    for ((info, payload), mut ent) in iproduct!(
+        &state.tkcache.as_ref().unwrap().lock().0,
+        dt_index.read().values()
+    )
+    .map(|(info, ent)| (info, ent.lock()))
+    {
+        for (personality, matching) in &info.personalities {
+            if is_subset(matching, &ent.properties) {
+                let new = load_tkext(
+                    &mut ent,
+                    info,
+                    personality,
+                    payload,
+                    &mut dt_id_gen,
+                    &mut scheduler,
+                );
+                newly_matched.push(new);
             }
         }
     }
