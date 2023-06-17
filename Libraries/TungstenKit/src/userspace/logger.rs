@@ -8,7 +8,15 @@ pub struct KWriter;
 
 impl Write for KWriter {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        unsafe { SystemCall::kprint(s) }
+        unsafe {
+            core::arch::asm!(
+                "int 249",
+                in("rdi") SystemCall::KPrint as u64,
+                in("rsi") s.as_ptr() as u64,
+                in("rdx") s.len() as u64,
+                options(nostack, preserves_flags),
+            );
+        }
         Ok(())
     }
 }

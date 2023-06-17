@@ -87,16 +87,6 @@ pub enum SystemCall {
 
 #[cfg(feature = "userspace")]
 impl SystemCall {
-    pub unsafe fn kprint(s: &str) {
-        core::arch::asm!(
-            "int 249",
-            in("rdi") Self::KPrint as u64,
-            in("rsi") s.as_ptr() as u64,
-            in("rdx") s.len() as u64,
-            options(nostack, preserves_flags),
-        );
-    }
-
     pub unsafe fn quit() -> ! {
         core::arch::asm!("int 249", in("rdi") Self::Quit as u64, options(nostack, preserves_flags, noreturn));
     }
