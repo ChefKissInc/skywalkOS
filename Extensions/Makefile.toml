@@ -1,27 +1,10 @@
 [tasks.make]
 command = "cargo"
-args = [
-    "build",
-    "-Zbuild-std=core,compiler_builtins,alloc",
-    "-Zbuild-std-features=compiler-builtins-mem",
-    "--target",
-    "../../x86_64-pc-tungsten.json",
-    "--out-dir",
-    "../../target/Extensions",
-]
+args = ["build", "--out-dir", "../../target/Extensions"]
 
 [tasks.make-release]
 command = "cargo"
-args = [
-    "build",
-    "-Zbuild-std=core,compiler_builtins,alloc",
-    "-Zbuild-std-features=compiler-builtins-mem",
-    "--target",
-    "../../x86_64-pc-tungsten.json",
-    "--out-dir",
-    "../../target/Extensions",
-    "--release",
-]
+args = ["build", "--out-dir", "../../target/Extensions", "--release"]
 
 [config]
 default_to_workspace = true

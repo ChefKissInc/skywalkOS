@@ -79,7 +79,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
     let mut mem_mgr = helpers::mem::MemoryManager::new();
     mem_mgr.allocate((tkcache_buf.as_ptr() as _, tkcache_buf.len() as _));
 
-    let (kernel_main, symbols) = helpers::parse_elf::parse_elf(&mut mem_mgr, kernel_buf);
+    let (kernel_main, symbols) = helpers::elf::parse(&mut mem_mgr, kernel_buf);
 
     let stack = vec![0u8; 0x14000].leak();
     let stack_ptr = unsafe { helpers::pa_to_kern_va(stack.as_ptr()).add(stack.len()) };

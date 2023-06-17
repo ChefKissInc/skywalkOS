@@ -10,8 +10,12 @@ version = "0.1.0"
 name = "tkpci"
 filename = "TKPCI"
 
+[profile.release]
+lto = true
+strip = true
+
 [dependencies]
-tungstenkit = { path = "../../Libraries/TungstenKit" }
+tungstenkit = { path = "../../Libraries/TungstenKit", features = ["userspace"] }
 log = { version = "0.4.19", features = [
     "release_max_level_debug",
     "max_level_trace",

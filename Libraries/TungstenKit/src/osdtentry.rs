@@ -1,12 +1,17 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use alloc::{borrow::ToOwned, string::String, vec::Vec};
+use alloc::string::String;
+#[cfg(feature = "userspace")]
+use alloc::{borrow::ToOwned, vec::Vec};
 
+#[cfg(feature = "userspace")]
 use hashbrown::HashMap;
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
-use crate::{osvalue::OSValue, syscall::SystemCall};
+use crate::osvalue::OSValue;
+#[cfg(feature = "userspace")]
+use crate::syscall::SystemCall;
 
 pub const OSDTENTRY_NAME_KEY: &str = "_Name";
 pub const TKEXT_MATCH_KEY: &str = "_TKExtMatch";
@@ -29,6 +34,7 @@ pub enum GetOSDTEntryReqType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SetOSDTEntryPropReq(pub String, pub OSValue);
 
+#[cfg(feature = "userspace")]
 impl OSDTEntry {
     fn get_info(&self, ty: GetOSDTEntryReqType, k: Option<&str>) -> Vec<u8> {
         let (mut ptr, mut len): (u64, u64);

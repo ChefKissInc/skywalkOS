@@ -10,6 +10,10 @@ version = "0.1.0"
 name = "xboot"
 filename = "BOOTX64"
 
+[profile.release]
+lto = true
+strip = true
+
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
 elf = { version = "0.7.2", default-features = false, features = ["nightly"] }

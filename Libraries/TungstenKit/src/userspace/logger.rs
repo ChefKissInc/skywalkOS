@@ -2,7 +2,7 @@
 
 use core::fmt::Write;
 
-use tungstenkit::syscall::SystemCall;
+use crate::syscall::SystemCall;
 
 pub struct KWriter;
 

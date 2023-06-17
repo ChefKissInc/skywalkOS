@@ -4,10 +4,9 @@
 #![no_main]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 #![allow(clippy::multiple_crate_versions)]
-#![feature(alloc_error_handler)]
 
-#[macro_use]
-extern crate log;
+// #[macro_use]
+// extern crate log;
 #[macro_use]
 extern crate alloc;
 
@@ -20,13 +19,9 @@ use serde::{Deserialize, Serialize};
 use tungstenkit::{
     osdtentry::{OSDTEntry, OSDTENTRY_NAME_KEY, TKEXT_PROC_KEY},
     osvalue::OSValue,
-    port::Port,
     syscall::{Message, SystemCall},
+    userspace::{logger::KWriter, port::Port},
 };
-
-mod allocator;
-mod logger;
-mod panic;
 
 #[derive(IntoPrimitive)]
 #[repr(u8)]
@@ -126,7 +121,7 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
     let id: u64 = ent.into();
     let props = ent.properties();
     writeln!(
-        logger::KWriter,
+        KWriter,
         "{spacing}+ {} (ID: <{}>)",
         if let Some(OSValue::String(v)) = props.get(OSDTENTRY_NAME_KEY) {
             v.as_str()
@@ -138,7 +133,7 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
     .unwrap();
 
     for (k, v) in props.into_iter().filter(|(k, _)| k != OSDTENTRY_NAME_KEY) {
-        writeln!(logger::KWriter, "{spacing}|- {k}: {v:X?}").unwrap();
+        writeln!(KWriter, "{spacing}|- {k}: {v:X?}").unwrap();
     }
 
     for child in ent.children() {
@@ -148,12 +143,12 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
 
 #[no_mangle]
 extern "C" fn _start(instance: OSDTEntry) -> ! {
-    logger::init();
+    tungstenkit::userspace::logger::init();
 
     let this = PS2Ctl::new();
     this.init();
     let mut s = String::new();
-    write!(logger::KWriter, "# ").unwrap();
+    write!(KWriter, "# ").unwrap();
     loop {
         let msg = unsafe { Message::receive() };
         if msg.pid == 0 {
@@ -179,7 +174,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                 };
 
                 if let Ps2Event::Pressed(ch) = event {
-                    write!(logger::KWriter, "{ch}").unwrap();
+                    write!(KWriter, "{ch}").unwrap();
                     if ch == '\n' {
                         match s.as_str() {
                             "osdt" => print_ent(OSDTEntry::default(), 0),
@@ -201,20 +196,20 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                             v if v.starts_with("msg") => 'a: {
                                 let mut v = v.split_whitespace().skip(1);
                                 let Some(pid) = v.next().and_then(|v| v.parse().ok()) else {
-                                    writeln!(logger::KWriter, "Expected PID").unwrap();
+                                    writeln!(KWriter, "Expected PID").unwrap();
                                     break 'a;
                                 };
                                 let Some(data) = v.next().and_then(|v| v.parse::<u64>().ok()) else {
-                                    writeln!(logger::KWriter, "Expected data").unwrap();
+                                    writeln!(KWriter, "Expected data").unwrap();
                                     break 'a;
                                 };
                                 unsafe {
                                     Message::new(0, pid, data.to_be_bytes().to_vec().leak()).send();
                                 }
                             }
-                            _ => writeln!(logger::KWriter, "{s}").unwrap(),
+                            _ => writeln!(KWriter, "{s}").unwrap(),
                         }
-                        write!(logger::KWriter, "# ").unwrap();
+                        write!(KWriter, "# ").unwrap();
                         s.clear();
                     } else {
                         s.push(ch);

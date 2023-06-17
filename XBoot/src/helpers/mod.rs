@@ -2,9 +2,9 @@
 
 use alloc::boxed::Box;
 
+pub mod elf;
 pub mod fb;
 pub mod mem;
-pub mod parse_elf;
 pub mod setup;
 
 #[repr(transparent)]

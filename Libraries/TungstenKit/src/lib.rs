@@ -3,20 +3,24 @@
 #![no_std]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 #![allow(clippy::missing_safety_doc, clippy::multiple_crate_versions)]
+#![cfg_attr(feature = "userspace", feature(alloc_error_handler))]
 
 use alloc::{string::String, vec::Vec};
 
 use hashbrown::HashMap;
 
 extern crate alloc;
+#[cfg(feature = "userspace")]
+#[macro_use]
+extern crate log;
 
 #[cfg(target_arch = "x86_64")]
 pub mod osdtentry;
 pub mod osvalue;
 #[cfg(target_arch = "x86_64")]
-pub mod port;
-#[cfg(target_arch = "x86_64")]
 pub mod syscall;
+#[cfg(feature = "userspace")]
+pub mod userspace;
 
 use serde::{Deserialize, Serialize};
 

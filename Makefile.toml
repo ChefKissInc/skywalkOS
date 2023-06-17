@@ -1,72 +1,37 @@
 [tasks.build-xboot]
 command = "cargo"
-args = [
-    "build",
-    "-Zbuild-std=core,compiler_builtins,alloc",
-    "-Zbuild-std-features=compiler-builtins-mem",
-    "--bin",
-    "xboot",
-    "--target",
-    "x86_64-unknown-uefi",
-    "--out-dir",
-    "Drive/EFI/BOOT",
-]
+cwd = "XBoot"
+args = ["build", "--out-dir", "../Drive/EFI/BOOT"]
 
 [tasks.build-kernel]
 command = "cargo"
-args = [
-    "build",
-    "-Zbuild-std=core,compiler_builtins,alloc",
-    "-Zbuild-std-features=compiler-builtins-mem",
-    "--bin",
-    "kernel",
-    "--target",
-    "x86_64-kernel-tungsten.json",
-    "--out-dir",
-    "Drive/System",
-]
+cwd = "Kernel"
+args = ["build", "--out-dir", "../Drive/System"]
 
 [tasks.build-xboot-release]
 command = "cargo"
-args = [
-    "build",
-    "-Zbuild-std=core,compiler_builtins,alloc",
-    "-Zbuild-std-features=compiler-builtins-mem",
-    "--bin",
-    "xboot",
-    "--target",
-    "x86_64-unknown-uefi",
-    "--out-dir",
-    "Drive/EFI/BOOT",
-    "--release",
-]
+cwd = "XBoot"
+args = ["build", "--out-dir", "../Drive/EFI/BOOT", "--release"]
 
 [tasks.build-kernel-release]
 command = "cargo"
-args = [
-    "build",
-    "-Zbuild-std=core,compiler_builtins,alloc",
-    "-Zbuild-std-features=compiler-builtins-mem",
-    "--bin",
-    "kernel",
-    "--target",
-    "x86_64-kernel-tungsten.json",
-    "--out-dir",
-    "Drive/System",
-    "--release",
-]
+cwd = "Kernel"
+args = ["build", "--out-dir", "../Drive/System", "--release"]
 
 [tasks.make-tkcache]
 command = "cargo"
-args = ["run", "--example", "tkcache_builder", "--release"]
+cwd = "Utilities/TKCacheBuilder"
+args = ["run", "--release"]
 
 [tasks.make-boot-exts]
 command = "cargo"
-args = ["make", "--cwd", "Extensions", "make"]
+cwd = "Extensions"
+args = ["make", "make"]
 
 [tasks.make-boot-exts-release]
 command = "cargo"
-args = ["make", "--cwd", "Extensions", "make-release"]
+cwd = "Extensions"
+args = ["make", "make-release"]
 
 [tasks.make]
 dependencies = ["build-xboot", "build-kernel", "make-boot-exts", "make-tkcache"]

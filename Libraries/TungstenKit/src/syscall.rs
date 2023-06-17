@@ -60,6 +60,14 @@ impl Message {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u64)]
+pub enum AccessSize {
+    Byte,
+    Word,
+    DWord,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+#[repr(u64)]
 pub enum SystemCall {
     KPrint,
     ReceiveMessage,
@@ -77,6 +85,7 @@ pub enum SystemCall {
     SetOSDTEntryProp,
 }
 
+#[cfg(feature = "userspace")]
 impl SystemCall {
     pub unsafe fn kprint(s: &str) {
         core::arch::asm!(

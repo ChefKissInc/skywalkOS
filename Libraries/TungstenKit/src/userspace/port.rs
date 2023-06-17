@@ -1,16 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
 
-use num_enum::TryFromPrimitive;
-
-use crate::syscall::SystemCall;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
-#[repr(u64)]
-pub enum AccessSize {
-    Byte,
-    Word,
-    DWord,
-}
+use crate::syscall::{AccessSize, SystemCall};
 
 macro_rules! PortIOSystemCallIn {
     ($out:tt, $port:expr, $size:expr) => {{

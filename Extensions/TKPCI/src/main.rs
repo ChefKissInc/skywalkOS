@@ -4,7 +4,6 @@
 #![no_main]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 #![allow(clippy::multiple_crate_versions)]
-#![feature(alloc_error_handler)]
 
 #[macro_use]
 extern crate log;
@@ -16,11 +15,7 @@ extern crate itertools;
 use alloc::boxed::Box;
 
 use tkpci::{PCIAddress, PCICfgOffset};
-use tungstenkit::{osdtentry::OSDTEntry, port::Port, syscall::Message};
-
-mod allocator;
-mod logger;
-mod panic;
+use tungstenkit::{osdtentry::OSDTEntry, syscall::Message, userspace::port::Port};
 
 trait PCIControllerIO: Sync {
     unsafe fn read8(&self, addr: PCIAddress, off: u8) -> u8;
@@ -164,7 +159,7 @@ impl PCIControllerIO for PCIPortIO {
 
 #[no_mangle]
 extern "C" fn _start(instance: OSDTEntry) -> ! {
-    logger::init();
+    tungstenkit::userspace::logger::init();
 
     let controller = Box::new(PCIController);
     for (bus, slot) in iproduct!(0..=255, 0..32) {

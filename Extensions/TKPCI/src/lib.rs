@@ -1,3 +1,5 @@
+// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
+
 #![no_std]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 #![allow(clippy::multiple_crate_versions)]
@@ -49,18 +51,18 @@ pub struct PCICommand {
 #[derive(IntoPrimitive)]
 #[repr(u8)]
 pub enum PCICfgOffset {
-    VendorID = 0x0,
-    DeviceID = 0x2,
-    Command = 0x4,
-    Status = 0x6,
-    RevisionId = 0x8,
-    ProgIf = 0x9,
-    ClassCode = 0xA,
-    Subclass = 0xB,
-    CacheLineSize = 0xC,
-    LatencyTimer = 0xD,
-    HeaderType = 0xE,
-    Bist = 0xF,
+    VendorID = 0x00,
+    DeviceID = 0x02,
+    Command = 0x04,
+    Status = 0x06,
+    RevisionId = 0x08,
+    ProgIf = 0x09,
+    ClassCode = 0x0A,
+    Subclass = 0x0B,
+    CacheLineSize = 0x0C,
+    LatencyTimer = 0x0D,
+    HeaderType = 0x0E,
+    Bist = 0x0F,
     BaseAddr0 = 0x10,
     BaseAddr1 = 0x14,
     BaseAddr2 = 0x18,

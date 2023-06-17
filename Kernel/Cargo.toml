@@ -10,6 +10,10 @@ version = "0.1.0"
 name = "kernel"
 filename = "Kernel"
 
+[profile.release]
+lto = true
+strip = true
+
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
 tungstenkit = { path = "../Libraries/TungstenKit" }
@@ -43,4 +47,6 @@ unwinding = { version = "0.1.7", default-features = false, features = [
 ] }
 serde = { version = "1.0.164", default-features = false, features = ["derive"] }
 elf = { version = "0.7.2", default-features = false, features = ["nightly"] }
-itertools = { version = "0.10.5", default-features = false, features = ["use_alloc"] }
+itertools = { version = "0.10.5", default-features = false, features = [
+    "use_alloc",
+] }

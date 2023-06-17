@@ -1,0 +1,20 @@
+cargo-features = ["different-binary-name"]
+
+[package]
+edition = "2021"
+name = "tkcachebuilder"
+publish = false
+version = "0.1.0"
+
+[[bin]]
+name = "tkcachebuilder"
+filename = "TKCacheBuilder"
+
+[profile.release]
+lto = true
+strip = true
+
+[dependencies]
+tungstenkit = { path = "../../Libraries/TungstenKit" }
+postcard = { version = "1.0.4", default-features = false, features = ["alloc"] }
+ron = { version = "0.8.0" }

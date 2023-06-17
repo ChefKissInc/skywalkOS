@@ -2,7 +2,7 @@
 
 use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 
-pub fn parse_elf(
+pub fn parse(
     mem_mgr: &mut super::mem::MemoryManager,
     buffer: &[u8],
 ) -> (

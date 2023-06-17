@@ -4,4 +4,8 @@ name = "paper-fb"
 publish = false
 version = "0.1.0"
 
+[profile.release]
+lto = true
+strip = true
+
 [dependencies]

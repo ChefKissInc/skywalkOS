@@ -2,9 +2,11 @@
 
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 
+use std::path::PathBuf;
+
 fn main() {
     let cache = tungstenkit::TKCache::new(
-        std::fs::read_dir("Extensions")
+        std::fs::read_dir("../../Extensions")
             .unwrap()
             .filter_map(Result::ok)
             .filter(|v| v.path().is_dir())
@@ -13,7 +15,7 @@ fn main() {
                     ron::from_str(&std::fs::read_to_string(ent.path().join("Info.ron")).unwrap())
                         .unwrap();
                 println!("{}", info.identifier);
-                let payload = std::fs::read(std::path::PathBuf::from("target/Extensions").join(
+                let payload = std::fs::read(PathBuf::from("../../target/Extensions").join(
                     format!("{}.exec", info.identifier.split('.').last().unwrap()),
                 ))
                 .unwrap();
@@ -22,7 +24,7 @@ fn main() {
             .collect(),
     );
     std::fs::write(
-        "Drive/System/Extensions.tkcache",
+        "../../Drive/System/Extensions.tkcache",
         postcard::to_allocvec(&cache).unwrap(),
     )
     .unwrap();
