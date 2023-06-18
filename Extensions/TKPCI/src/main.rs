@@ -15,7 +15,7 @@ extern crate itertools;
 use alloc::boxed::Box;
 
 use tkpci::{PCIAddress, PCICfgOffset};
-use tungstenkit::{osdtentry::OSDTEntry, syscall::Message, userspace::port::Port};
+use tungstenkit::{msg::Message, osdtentry::OSDTEntry, userspace::port::Port};
 
 trait PCIControllerIO: Sync {
     unsafe fn read8(&self, addr: PCIAddress, off: u8) -> u8;

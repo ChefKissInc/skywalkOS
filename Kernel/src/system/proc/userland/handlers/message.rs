@@ -4,7 +4,7 @@ use core::ops::ControlFlow;
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
 use tungstenkit::{
-    syscall::{KernelMessage, Message},
+    msg::{KernelMessage, Message},
     TerminationReason,
 };
 

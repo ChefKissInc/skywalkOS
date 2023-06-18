@@ -4,7 +4,7 @@ use alloc::{boxed::Box, collections::VecDeque, string::String, vec::Vec};
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
 use hashbrown::HashMap;
-use tungstenkit::syscall::Message;
+use tungstenkit::msg::Message;
 
 use super::gdt::{PrivilegeLevel, SegmentSelector};
 

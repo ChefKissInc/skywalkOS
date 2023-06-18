@@ -3,7 +3,8 @@
 use core::ops::ControlFlow;
 
 use tungstenkit::{
-    syscall::{KernelMessage, Message, SystemCall},
+    msg::{KernelMessage, Message},
+    syscall::SystemCall,
     TerminationReason,
 };
 

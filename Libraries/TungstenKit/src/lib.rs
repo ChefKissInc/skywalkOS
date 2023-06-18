@@ -14,6 +14,7 @@ extern crate alloc;
 #[macro_use]
 extern crate log;
 
+pub mod msg;
 #[cfg(target_arch = "x86_64")]
 pub mod osdtentry;
 pub mod osvalue;

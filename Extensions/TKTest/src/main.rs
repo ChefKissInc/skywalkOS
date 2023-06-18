@@ -17,9 +17,10 @@ use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 use tungstenkit::{
+    msg::Message,
     osdtentry::{OSDTEntry, OSDTENTRY_NAME_KEY, TKEXT_PROC_KEY},
     osvalue::OSValue,
-    syscall::{Message, SystemCall},
+    syscall::SystemCall,
     userspace::{logger::KWriter, port::Port},
 };
 
@@ -190,7 +191,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                                     .unwrap();
 
                                 unsafe {
-                                    Message::new(0, pid, vec![1, 2, 3, 4].leak()).send();
+                                    Message::new(pid, vec![1, 2, 3, 4].leak()).send();
                                 }
                             }
                             v if v.starts_with("msg") => 'a: {
@@ -204,7 +205,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                                     break 'a;
                                 };
                                 unsafe {
-                                    Message::new(0, pid, data.to_be_bytes().to_vec().leak()).send();
+                                    Message::new(pid, data.to_be_bytes().to_vec().leak()).send();
                                 }
                             }
                             _ => writeln!(KWriter, "{s}").unwrap(),
