@@ -195,7 +195,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
             continue;
         }
 
-        if msg.data == &(1u64).to_be_bytes() {
+        if msg.data == (1u64).to_be_bytes() {
             info!("Received packet hello");
         }
     }
