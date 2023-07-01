@@ -23,10 +23,10 @@ log = { version = "0.4.19", default-features = false, features = [
 ] }
 sulphur-dioxide = { path = "../Libraries/SulphurDioxide" }
 paper-fb = { path = "../Libraries/PaperFrameBuffer" }
-uefi = { version = "0.23.0", default-features = false, features = [
+uefi = { version = "0.24.0", default-features = false, features = [
     "alloc",
     "global_allocator",
     "unstable",
     "logger",
 ] }
-uefi-services = "0.20.0"
+uefi-services = "0.21.0"

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "userspace")]
 use super::syscall::SystemCall;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Message {
     pub id: u64,
     pub pid: u64,
@@ -60,14 +60,22 @@ impl Message {
             options(nostack, preserves_flags),
         );
     }
+}
 
-    pub unsafe fn ack(self) {
-        core::arch::asm!(
-            "int 249",
-            in("rdi") SystemCall::AckMessage as u64,
-            in("rsi") self.id,
-            options(nostack, preserves_flags),
-        );
+#[cfg(feature = "userspace")]
+impl Drop for Message {
+    fn drop(&mut self) {
+        if self.id == 0 {
+            return;
+        }
+        unsafe {
+            core::arch::asm!(
+                "int 249",
+                in("rdi") SystemCall::AckMessage as u64,
+                in("rsi") self.id,
+                options(nostack, preserves_flags),
+            );
+        }
     }
 }
 

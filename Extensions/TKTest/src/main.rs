@@ -34,7 +34,7 @@ enum PS2CtlCmd {
 #[bitfield(bits = 8)]
 #[derive(Default, Debug, Clone, Copy)]
 #[repr(u8)]
-struct Ps2Cfg {
+pub struct Ps2Cfg {
     pub port1_intr: bool,
     pub port2_intr: bool,
     pub post_pass: bool,
@@ -152,72 +152,76 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
     write!(KWriter, "# ").unwrap();
     loop {
         let msg = unsafe { Message::receive() };
-        if msg.pid == 0 {
-            while this.output_full() {
-                let event = match unsafe { this.data_port.read() } {
-                    0xE => Ps2Event::BackSpace,
-                    v @ 0x2..=0xB => {
-                        Ps2Event::Pressed("1234567890".chars().nth(v as usize - 0x2).unwrap())
-                    }
-                    0x1C => Ps2Event::Pressed('\n'),
-                    v @ 0x10..=0x1C => {
-                        Ps2Event::Pressed("qwertyuiop".chars().nth(v as usize - 0x10).unwrap())
-                    }
-                    v @ 0x1E..=0x26 => {
-                        Ps2Event::Pressed("asdfghjkl".chars().nth(v as usize - 0x1E).unwrap())
-                    }
-                    0x29 => Ps2Event::Pressed('0'),
-                    v @ 0x2C..=0x32 => {
-                        Ps2Event::Pressed("zxcvbnm".chars().nth(v as usize - 0x2C).unwrap())
-                    }
-                    0x39 => Ps2Event::Pressed(' '),
-                    v => Ps2Event::Other(v),
-                };
+        if msg.pid != 0 {
+            continue;
+        }
 
-                if let Ps2Event::Pressed(ch) = event {
-                    write!(KWriter, "{ch}").unwrap();
-                    if ch == '\n' {
-                        match s.as_str() {
-                            "osdt" => print_ent(OSDTEntry::default(), 0),
-                            "msgparent" => {
-                                let pid: u64 = instance
-                                    .parent()
-                                    .unwrap()
-                                    .parent()
-                                    .unwrap()
-                                    .get_property(TKEXT_PROC_KEY)
-                                    .unwrap()
-                                    .try_into()
-                                    .unwrap();
+        while this.output_full() {
+            let event = match unsafe { this.data_port.read() } {
+                0xE => Ps2Event::BackSpace,
+                v @ 0x2..=0xB => {
+                    Ps2Event::Pressed("1234567890".chars().nth(v as usize - 0x2).unwrap())
+                }
+                0x1C => Ps2Event::Pressed('\n'),
+                v @ 0x10..=0x1C => {
+                    Ps2Event::Pressed("qwertyuiop".chars().nth(v as usize - 0x10).unwrap())
+                }
+                v @ 0x1E..=0x26 => {
+                    Ps2Event::Pressed("asdfghjkl".chars().nth(v as usize - 0x1E).unwrap())
+                }
+                0x29 => Ps2Event::Pressed('0'),
+                v @ 0x2C..=0x32 => {
+                    Ps2Event::Pressed("zxcvbnm".chars().nth(v as usize - 0x2C).unwrap())
+                }
+                0x39 => Ps2Event::Pressed(' '),
+                v => Ps2Event::Other(v),
+            };
 
-                                unsafe {
-                                    Message::new(pid, vec![1, 2, 3, 4].leak()).send();
-                                }
-                            }
-                            v if v.starts_with("msg") => 'a: {
-                                let mut v = v.split_whitespace().skip(1);
-                                let Some(pid) = v.next().and_then(|v| v.parse().ok()) else {
-                                    writeln!(KWriter, "Expected PID").unwrap();
-                                    break 'a;
-                                };
-                                let Some(data) = v.next().and_then(|v| v.parse::<u64>().ok()) else {
-                                    writeln!(KWriter, "Expected data").unwrap();
-                                    break 'a;
-                                };
-                                unsafe {
-                                    Message::new(pid, data.to_be_bytes().to_vec().leak()).send();
-                                }
-                            }
-                            _ => writeln!(KWriter, "{s}").unwrap(),
-                        }
-                        write!(KWriter, "# ").unwrap();
-                        s.clear();
-                    } else {
-                        s.push(ch);
+            let Ps2Event::Pressed(ch) = event else {
+                continue;
+            };
+            write!(KWriter, "{ch}").unwrap();
+
+            if ch != '\n' {
+                s.push(ch);
+                continue;
+            }
+
+            match s.as_str() {
+                "osdt" => print_ent(OSDTEntry::default(), 0),
+                "msgparent" => {
+                    let pid: u64 = instance
+                        .parent()
+                        .unwrap()
+                        .parent()
+                        .unwrap()
+                        .get_property(TKEXT_PROC_KEY)
+                        .unwrap()
+                        .try_into()
+                        .unwrap();
+
+                    unsafe {
+                        Message::new(pid, vec![1, 2, 3, 4].leak()).send();
                     }
                 }
+                v if v.split_whitespace().next() == Some("msg") => 'a: {
+                    let mut v = v.split_whitespace().skip(1);
+                    let Some(pid) = v.next().and_then(|v| v.parse().ok()) else {
+                        writeln!(KWriter, "Expected PID").unwrap();
+                        break 'a;
+                    };
+                    let Some(data) = v.next().and_then(|v| v.parse::<u64>().ok()) else {
+                        writeln!(KWriter, "Expected data").unwrap();
+                        break 'a;
+                    };
+                    unsafe {
+                        Message::new(pid, data.to_be_bytes().to_vec().leak()).send();
+                    }
+                }
+                _ => writeln!(KWriter, "{s}").unwrap(),
             }
+            write!(KWriter, "# ").unwrap();
+            s.clear();
         }
-        unsafe { msg.ack() }
     }
 }

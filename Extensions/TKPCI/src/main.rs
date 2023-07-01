@@ -191,8 +191,12 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
 
     loop {
         let msg = unsafe { Message::receive() };
-        info!("Received message: {:#X?}", msg);
-        // if msg.pid == 0 {}
-        unsafe { msg.ack() }
+        if msg.pid == 0 {
+            continue;
+        }
+
+        if msg.data == &(1u64).to_be_bytes() {
+            info!("Received packet hello");
+        }
     }
 }
