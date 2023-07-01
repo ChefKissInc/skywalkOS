@@ -9,11 +9,11 @@ lto = true
 strip = true
 
 [dependencies]
+hashbrown = { version = "0.14.0", features = ["nightly", "serde"] }
+log = { version = "0.4.19", optional = true }
 num_enum = { version = "0.6.1", default-features = false }
 postcard = { version = "1.0.4", default-features = false, features = ["alloc"] }
-hashbrown = { version = "0.14.0", features = ["nightly", "serde"] }
 serde = { version = "1.0.164", default-features = false, features = ["derive"] }
-log = { version = "0.4.19", optional = true }
 
 [features]
 default = []

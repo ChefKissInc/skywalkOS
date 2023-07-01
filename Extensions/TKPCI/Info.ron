@@ -1,8 +1,0 @@
-TKInfo (
-    identifier: "com.ChefKiss.TKPCI",
-    personalities: {
-        "Master": {
-            "_Name": String("Root"),
-        },
-    },
-)

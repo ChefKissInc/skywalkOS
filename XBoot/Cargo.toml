@@ -7,8 +7,8 @@ publish = false
 version = "0.1.0"
 
 [[bin]]
-name = "xboot"
 filename = "BOOTX64"
+name = "xboot"
 
 [profile.release]
 lto = true
@@ -21,12 +21,12 @@ log = { version = "0.4.19", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
-sulphur-dioxide = { path = "../Libraries/SulphurDioxide" }
 paper-fb = { path = "../Libraries/PaperFrameBuffer" }
+sulphur-dioxide = { path = "../Libraries/SulphurDioxide" }
 uefi = { version = "0.24.0", default-features = false, features = [
     "alloc",
     "global_allocator",
-    "unstable",
     "logger",
+    "unstable",
 ] }
 uefi-services = "0.21.0"

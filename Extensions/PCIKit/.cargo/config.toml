@@ -1,0 +1,7 @@
+[unstable]
+build-std = ["alloc", "compiler_builtins", "core"]
+build-std-features = ["compiler-builtins-mem"]
+unstable-options = true
+
+[build]
+target = "../../x86_64-pc-tungsten.json"

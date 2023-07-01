@@ -1,0 +1,8 @@
+TKInfo (
+    identifier: "com.ChefKiss.AC97Audio",
+    personalities: {
+        "Master": {
+            "ClassCode": U16(0x0401),
+        },
+    },
+)

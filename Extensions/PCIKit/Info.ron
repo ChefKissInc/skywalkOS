@@ -1,0 +1,8 @@
+TKInfo (
+    identifier: "com.ChefKiss.PCIKit",
+    personalities: {
+        "Master": {
+            "_Name": String("Root"),
+        },
+    },
+)
