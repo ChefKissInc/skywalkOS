@@ -25,8 +25,8 @@ log = { version = "0.4.19", features = [
 ] }
 modular-bitfield = "0.11.2"
 num_enum = { version = "0.6.1", default-features = false }
-postcard = { version = "1.0.4", default-features = false, features = ["alloc"] }
-serde = { version = "1.0.164", default-features = false, features = ["derive"] }
+postcard = { version = "1.0.6", default-features = false, features = ["alloc"] }
+serde = { version = "1.0.173", default-features = false, features = ["derive"] }
 tungstenkit = { path = "../../Libraries/TungstenKit", features = ["userspace"] }
 
 [features]

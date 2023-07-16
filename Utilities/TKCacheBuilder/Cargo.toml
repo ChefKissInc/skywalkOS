@@ -15,6 +15,6 @@ lto = true
 strip = true
 
 [dependencies]
-postcard = { version = "1.0.4", default-features = false, features = ["alloc"] }
+postcard = { version = "1.0.6", default-features = false, features = ["alloc"] }
 ron = { version = "0.8.0" }
 tungstenkit = { path = "../../Libraries/TungstenKit" }
