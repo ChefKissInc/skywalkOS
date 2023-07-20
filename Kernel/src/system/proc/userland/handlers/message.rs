@@ -45,7 +45,7 @@ pub fn handle_new(
 
 pub fn send(
     scheduler: &mut Scheduler,
-    state: &mut RegisterState,
+    state: &RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
     let target = state.rsi;
 
@@ -98,7 +98,7 @@ pub fn receive(
 
 pub fn ack(
     scheduler: &mut Scheduler,
-    state: &mut RegisterState,
+    state: &RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
     let msg_id = state.rsi;
 

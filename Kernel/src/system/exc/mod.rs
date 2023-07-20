@@ -25,8 +25,8 @@ macro_rules! generic_exception {
     };
 }
 
-pub(self) use exc_msg;
-pub(self) use generic_exception;
+use exc_msg;
+use generic_exception;
 
 use crate::system::gdt::PrivilegeLevel;
 

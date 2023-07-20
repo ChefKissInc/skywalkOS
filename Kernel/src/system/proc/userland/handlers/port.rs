@@ -22,7 +22,7 @@ pub fn port_in(state: &mut RegisterState) -> ControlFlow<Option<TerminationReaso
     ControlFlow::Continue(())
 }
 
-pub fn port_out(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
+pub fn port_out(state: &RegisterState) -> ControlFlow<Option<TerminationReason>> {
     let port = state.rsi as u16;
     let Ok(access_size) = AccessSize::try_from(state.rdx) else {
         return ControlFlow::Break(Some(TerminationReason::MalformedArgument));

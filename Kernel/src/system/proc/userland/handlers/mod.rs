@@ -11,7 +11,7 @@ pub mod message;
 pub mod osdtentry;
 pub mod port;
 
-pub fn kprint(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
+pub fn kprint(state: &RegisterState) -> ControlFlow<Option<TerminationReason>> {
     let s = unsafe { core::slice::from_raw_parts(state.rsi as *const _, state.rdx as _) };
     let Ok(s) = core::str::from_utf8(s) else {
         return ControlFlow::Break(Some(TerminationReason::MalformedBody));
@@ -29,7 +29,7 @@ pub fn kprint(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason
 
 pub fn register_irq_handler(
     scheduler: &mut Scheduler,
-    state: &mut RegisterState,
+    state: &RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
     let irq = state.rsi as u8;
     if irq > 0xDF {

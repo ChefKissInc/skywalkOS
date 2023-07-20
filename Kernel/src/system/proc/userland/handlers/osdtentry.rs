@@ -70,7 +70,7 @@ pub fn get_info(
 
 pub fn set_prop(
     scheduler: &mut Scheduler,
-    state: &mut RegisterState,
+    state: &RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
     let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     let dt_index = sys_state.dt_index.as_ref().unwrap().read();

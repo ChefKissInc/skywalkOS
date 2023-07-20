@@ -24,7 +24,7 @@ pub fn alloc(
 
 pub fn free(
     scheduler: &mut Scheduler,
-    state: &mut RegisterState,
+    state: &RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
     scheduler
         .current_process_mut()
