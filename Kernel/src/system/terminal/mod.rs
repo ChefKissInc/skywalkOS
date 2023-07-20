@@ -58,7 +58,10 @@ impl Terminal {
 
     #[inline]
     pub fn draw_char(&mut self, c: u8, colour: Colour) {
-        let Some(v) = c.checked_sub(0x20).and_then(|v| font::FONT_BITMAP.get(v as usize)) else {
+        let Some(v) = c
+            .checked_sub(0x20)
+            .and_then(|v| font::FONT_BITMAP.get(v as usize))
+        else {
             return;
         };
         let (x, y) = (self.x * font::FONT_WIDTH, self.y * font::FONT_HEIGHT);

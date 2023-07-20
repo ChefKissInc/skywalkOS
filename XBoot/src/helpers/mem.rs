@@ -33,8 +33,11 @@ impl MemoryManager {
             uefi::table::boot::MemoryType::CONVENTIONAL => Some(MemoryEntry::Usable(data)),
             uefi::table::boot::MemoryType::LOADER_CODE
             | uefi::table::boot::MemoryType::LOADER_DATA => {
-                let Some((base, size)) = self.entries.iter()
-                    .find(|(base, size)| data.base <= base + size) else {
+                let Some((base, size)) = self
+                    .entries
+                    .iter()
+                    .find(|(base, size)| data.base <= base + size)
+                else {
                     return Some(MemoryEntry::BootLoaderReclaimable(data));
                 };
                 let top = data.base + data.length;

@@ -149,8 +149,8 @@ impl Scheduler {
             + tungstenkit::USER_PHYS_VIRT_OFFSET;
         for v in exec.section_headers().unwrap().iter() {
             let Ok(relas) = exec.section_data_as_relas(&v) else {
-                    continue;
-                };
+                continue;
+            };
             for reloc in relas {
                 let ptr = unsafe { &mut *data.as_mut_ptr().add(reloc.r_offset as _).cast::<u64>() };
                 *ptr = if reloc.r_addend.is_negative() {
