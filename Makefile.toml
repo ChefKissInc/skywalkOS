@@ -1,89 +1,89 @@
 [tasks.build-xboot]
-args = ["--out-dir", "../Drive/EFI/BOOT", "build"]
 command = "cargo"
 cwd = "XBoot"
+args = ["build", "--out-dir", "../Drive/EFI/BOOT"]
 
 [tasks.build-kernel]
-args = ["--out-dir", "../Drive/System", "build"]
 command = "cargo"
 cwd = "Kernel"
+args = ["build", "--out-dir", "../Drive/System"]
 
 [tasks.build-xboot-release]
-args = ["--out-dir", "--release", "../Drive/EFI/BOOT", "build"]
 command = "cargo"
 cwd = "XBoot"
+args = ["build", "--out-dir", "../Drive/EFI/BOOT", "--release"]
 
 [tasks.build-kernel-release]
-args = ["--out-dir", "--release", "../Drive/System", "build"]
 command = "cargo"
 cwd = "Kernel"
+args = ["build", "--out-dir", "../Drive/System", "--release"]
 
 [tasks.make-tkcache]
-args = ["--release", "run"]
 command = "cargo"
 cwd = "Utilities/TKCacheBuilder"
+args = ["run", "--release"]
 
 [tasks.make-boot-exts]
-args = ["make", "make"]
 command = "cargo"
 cwd = "Extensions"
+args = ["make", "make"]
 
 [tasks.make-boot-exts-release]
-args = ["make", "make-release"]
 command = "cargo"
 cwd = "Extensions"
+args = ["make", "make-release"]
 
 [tasks.make]
-dependencies = ["build-kernel", "build-xboot", "make-boot-exts", "make-tkcache"]
+dependencies = ["build-xboot", "build-kernel", "make-boot-exts", "make-tkcache"]
 
 [tasks.make-release]
 dependencies = [
-    "build-kernel-release",
     "build-xboot-release",
+    "build-kernel-release",
     "make-boot-exts-release",
     "make-tkcache",
 ]
 
 [tasks.run]
+command = "qemu-system-x86_64"
 args = [
     "-M",
-    "-audiodev",
-    "-device",
-    "-drive",
-    "-drive",
-    "-hda",
-    "-m",
-    "-serial",
-    "1G",
-    "ac97,audiodev=audio",
-    "coreaudio,id=audio,out.frequency=48000",
-    "fat:rw:Drive",
-    "if=pflash,format=raw,readonly=on,unit=0,file=${@}/OVMF_CODE.fd",
-    "if=pflash,format=raw,unit=1,file=${@}/OVMF_VARS.fd",
     "q35",
+    "-m",
+    "1G",
+    "-drive",
+    "if=pflash,format=raw,readonly=on,unit=0,file=${@}/OVMF_CODE.fd",
+    "-drive",
+    "if=pflash,format=raw,unit=1,file=${@}/OVMF_VARS.fd",
+    "-hda",
+    "fat:rw:Drive",
+    "-serial",
     "stdio",
+    "-audiodev",
+    "coreaudio,id=audio,out.frequency=48000",
+    "-device",
+    "ac97,audiodev=audio",
 ]
-command = "qemu-system-x86_64"
 dependencies = ["make"]
 
 [tasks.run-release]
+command = "qemu-system-x86_64"
 args = [
     "-M",
-    "-audiodev",
-    "-device",
-    "-drive",
-    "-drive",
-    "-hda",
+    "q35",
     "-m",
     "1G",
-    "ac97,audiodev=audio",
-    "coreaudio,id=audio,out.frequency=48000",
-    "fat:rw:Drive",
+    "-drive",
     "if=pflash,format=raw,readonly=on,unit=0,file=${@}/OVMF_CODE.fd",
+    "-drive",
     "if=pflash,format=raw,unit=1,file=${@}/OVMF_VARS.fd",
-    "q35",
+    "-hda",
+    "fat:rw:Drive",
+    "-audiodev",
+    "coreaudio,id=audio,out.frequency=48000",
+    "-device",
+    "ac97,audiodev=audio",
 ]
-command = "qemu-system-x86_64"
 dependencies = ["make-release"]
 
 [config]
