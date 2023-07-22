@@ -11,7 +11,6 @@ filename = "PCIKit"
 name = "pcikit"
 
 [profile.release]
-lto = true
 strip = true
 
 [dependencies]
