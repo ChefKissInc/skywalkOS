@@ -5,7 +5,7 @@
 
 use paper_fb::pixel::PixelBitMask;
 
-pub const CURRENT_REVISION: u64 = 0x1A;
+pub const CURRENT_REVISION: u64 = 0x1B;
 
 pub type EntryPoint = extern "sysv64" fn(&'static BootInfo) -> !;
 
@@ -32,14 +32,6 @@ pub enum MemoryEntry {
     ACPIReclaimable(MemoryData),
     BootLoaderReclaimable(MemoryData),
     FrameBuffer(MemoryData),
-}
-
-#[repr(C)]
-#[derive(Debug)]
-pub enum PixelFormat {
-    RedGreenBlue,
-    BlueGreenRed,
-    Bitmask,
 }
 
 #[repr(C)]
