@@ -40,7 +40,7 @@ pub fn parse(
         .unwrap_or_default();
 
     trace!("Parsing program headers: ");
-    let system_table = unsafe { uefi_services::system_table().as_mut() };
+    let bs = unsafe { uefi_services::system_table().as_mut().boot_services() };
     for phdr in elf
         .segments()
         .unwrap()
@@ -70,16 +70,14 @@ pub fn parse(
             npages
         );
         assert_eq!(
-            system_table
-                .boot_services()
-                .allocate_pages(
-                    uefi::table::boot::AllocateType::Address(
-                        (phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET) as _,
-                    ),
-                    uefi::table::boot::MemoryType::LOADER_DATA,
-                    npages,
-                )
-                .unwrap(),
+            bs.allocate_pages(
+                uefi::table::boot::AllocateType::Address(
+                    (phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET) as _,
+                ),
+                uefi::table::boot::MemoryType::LOADER_DATA,
+                npages,
+            )
+            .unwrap(),
             phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET
         );
 

@@ -3,6 +3,7 @@
 use alloc::vec::Vec;
 
 use sulphur_dioxide::{MemoryData, MemoryEntry};
+use uefi::table::boot::{MemoryDescriptor, MemoryType};
 
 pub struct MemoryManager {
     entries: Vec<(u64, u64)>,
@@ -20,19 +21,15 @@ impl MemoryManager {
         self.entries.push(ent);
     }
 
-    pub fn mem_type_from_desc(
-        &self,
-        desc: &uefi::table::boot::MemoryDescriptor,
-    ) -> Option<MemoryEntry> {
+    pub fn mem_type_from_desc(&self, desc: &MemoryDescriptor) -> Option<MemoryEntry> {
         let mut data = MemoryData {
             base: desc.phys_start,
             length: desc.page_count * 0x1000,
         };
 
         match desc.ty {
-            uefi::table::boot::MemoryType::CONVENTIONAL => Some(MemoryEntry::Usable(data)),
-            uefi::table::boot::MemoryType::LOADER_CODE
-            | uefi::table::boot::MemoryType::LOADER_DATA => {
+            MemoryType::CONVENTIONAL => Some(MemoryEntry::Usable(data)),
+            MemoryType::LOADER_CODE | MemoryType::LOADER_DATA => {
                 let Some((base, size)) = self
                     .entries
                     .iter()
@@ -50,7 +47,7 @@ impl MemoryManager {
                     None
                 }
             }
-            uefi::table::boot::MemoryType::ACPI_RECLAIM => Some(MemoryEntry::ACPIReclaimable(data)),
+            MemoryType::ACPI_RECLAIM => Some(MemoryEntry::ACPIReclaimable(data)),
             _ => None,
         }
     }
