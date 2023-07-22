@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
+// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
 use alloc::{string::String, vec::Vec};
 use core::cell::SyncUnsafeCell;
@@ -163,7 +163,7 @@ impl Scheduler {
 
         let pid = self.pid_gen.next();
         self.processes
-            .insert(pid, super::Process::new(pid, String::new()));
+            .insert(pid, super::Process::new(pid, String::new(), virt_addr));
         let proc = self.processes.get_mut(&pid).unwrap();
         unsafe { proc.cr3.map_higher_half() }
         proc.track_alloc(virt_addr, data.len() as _, Some(true));

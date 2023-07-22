@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
+// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
 use alloc::{boxed::Box, collections::VecDeque, string::String, vec::Vec};
 
@@ -67,6 +67,7 @@ impl Thread {
 pub struct Process {
     pub id: u64,
     pub path: String,
+    pub image_base: u64,
     pub cr3: Box<userland::page_table::UserPML4>,
     pub messages: VecDeque<Message>,
     pub allocations: HashMap<u64, (u64, bool)>,
@@ -76,10 +77,11 @@ pub struct Process {
 
 impl Process {
     #[inline]
-    pub fn new(id: u64, path: String) -> Self {
+    pub fn new(id: u64, path: String, image_base: u64) -> Self {
         Self {
             id,
             path,
+            image_base,
             cr3: Box::new(userland::page_table::UserPML4::new(id)),
             messages: VecDeque::new(),
             allocations: HashMap::new(),

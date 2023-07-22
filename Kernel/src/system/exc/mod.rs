@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
+// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
 macro_rules! exc_msg {
     ($name:expr, $msg:expr, $regs:expr) => {
@@ -11,8 +11,37 @@ macro_rules! exc_msg {
             (*crate::system::state::SYS_STATE.get()).interrupt_context = Some(*$regs);
             panic!("Received {} exception: {}", $name, $msg);
         } else {
-            error!("Received {} exception in user-land: {}", $name, $msg);
-            error!("{:#X?}", $regs);
+            use core::fmt::Write;
+            let image_base = (*crate::system::state::SYS_STATE.get())
+                .scheduler
+                .as_ref()
+                .unwrap()
+                .lock()
+                .current_process_mut()
+                .unwrap()
+                .image_base;
+            #[cfg(debug_assertions)]
+            writeln!(
+                crate::system::serial::SERIAL.lock(),
+                "Received {} exception in user-land: {}",
+                $name,
+                $msg
+            )
+            .unwrap();
+            #[cfg(debug_assertions)]
+            writeln!(crate::system::serial::SERIAL.lock(), "{}", $regs).unwrap();
+            #[cfg(debug_assertions)]
+            writeln!(
+                crate::system::serial::SERIAL.lock(),
+                "Image Base: 0x{image_base:>016X}"
+            )
+            .unwrap();
+
+            if let Some(v) = unsafe { (*crate::system::state::SYS_STATE.get()).terminal.as_mut() } {
+                writeln!(v, "Received {} exception in user-land: {}", $name, $msg).unwrap();
+                writeln!(v, "{}", $regs).unwrap();
+                writeln!(v, "Image Base: 0x{image_base:>016X}").unwrap();
+            }
         }
     };
 }

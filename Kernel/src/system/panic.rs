@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.0. See LICENSE for details.
+// Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
 use unwinding::abi::{UnwindContext, UnwindReasonCode, _Unwind_Backtrace, _Unwind_GetIP};
 
@@ -77,7 +77,7 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
     if let Some(ctx) = state.interrupt_context {
         data.counter = 0;
         error!("In interrupt:");
-        error!("    {ctx:#X?}");
+        error!("    {ctx}");
         error!("Interrupt backtrace:");
         let mut rbp = ctx.rbp;
         loop {
