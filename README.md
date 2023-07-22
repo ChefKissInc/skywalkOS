@@ -2,4 +2,4 @@
 
 The Tungsten Operating System.
 
-The Source Code of this Original Work is licensed under the `Thou Shalt Not Profit License version 1.0`. See `LICENSE`
+The Tungsten project is licensed under the `Thou Shalt Not Profit License version 1.5`. See `LICENSE`

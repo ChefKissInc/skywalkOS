@@ -25,12 +25,12 @@ mod helpers;
 #[export_name = "efi_main"]
 extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     unsafe { system_table.boot_services().set_image_handle(image_handle) }
-    system_table
+    if let Err(e) = system_table
         .boot_services()
         .set_watchdog_timer(0, 0x10000, None)
-        .unwrap();
-    system_table.stdout().reset(false).unwrap();
-    system_table.stdin().reset(false).unwrap();
+    {
+        warn!("Failed to disarm watchdog timer: {e}.");
+    };
     uefi_services::init(&mut system_table).unwrap();
     helpers::setup::init_output();
     helpers::setup::setup();
