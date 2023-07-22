@@ -13,12 +13,7 @@ extern crate log;
 
 use alloc::{boxed::Box, vec::Vec};
 
-use uefi::{
-    prelude::*,
-    proto::console::text::Key,
-    table::boot::{EventType, TimerTrigger, Tpl},
-    Char16,
-};
+use uefi::prelude::*;
 
 mod helpers;
 
@@ -35,41 +30,7 @@ extern "efiapi" fn efi_main(image_handle: Handle, mut system_table: SystemTable<
     helpers::setup::init_output();
     helpers::setup::setup();
 
-    let verbose = 'a: {
-        let Ok(timer) = (unsafe {
-            system_table
-                .boot_services()
-                .create_event(EventType::TIMER, Tpl::CALLBACK, None, None)
-        }) else {
-            break 'a false;
-        };
-        if system_table
-            .boot_services()
-            .set_timer(&timer, TimerTrigger::Relative(5 * 1000 * 1000))
-            .is_err()
-        {
-            system_table.boot_services().close_event(timer).unwrap();
-            break 'a false;
-        };
-        let mut events = unsafe {
-            [
-                timer.unsafe_clone(),
-                system_table.stdin().wait_for_key_event().unsafe_clone(),
-            ]
-        };
-        let Ok(index) = system_table.boot_services().wait_for_event(&mut events) else {
-            system_table.boot_services().close_event(timer).unwrap();
-            break 'a false;
-        };
-
-        system_table.boot_services().close_event(timer).unwrap();
-        index != 0
-            && system_table
-                .stdin()
-                .read_key()
-                .map(|v| v == Some(Key::Printable(Char16::try_from('v').unwrap())))
-                .unwrap_or_default()
-    };
+    let verbose = helpers::setup::check_for_verbose();
 
     let (kernel_buf, tkcache_buf) = {
         let mut esp = system_table

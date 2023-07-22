@@ -2,8 +2,14 @@
 
 use amd64::paging::pml4::PML4;
 use uefi::{
-    proto::console::{gop::GraphicsOutput, text::Color},
-    table::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol},
+    proto::console::{
+        gop::GraphicsOutput,
+        text::{Color, Key},
+    },
+    table::boot::{
+        EventType, OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, TimerTrigger, Tpl,
+    },
+    Char16,
 };
 
 pub fn init_output() {
@@ -38,24 +44,70 @@ pub fn setup() {
 }
 
 pub fn get_gop<'a>() -> ScopedProtocol<'a, GraphicsOutput> {
-    let system_table = unsafe { uefi_services::system_table().as_mut() };
-    let handle = system_table
-        .boot_services()
+    let boot_services = unsafe { uefi_services::system_table().as_mut().boot_services() };
+    let handle = boot_services
         .get_handle_for_protocol::<uefi::proto::console::gop::GraphicsOutput>()
         .unwrap();
     unsafe {
-        system_table
-            .boot_services()
+        boot_services
             .open_protocol(
                 OpenProtocolParams {
                     handle,
-                    agent: system_table.boot_services().image_handle(),
+                    agent: boot_services.image_handle(),
                     controller: None,
                 },
                 OpenProtocolAttributes::GetProtocol,
             )
             .unwrap()
     }
+}
+
+pub fn check_for_verbose() -> bool {
+    let system_table = unsafe { uefi_services::system_table().as_mut() };
+    let timer = match unsafe {
+        system_table
+            .boot_services()
+            .create_event(EventType::TIMER, Tpl::CALLBACK, None, None)
+    } {
+        Ok(v) => v,
+        Err(e) => {
+            warn!("Failed to create timer: {e}.");
+            return false;
+        }
+    };
+    if let Err(e) = system_table
+        .boot_services()
+        .set_timer(&timer, TimerTrigger::Relative(5 * 1000 * 1000))
+    {
+        warn!("Failed to set timer: {e}.");
+        system_table.boot_services().close_event(timer).unwrap();
+        return false;
+    };
+    let mut events = unsafe {
+        [
+            timer.unsafe_clone(),
+            system_table.stdin().wait_for_key_event().unsafe_clone(),
+        ]
+    };
+    let i = match system_table.boot_services().wait_for_event(&mut events) {
+        Ok(v) => v,
+        Err(e) => {
+            warn!("Failed to wait for event: {e}.");
+            system_table.boot_services().close_event(timer).unwrap();
+            return false;
+        }
+    };
+
+    system_table.boot_services().close_event(timer).unwrap();
+    if i == 0 {
+        return false;
+    }
+
+    system_table
+        .stdin()
+        .read_key()
+        .map(|v| v == Some(Key::Printable(Char16::try_from('v').unwrap())))
+        .unwrap_or_default()
 }
 
 pub fn get_rsdp() -> *const u8 {
