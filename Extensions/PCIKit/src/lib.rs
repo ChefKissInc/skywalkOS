@@ -82,7 +82,7 @@ pub enum PCICfgOffset {
     MaximumLatency = 0x3F,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum PCIRequest {
     Read8(PCIAddress, u8),
     Read16(PCIAddress, u8),
