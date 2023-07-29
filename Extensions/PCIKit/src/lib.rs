@@ -94,8 +94,8 @@ pub enum PCIRequest {
 
 #[cfg(feature = "ext")]
 impl PCIRequest {
-    pub unsafe fn send(&self, pid: u64) {
-        Message::new(pid, postcard::to_allocvec(self).unwrap().leak()).send();
+    pub unsafe fn send(self, pid: u64) {
+        Message::new(pid, postcard::to_allocvec(&self).unwrap().leak()).send();
     }
 }
 
