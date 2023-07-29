@@ -175,7 +175,7 @@ impl Scheduler {
                 tid,
                 pid,
                 virt_addr + exec.ehdr.e_entry,
-                proc.allocate(super::STACK_SIZE),
+                proc.allocate(super::STACK_SIZE).0,
             ),
         );
 

@@ -10,12 +10,11 @@ pub fn alloc(
     scheduler: &mut Scheduler,
     state: &mut RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
-    let size = state.rsi;
     let process = scheduler.current_process_mut().unwrap();
-    let addr = process.allocate(size);
+    let (addr, pages) = process.allocate(state.rsi);
 
     unsafe {
-        core::ptr::write_bytes(addr as *mut u8, 0, ((size + 0xFFF) / 0x1000 * 0x1000) as _);
+        core::ptr::write_bytes(addr as *mut u8, 0, (pages * 0x1000) as _);
     }
 
     state.rax = addr;

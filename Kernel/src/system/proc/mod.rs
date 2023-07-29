@@ -149,19 +149,20 @@ impl Process {
         trace!("PID {}: Freed message {id}", self.id);
     }
 
-    pub fn allocate(&mut self, size: u64) -> u64 {
+    pub fn allocate(&mut self, size: u64) -> (u64, u64) {
+        let page_count = (size + 0xFFF) / 0x1000;
         let addr = unsafe {
             (*crate::system::state::SYS_STATE.get())
                 .pmm
                 .as_mut()
                 .unwrap()
                 .lock()
-                .alloc((size + 0xFFF) / 0x1000)
+                .alloc(page_count)
                 .unwrap() as u64
         };
         let virt = addr + tungstenkit::USER_PHYS_VIRT_OFFSET;
         self.track_alloc(virt, size, Some(true));
-        virt
+        (virt, page_count)
     }
 }
 
