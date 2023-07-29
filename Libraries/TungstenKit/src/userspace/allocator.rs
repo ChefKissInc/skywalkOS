@@ -13,7 +13,7 @@ unsafe impl core::alloc::GlobalAlloc for Allocator {
         core::arch::asm!(
             "int 249",
             in("rdi") SystemCall::Allocate as u64,
-            in("rsi") layout.size() as u64,
+            in("rsi") layout.pad_to_align().size() as u64,
             out("rax") ptr,
             options(nostack, preserves_flags),
         );
