@@ -10,7 +10,6 @@ impl log::Log for Logger {
     }
 
     fn log(&self, record: &log::Record) {
-        #[cfg(debug_assertions)]
         writeln!(
             crate::system::serial::SERIAL.lock(),
             "{} {} > {}",
@@ -41,7 +40,6 @@ impl log::Log for Logger {
 pub static LOGGER: Logger = Logger;
 
 pub fn init() {
-    #[cfg(debug_assertions)]
     crate::system::serial::SERIAL.lock().init();
 
     log::set_logger(&LOGGER)

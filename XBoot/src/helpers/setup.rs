@@ -24,7 +24,7 @@ pub fn setup() {
     unsafe { super::PML4::get().map_higher_half() }
 }
 
-pub fn check_for_verbose() -> bool {
+pub fn check_boot_flags() -> (bool, bool) {
     let st = unsafe { uefi_services::system_table().as_mut() };
     let timer = match unsafe {
         st.boot_services()
@@ -33,7 +33,7 @@ pub fn check_for_verbose() -> bool {
         Ok(v) => v,
         Err(e) => {
             warn!("Failed to create timer: {e}.");
-            return false;
+            return (false, false);
         }
     };
     if let Err(e) = st
@@ -42,7 +42,7 @@ pub fn check_for_verbose() -> bool {
     {
         warn!("Failed to set timer: {e}.");
         st.boot_services().close_event(timer).unwrap();
-        return false;
+        return (false, false);
     };
     let mut events = unsafe {
         [
@@ -55,19 +55,31 @@ pub fn check_for_verbose() -> bool {
         Err(e) => {
             warn!("Failed to wait for event: {e}.");
             st.boot_services().close_event(timer).unwrap();
-            return false;
+            return (false, false);
         }
     };
 
     st.boot_services().close_event(timer).unwrap();
     if i == 0 {
-        return false;
+        return (false, false);
     }
 
-    st.stdin()
-        .read_key()
-        .map(|v| v == Some(Key::Printable(Char16::try_from('v').unwrap())))
-        .unwrap_or_default()
+    let mut verbose = false;
+    let mut serial_enabled = false;
+    while let Ok(v) = st.stdin().read_key() {
+        match v {
+            Some(Key::Printable(v)) if v == Char16::try_from('v').unwrap() => {
+                verbose = true;
+                break;
+            }
+            Some(Key::Printable(v)) if v == Char16::try_from('s').unwrap() => {
+                serial_enabled = true;
+                break;
+            }
+            _ => {}
+        }
+    }
+    (verbose, serial_enabled)
 }
 
 pub fn get_rsdp() -> *const u8 {

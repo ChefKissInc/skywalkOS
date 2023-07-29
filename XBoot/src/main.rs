@@ -27,7 +27,7 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
     let fb_info = helpers::fb::init();
     helpers::setup::setup();
 
-    let verbose = helpers::setup::check_for_verbose();
+    let (verbose, serial_enabled) = helpers::setup::check_boot_flags();
 
     let (kernel_buf, tkcache_buf) = {
         let mut esp = st.boot_services().get_image_file_system(image).unwrap();
@@ -51,6 +51,7 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
     let boot_info = Box::leak(Box::new(sulphur_dioxide::BootInfo::new(
         symbols.leak(),
         verbose,
+        serial_enabled,
         fb_info.map(|v| helpers::phys_to_kern_ref(Box::leak(v))),
         helpers::setup::get_rsdp(),
         helpers::phys_to_kern_slice_ref(tkcache_buf),

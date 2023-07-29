@@ -2,7 +2,6 @@
 
 macro_rules! exc_msg {
     ($name:expr, $msg:expr, $regs:expr) => {
-        #[cfg(debug_assertions)]
         while crate::system::serial::SERIAL.is_locked() {
             crate::system::serial::SERIAL.force_unlock()
         }
@@ -20,7 +19,6 @@ macro_rules! exc_msg {
                 .current_process_mut()
                 .unwrap()
                 .image_base;
-            #[cfg(debug_assertions)]
             writeln!(
                 crate::system::serial::SERIAL.lock(),
                 "Received {} exception in user-land: {}",
@@ -28,9 +26,7 @@ macro_rules! exc_msg {
                 $msg
             )
             .unwrap();
-            #[cfg(debug_assertions)]
             writeln!(crate::system::serial::SERIAL.lock(), "{}", $regs).unwrap();
-            #[cfg(debug_assertions)]
             writeln!(
                 crate::system::serial::SERIAL.lock(),
                 "Image Base: 0x{image_base:>016X}"

@@ -31,7 +31,6 @@ super::generic_exception!(vmm_com_handler, "VMM communication");
 super::generic_exception!(security_handler, "security");
 
 pub unsafe extern "sysv64" fn spurious(_regs: &mut crate::system::RegisterState) {
-    #[cfg(debug_assertions)]
     while crate::system::serial::SERIAL.is_locked() {
         crate::system::serial::SERIAL.force_unlock();
     }

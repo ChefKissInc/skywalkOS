@@ -1,15 +1,18 @@
-[tasks.make]
-command = "cargo"
-args = ["build", "--out-dir", "../../target/Extensions"]
-
-[tasks.make-release]
-command = "cargo"
-args = ["build", "--out-dir", "../../target/Extensions", "--release"]
-
-[config]
-default_to_workspace = true
-
 [env]
+CARGO_BUILD_PROFILE = "dev"
 CARGO_MAKE_WORKSPACE_EMULATION = true
 CARGO_MAKE_CRATE_WORKSPACE_MEMBERS = ["AC97Audio", "PCIKit", "TKTest"]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+
+[env.production]
+CARGO_BUILD_PROFILE = "release"
+
+[tasks.make]
+command = "cargo"
+args = [
+    "build",
+    "--out-dir",
+    "../../target/Extensions",
+    "--profile",
+    "${CARGO_BUILD_PROFILE}",
+]

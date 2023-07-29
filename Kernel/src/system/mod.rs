@@ -6,7 +6,6 @@ pub mod gdt;
 mod panic;
 pub mod pmm;
 pub mod proc;
-#[cfg(debug_assertions)]
 pub mod serial;
 pub mod state;
 pub mod terminal;

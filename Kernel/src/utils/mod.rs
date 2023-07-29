@@ -42,6 +42,7 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     state.kern_symbols = Some(boot_info.kern_symbols);
     state.verbose = boot_info.verbose;
+    state.serial_enabled = boot_info.serial_enabled;
 
     unsafe {
         crate::system::gdt::GDTR.load();

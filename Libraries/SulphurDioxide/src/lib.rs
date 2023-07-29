@@ -67,6 +67,7 @@ pub struct BootInfo {
     pub revision: u64,
     pub kern_symbols: &'static [KernSymbol],
     pub verbose: bool,
+    pub serial_enabled: bool,
     pub memory_map: &'static [MemoryEntry],
     pub frame_buffer: Option<&'static FrameBufferInfo>,
     pub acpi_rsdp: *const u8,
@@ -79,6 +80,7 @@ impl BootInfo {
     pub fn new(
         kern_symbols: &'static [KernSymbol],
         verbose: bool,
+        serial_enabled: bool,
         frame_buffer: Option<&'static FrameBufferInfo>,
         acpi_rsdp: *const u8,
         tkcache: &'static [u8],
@@ -87,6 +89,7 @@ impl BootInfo {
             revision: CURRENT_REVISION,
             kern_symbols,
             verbose,
+            serial_enabled,
             memory_map: Default::default(),
             frame_buffer,
             acpi_rsdp,

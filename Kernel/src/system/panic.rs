@@ -51,7 +51,6 @@ extern "C" fn callback(
 #[panic_handler]
 pub fn panic(info: &core::panic::PanicInfo) -> ! {
     crate::cli!();
-    #[cfg(debug_assertions)]
     while super::serial::SERIAL.is_locked() {
         unsafe { super::serial::SERIAL.force_unlock() }
     }

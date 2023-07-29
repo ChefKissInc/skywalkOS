@@ -17,7 +17,6 @@ pub fn kprint(state: &RegisterState) -> ControlFlow<Option<TerminationReason>> {
         return ControlFlow::Break(Some(TerminationReason::MalformedBody));
     };
 
-    #[cfg(debug_assertions)]
     write!(crate::system::serial::SERIAL.lock(), "{s}").unwrap();
 
     if let Some(v) = unsafe { (*crate::system::state::SYS_STATE.get()).terminal.as_mut() } {

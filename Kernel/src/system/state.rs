@@ -26,6 +26,7 @@ pub struct OSDTEntry {
 pub struct SystemState {
     pub kern_symbols: Option<&'static [sulphur_dioxide::KernSymbol]>,
     pub verbose: bool,
+    pub serial_enabled: bool,
     pub pmm: Option<spin::Mutex<BitmapAllocator>>,
     pub pml4: Option<&'static mut PageTableLvl4>,
     pub terminal: Option<Terminal>,
@@ -46,6 +47,7 @@ impl SystemState {
         Self {
             kern_symbols: None,
             verbose: cfg!(debug_assertions),
+            serial_enabled: false,
             pmm: None,
             pml4: None,
             terminal: None,

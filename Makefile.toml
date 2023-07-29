@@ -1,48 +1,44 @@
+[env]
+CARGO_BUILD_PROFILE = "dev"
+
+[env.production]
+CARGO_BUILD_PROFILE = "release"
+
 [tasks.build-xboot]
-command = "cargo"
 cwd = "XBoot"
-args = ["build", "--out-dir", "../Drive/EFI/BOOT"]
+command = "cargo"
+args = [
+    "build",
+    "--out-dir",
+    "../Drive/EFI/BOOT",
+    "--profile",
+    "${CARGO_BUILD_PROFILE}",
+]
 
 [tasks.build-kernel]
-command = "cargo"
 cwd = "Kernel"
-args = ["build", "--out-dir", "../Drive/System"]
-
-[tasks.build-xboot-release]
 command = "cargo"
-cwd = "XBoot"
-args = ["build", "--out-dir", "../Drive/EFI/BOOT", "--release"]
-
-[tasks.build-kernel-release]
-command = "cargo"
-cwd = "Kernel"
-args = ["build", "--out-dir", "../Drive/System", "--release"]
+args = [
+    "build",
+    "--out-dir",
+    "../Drive/System",
+    "--profile",
+    "${CARGO_BUILD_PROFILE}",
+]
 
 [tasks.make-tkcache]
-command = "cargo"
+dependencies = ["make-boot-exts"]
 cwd = "Utilities/TKCacheBuilder"
+command = "cargo"
 args = ["run", "--release"]
 
 [tasks.make-boot-exts]
-command = "cargo"
 cwd = "Extensions"
-args = ["make", "make"]
-
-[tasks.make-boot-exts-release]
 command = "cargo"
-cwd = "Extensions"
-args = ["make", "make-release"]
+args = ["make", "--profile", "${CARGO_MAKE_PROFILE}", "make"]
 
 [tasks.make]
-dependencies = ["build-xboot", "build-kernel", "make-boot-exts", "make-tkcache"]
-
-[tasks.make-release]
-dependencies = [
-    "build-xboot-release",
-    "build-kernel-release",
-    "make-boot-exts-release",
-    "make-tkcache",
-]
+dependencies = ["build-xboot", "build-kernel", "make-tkcache"]
 
 [tasks.run]
 command = "qemu-system-x86_64"
@@ -65,26 +61,3 @@ args = [
     "ac97,audiodev=audio",
 ]
 dependencies = ["make"]
-
-[tasks.run-release]
-command = "qemu-system-x86_64"
-args = [
-    "-M",
-    "q35",
-    "-m",
-    "1G",
-    "-drive",
-    "if=pflash,format=raw,readonly=on,unit=0,file=${@}/OVMF_CODE.fd",
-    "-drive",
-    "if=pflash,format=raw,unit=1,file=${@}/OVMF_VARS.fd",
-    "-hda",
-    "fat:rw:Drive",
-    "-audiodev",
-    "coreaudio,id=audio,out.frequency=48000",
-    "-device",
-    "ac97,audiodev=audio",
-]
-dependencies = ["make-release"]
-
-[config]
-default_to_workspace = false
