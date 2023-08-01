@@ -5,13 +5,13 @@
 use std::path::PathBuf;
 
 fn main() {
-    let cache = tungstenkit::TKCache::new(
+    let cache = fireworkkit::FKCache::new(
         std::fs::read_dir("../../Extensions")
             .unwrap()
             .filter_map(Result::ok)
             .filter(|v| v.path().is_dir())
             .map(|ent| {
-                let info: tungstenkit::TKInfo =
+                let info: fireworkkit::FKInfo =
                     ron::from_str(&std::fs::read_to_string(ent.path().join("Info.ron")).unwrap())
                         .unwrap();
                 println!("{}", info.identifier);
@@ -24,7 +24,7 @@ fn main() {
             .collect(),
     );
     std::fs::write(
-        "../../Drive/System/Extensions.tkcache",
+        "../../Drive/System/Extensions.fkcache",
         postcard::to_allocvec(&cache).unwrap(),
     )
     .unwrap();

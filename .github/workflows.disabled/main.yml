@@ -57,4 +57,4 @@ jobs:
         with:
           toolchain: nightly
           command: test
-          args: --workspace --exclude kernel --exclude xboot --exclude tkpci --exclude tktest
+          args: --workspace --exclude kernel --exclude xboot --exclude fkpci --exclude fktest

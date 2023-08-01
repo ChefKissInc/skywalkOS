@@ -24,4 +24,4 @@ num_enum = { version = "0.6.1", default-features = false }
 pcikit = { path = "../PCIKit", features = ["ext"] }
 postcard = { version = "1.0.6", default-features = false, features = ["alloc"] }
 serde = { version = "1.0.177", default-features = false, features = ["derive"] }
-tungstenkit = { path = "../../Libraries/TungstenKit", features = ["userspace"] }
+fireworkkit = { path = "../../Libraries/FireworkKit", features = ["userspace"] }

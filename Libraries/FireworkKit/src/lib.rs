@@ -28,16 +28,16 @@ use serde::{Deserialize, Serialize};
 pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC000_0000;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct TKInfo {
+pub struct FKInfo {
     pub identifier: String,
     pub personalities: HashMap<String, HashMap<String, osvalue::OSValue>>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct TKCache(pub Vec<(TKInfo, Vec<u8>)>);
+pub struct FKCache(pub Vec<(FKInfo, Vec<u8>)>);
 
-impl TKCache {
-    pub const fn new(inner: Vec<(TKInfo, Vec<u8>)>) -> Self {
+impl FKCache {
+    pub const fn new(inner: Vec<(FKInfo, Vec<u8>)>) -> Self {
         Self(inner)
     }
 }

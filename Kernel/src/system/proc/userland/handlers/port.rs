@@ -3,7 +3,7 @@
 use core::ops::ControlFlow;
 
 use amd64::io::port::PortIO;
-use tungstenkit::{syscall::AccessSize, TerminationReason};
+use fireworkkit::{syscall::AccessSize, TerminationReason};
 
 use crate::system::RegisterState;
 

@@ -3,7 +3,7 @@
 use core::ops::ControlFlow;
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
-use tungstenkit::{
+use fireworkkit::{
     msg::{KernelMessage, Message},
     TerminationReason,
 };
@@ -67,7 +67,7 @@ pub fn send(
         unsafe {
             process.cr3.map_pages(
                 addr,
-                addr - tungstenkit::USER_PHYS_VIRT_OFFSET,
+                addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
                 (size + 0xFFF) / 0x1000,
                 PageTableEntry::new().with_present(true).with_user(true),
             );

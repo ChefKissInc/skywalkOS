@@ -2,7 +2,7 @@
 
 use core::ops::ControlFlow;
 
-use tungstenkit::{
+use fireworkkit::{
     osdtentry::{GetOSDTEntryReqType, SetOSDTEntryPropReq},
     TerminationReason,
 };
@@ -83,7 +83,7 @@ pub fn set_prop(
     };
     ent.lock().properties.insert(v.0, v.1);
     drop(dt_index);
-    crate::system::tkext::handle_change(scheduler, state.rsi.into());
+    crate::system::fkext::handle_change(scheduler, state.rsi.into());
 
     ControlFlow::Continue(())
 }

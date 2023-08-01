@@ -42,16 +42,16 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Extensions/TKTest"
+    directory: "/Extensions/FKTest"
     labels:
       - "Enhancement"
-      - "Project:TKTest"
+      - "Project:FKTest"
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Extensions/TKPCI"
+    directory: "/Extensions/FKPCI"
     labels:
       - "Enhancement"
-      - "Project:TKPCI"
+      - "Project:FKPCI"
     schedule:
       interval: "daily"

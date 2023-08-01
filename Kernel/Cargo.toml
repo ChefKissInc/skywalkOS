@@ -41,7 +41,7 @@ spin = { version = "0.9.8", default-features = false, features = [
     "use_ticket_mutex",
 ] }
 sulphur-dioxide = { path = "../Libraries/SulphurDioxide" }
-tungstenkit = { path = "../Libraries/TungstenKit" }
+fireworkkit = { path = "../Libraries/FireworkKit" }
 unwinding = { version = "0.1.7", default-features = false, features = [
     "fde-static",
     "hide-trace",

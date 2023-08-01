@@ -2,8 +2,8 @@
 
 use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 
+use fireworkkit::osdtentry::OSDTENTRY_NAME_KEY;
 use hashbrown::HashMap;
-use tungstenkit::osdtentry::OSDTENTRY_NAME_KEY;
 
 use crate::{
     acpi::{tables::rsdp::RootSystemDescPtr, ACPIState},

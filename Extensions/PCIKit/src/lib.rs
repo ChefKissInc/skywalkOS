@@ -4,11 +4,11 @@
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 #![allow(clippy::multiple_crate_versions, clippy::missing_safety_doc)]
 
+#[cfg(feature = "ext")]
+use fireworkkit::msg::Message;
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "ext")]
-use tungstenkit::msg::Message;
 
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 pub struct PCIAddress {

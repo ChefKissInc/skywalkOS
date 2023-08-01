@@ -13,7 +13,7 @@
 )]
 #![allow(clippy::multiple_crate_versions)]
 
-use tungstenkit::TKCache;
+use fireworkkit::FKCache;
 
 #[macro_use]
 extern crate alloc;
@@ -58,11 +58,11 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
 
     system::proc::userland::setup();
 
-    let tkcache: TKCache = postcard::from_bytes(boot_info.tkcache).unwrap();
-    state.tkcache = Some(tkcache.into());
+    let fkcache: FKCache = postcard::from_bytes(boot_info.fkcache).unwrap();
+    state.fkcache = Some(fkcache.into());
     state.scheduler = Some(system::proc::scheduler::Scheduler::new(&acpi::get_hpet(state)).into());
 
-    system::tkext::spawn_initial_matches();
+    system::fkext::spawn_initial_matches();
 
     debug!("I'm out of here!");
     system::proc::scheduler::Scheduler::unmask();

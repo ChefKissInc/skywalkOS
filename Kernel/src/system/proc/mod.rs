@@ -3,8 +3,8 @@
 use alloc::{boxed::Box, collections::VecDeque, string::String, vec::Vec};
 
 use amd64::paging::{pml4::PML4, PageTableEntry};
+use fireworkkit::msg::Message;
 use hashbrown::HashMap;
-use tungstenkit::msg::Message;
 
 use super::gdt::{PrivilegeLevel, SegmentSelector};
 
@@ -97,7 +97,7 @@ impl Process {
             unsafe {
                 self.cr3.map_pages(
                     addr,
-                    addr - tungstenkit::USER_PHYS_VIRT_OFFSET,
+                    addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
                     (size + 0xFFF) / 0x1000,
                     PageTableEntry::new()
                         .with_present(true)
@@ -109,7 +109,7 @@ impl Process {
     }
 
     pub fn track_kernelside_alloc(&mut self, addr: u64, size: u64) -> u64 {
-        let addr = addr - amd64::paging::PHYS_VIRT_OFFSET + tungstenkit::USER_PHYS_VIRT_OFFSET;
+        let addr = addr - amd64::paging::PHYS_VIRT_OFFSET + fireworkkit::USER_PHYS_VIRT_OFFSET;
         self.track_alloc(addr, size, Some(false));
         addr
     }
@@ -126,7 +126,7 @@ impl Process {
                 .unwrap()
                 .lock()
                 .free(
-                    (addr - tungstenkit::USER_PHYS_VIRT_OFFSET) as *mut _,
+                    (addr - fireworkkit::USER_PHYS_VIRT_OFFSET) as *mut _,
                     page_count,
                 );
         }
@@ -160,7 +160,7 @@ impl Process {
                 .alloc(page_count)
                 .unwrap() as u64
         };
-        let virt = addr + tungstenkit::USER_PHYS_VIRT_OFFSET;
+        let virt = addr + fireworkkit::USER_PHYS_VIRT_OFFSET;
         self.track_alloc(virt, size, Some(true));
         (virt, page_count)
     }

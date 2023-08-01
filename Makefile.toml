@@ -26,9 +26,9 @@ args = [
     "${CARGO_BUILD_PROFILE}",
 ]
 
-[tasks.make-tkcache]
+[tasks.make-fkcache]
 dependencies = ["make-boot-exts"]
-cwd = "Utilities/TKCacheBuilder"
+cwd = "Utilities/FKCacheBuilder"
 command = "cargo"
 args = ["run", "--release"]
 
@@ -38,7 +38,7 @@ command = "cargo"
 args = ["make", "--profile", "${CARGO_MAKE_PROFILE}", "make"]
 
 [tasks.make]
-dependencies = ["build-xboot", "build-kernel", "make-tkcache"]
+dependencies = ["build-xboot", "build-kernel", "make-fkcache"]
 
 [tasks.run]
 command = "qemu-system-x86_64"

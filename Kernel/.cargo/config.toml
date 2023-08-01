@@ -4,4 +4,4 @@ build-std-features = ["compiler-builtins-mem"]
 unstable-options = true
 
 [build]
-target = "../x86_64-kernel-tungsten.json"
+target = "../x86_64-kernel-firework.json"

@@ -14,9 +14,9 @@ extern crate itertools;
 
 use alloc::{boxed::Box, string::String};
 
+use fireworkkit::{msg::Message, osdtentry::OSDTEntry, osvalue::OSValue, userspace::port::Port};
 use hashbrown::HashMap;
 use pcikit::{PCIAddress, PCICfgOffset, PCIRequest};
-use tungstenkit::{msg::Message, osdtentry::OSDTEntry, osvalue::OSValue, userspace::port::Port};
 
 trait PCIControllerIO: Sync {
     unsafe fn read8(&self, addr: PCIAddress, off: u8) -> u8;
@@ -160,7 +160,7 @@ impl PCIControllerIO for PCIPortIO {
 
 #[no_mangle]
 extern "C" fn _start(instance: OSDTEntry) -> ! {
-    tungstenkit::userspace::logger::init();
+    fireworkkit::userspace::logger::init();
 
     let controller = Box::new(PCIController);
     for (bus, slot) in iproduct!(0..=255, 0..32) {

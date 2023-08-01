@@ -3,11 +3,11 @@
 use alloc::vec::Vec;
 use core::hash::Hash;
 
-use hashbrown::HashMap;
-use tungstenkit::{
-    osdtentry::{OSDTENTRY_NAME_KEY, TKEXT_MATCH_KEY, TKEXT_PROC_KEY},
-    TKInfo,
+use fireworkkit::{
+    osdtentry::{FKEXT_MATCH_KEY, FKEXT_PROC_KEY, OSDTENTRY_NAME_KEY},
+    FKInfo,
 };
+use hashbrown::HashMap;
 
 use super::proc::scheduler::Scheduler;
 use crate::utils::incr_id::IncrementalIDGen;
@@ -20,16 +20,16 @@ fn is_subset<K: Eq + Hash, V: Eq>(a: &HashMap<K, V>, b: &HashMap<K, V>) -> bool 
     a.iter().all(|(k, v)| b.get(k) == Some(v))
 }
 
-fn load_tkext(
+fn load_fkext(
     ent: &mut super::state::OSDTEntry,
-    info: &TKInfo,
+    info: &FKInfo,
     personality: &str,
     payload: &[u8],
     dt_id_gen: &mut IncrementalIDGen,
     scheduler: &mut Scheduler,
 ) -> (u64, spin::Mutex<super::state::OSDTEntry>) {
     debug!(
-        "TungstenKit extension {} matched <{}> for personality {personality}",
+        "FireworkKit extension {} matched <{}> for personality {personality}",
         info.identifier, ent.id
     );
     let thread = scheduler.spawn_proc(payload);
@@ -42,10 +42,10 @@ fn load_tkext(
                 info.identifier.split('.').last().unwrap().into(),
             ),
             (
-                TKEXT_MATCH_KEY.into(),
+                FKEXT_MATCH_KEY.into(),
                 (info.identifier.as_str(), personality).into(),
             ),
-            (TKEXT_PROC_KEY.into(), thread.pid.into()),
+            (FKEXT_PROC_KEY.into(), thread.pid.into()),
         ]),
         ..Default::default()
     };
@@ -54,7 +54,7 @@ fn load_tkext(
     (new.id, new.into())
 }
 
-pub fn handle_change(scheduler: &mut Scheduler, ent: tungstenkit::osdtentry::OSDTEntry) {
+pub fn handle_change(scheduler: &mut Scheduler, ent: fireworkkit::osdtentry::OSDTEntry) {
     let state = unsafe { &*super::state::SYS_STATE.get() };
 
     let dt_index = state.dt_index.as_ref().unwrap();
@@ -63,8 +63,8 @@ pub fn handle_change(scheduler: &mut Scheduler, ent: tungstenkit::osdtentry::OSD
     let new: Vec<_> = {
         let dt_index = dt_index.read();
         let mut ent = dt_index.get::<u64>(&ent.into()).unwrap().lock();
-        let tkcache = &state.tkcache.as_ref().unwrap().lock().0;
-        tkcache
+        let fkcache = &state.fkcache.as_ref().unwrap().lock().0;
+        fkcache
             .iter()
             .filter_map(|(info, payload)| {
                 for (personality, matching) in &info.personalities {
@@ -73,9 +73,9 @@ pub fn handle_change(scheduler: &mut Scheduler, ent: tungstenkit::osdtentry::OSD
                         .children
                         .iter()
                         .filter_map(|id| dt_index.get::<u64>(&id.into()))
-                        .any(|v| v.lock().properties.get(TKEXT_MATCH_KEY) == Some(&match_));
+                        .any(|v| v.lock().properties.get(FKEXT_MATCH_KEY) == Some(&match_));
                     if !attached && is_subset(matching, &ent.properties) {
-                        return Some(load_tkext(
+                        return Some(load_fkext(
                             &mut ent,
                             info,
                             personality,
@@ -102,14 +102,14 @@ pub fn spawn_initial_matches() {
 
     let mut newly_matched = vec![];
     for ((info, payload), mut ent) in iproduct!(
-        &state.tkcache.as_ref().unwrap().lock().0,
+        &state.fkcache.as_ref().unwrap().lock().0,
         dt_index.read().values()
     )
     .map(|(info, ent)| (info, ent.lock()))
     {
         for (personality, matching) in &info.personalities {
             if is_subset(matching, &ent.properties) {
-                let new = load_tkext(
+                let new = load_fkext(
                     &mut ent,
                     info,
                     personality,

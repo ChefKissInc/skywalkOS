@@ -34,7 +34,7 @@ impl PML4 for UserPML4 {
                 .get_mut()
         };
         scheduler.processes.get_mut(&self.1).unwrap().track_alloc(
-            phys + tungstenkit::USER_PHYS_VIRT_OFFSET,
+            phys + fireworkkit::USER_PHYS_VIRT_OFFSET,
             size_of::<Self>() as _,
             None,
         );

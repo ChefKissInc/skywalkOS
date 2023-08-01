@@ -13,16 +13,16 @@ extern crate alloc;
 use alloc::string::String;
 use core::fmt::Write;
 
-use modular_bitfield::prelude::*;
-use num_enum::IntoPrimitive;
-use serde::{Deserialize, Serialize};
-use tungstenkit::{
+use fireworkkit::{
     msg::Message,
-    osdtentry::{OSDTEntry, OSDTENTRY_NAME_KEY, TKEXT_PROC_KEY},
+    osdtentry::{OSDTEntry, FKEXT_PROC_KEY, OSDTENTRY_NAME_KEY},
     osvalue::OSValue,
     syscall::SystemCall,
     userspace::{logger::KWriter, port::Port},
 };
+use modular_bitfield::prelude::*;
+use num_enum::IntoPrimitive;
+use serde::{Deserialize, Serialize};
 
 #[derive(IntoPrimitive)]
 #[repr(u8)]
@@ -144,7 +144,7 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
 
 #[no_mangle]
 extern "C" fn _start(instance: OSDTEntry) -> ! {
-    tungstenkit::userspace::logger::init();
+    fireworkkit::userspace::logger::init();
 
     let this = PS2Ctl::new();
     this.init();
@@ -195,7 +195,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                         .unwrap()
                         .parent()
                         .unwrap()
-                        .get_property(TKEXT_PROC_KEY)
+                        .get_property(FKEXT_PROC_KEY)
                         .unwrap()
                         .try_into()
                         .unwrap();

@@ -12,15 +12,15 @@ extern crate alloc;
 
 use alloc::{collections::VecDeque, string::String, vec::Vec};
 
-use hashbrown::HashMap;
-use pcikit::{PCIAddress, PCICfgOffset, PCICommand, PCIDevice};
-use tungstenkit::{
+use fireworkkit::{
     msg::Message,
-    osdtentry::{OSDTEntry, TKEXT_PROC_KEY},
+    osdtentry::{OSDTEntry, FKEXT_PROC_KEY},
     osvalue::OSValue,
     syscall::SystemCall,
     userspace::port::Port,
 };
+use hashbrown::HashMap;
+use pcikit::{PCIAddress, PCICfgOffset, PCICommand, PCIDevice};
 
 mod regs;
 
@@ -132,9 +132,9 @@ impl AC97 {
     pub unsafe fn set_bdl(&mut self) {
         self.buf.make_contiguous();
         self.bdl[0].addr =
-            (self.buf.as_slices().0.as_ptr() as u64 - tungstenkit::USER_PHYS_VIRT_OFFSET) as _;
+            (self.buf.as_slices().0.as_ptr() as u64 - fireworkkit::USER_PHYS_VIRT_OFFSET) as _;
         self.pcm_out_bdl_addr
-            .write((self.bdl.as_ptr() as u64 - tungstenkit::USER_PHYS_VIRT_OFFSET) as _);
+            .write((self.bdl.as_ptr() as u64 - fireworkkit::USER_PHYS_VIRT_OFFSET) as _);
         self.pcm_out_bdl_last_ent.write(0);
     }
 
@@ -163,7 +163,7 @@ impl AC97 {
 
 #[no_mangle]
 extern "C" fn _start(instance: OSDTEntry) -> ! {
-    tungstenkit::userspace::logger::init();
+    fireworkkit::userspace::logger::init();
 
     let ent = instance.parent().unwrap();
     let mut addr = ent.get_property("Address");
@@ -184,7 +184,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
     let pid: u64 = ent
         .parent()
         .unwrap()
-        .get_property(TKEXT_PROC_KEY)
+        .get_property(FKEXT_PROC_KEY)
         .unwrap()
         .try_into()
         .unwrap();

@@ -2,7 +2,7 @@
 
 use core::{fmt::Write, ops::ControlFlow};
 
-use tungstenkit::TerminationReason;
+use fireworkkit::TerminationReason;
 
 use crate::system::{gdt::PrivilegeLevel, proc::scheduler::Scheduler, RegisterState};
 

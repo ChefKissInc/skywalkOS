@@ -1,4 +1,4 @@
-TKInfo (
+FKInfo (
     identifier: "com.ChefKiss.AC97Audio",
     personalities: {
         "Master": {

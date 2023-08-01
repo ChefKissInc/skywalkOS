@@ -17,10 +17,10 @@ pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemSt
 
 #[derive(Debug, Default, Clone)]
 pub struct OSDTEntry {
-    pub parent: Option<tungstenkit::osdtentry::OSDTEntry>,
+    pub parent: Option<fireworkkit::osdtentry::OSDTEntry>,
     pub id: u64,
-    pub properties: HashMap<String, tungstenkit::osvalue::OSValue>,
-    pub children: Vec<tungstenkit::osdtentry::OSDTEntry>,
+    pub properties: HashMap<String, fireworkkit::osvalue::OSValue>,
+    pub children: Vec<fireworkkit::osdtentry::OSDTEntry>,
 }
 
 pub struct SystemState {
@@ -38,7 +38,7 @@ pub struct SystemState {
     pub in_panic: core::sync::atomic::AtomicBool,
     pub dt_index: Option<spin::RwLock<HashMap<u64, spin::Mutex<OSDTEntry>>>>,
     pub dt_id_gen: Option<spin::Mutex<IncrementalIDGen>>,
-    pub tkcache: Option<spin::Mutex<tungstenkit::TKCache>>,
+    pub fkcache: Option<spin::Mutex<fireworkkit::FKCache>>,
 }
 
 impl SystemState {
@@ -59,7 +59,7 @@ impl SystemState {
             in_panic: core::sync::atomic::AtomicBool::new(false),
             dt_index: None,
             dt_id_gen: None,
-            tkcache: None,
+            fkcache: None,
         }
     }
 }

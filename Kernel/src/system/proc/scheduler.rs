@@ -146,7 +146,7 @@ impl Scheduler {
         }
 
         let virt_addr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET
-            + tungstenkit::USER_PHYS_VIRT_OFFSET;
+            + fireworkkit::USER_PHYS_VIRT_OFFSET;
         for v in exec.section_headers().unwrap().iter() {
             let Ok(relas) = exec.section_data_as_relas(&v) else {
                 continue;

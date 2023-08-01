@@ -29,18 +29,18 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
 
     let (verbose, serial_enabled) = helpers::setup::check_boot_flags();
 
-    let (kernel_buf, tkcache_buf) = {
+    let (kernel_buf, fkcache_buf) = {
         let mut esp = st.boot_services().get_image_file_system(image).unwrap();
         (
             esp.read(cstr16!("\\System\\Kernel.exec")).unwrap().leak(),
-            esp.read(cstr16!("\\System\\Extensions.tkcache"))
+            esp.read(cstr16!("\\System\\Extensions.fkcache"))
                 .unwrap()
                 .leak(),
         )
     };
 
     let mut mem_mgr = helpers::mem::MemoryManager::new();
-    mem_mgr.allocate((tkcache_buf.as_ptr() as _, tkcache_buf.len() as _));
+    mem_mgr.allocate((fkcache_buf.as_ptr() as _, fkcache_buf.len() as _));
 
     let (kernel_main, symbols) = helpers::elf::parse(&mut mem_mgr, kernel_buf);
 
@@ -54,7 +54,7 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
         serial_enabled,
         fb_info.map(|v| helpers::phys_to_kern_ref(Box::leak(v))),
         helpers::setup::get_rsdp(),
-        helpers::phys_to_kern_slice_ref(tkcache_buf),
+        helpers::phys_to_kern_slice_ref(fkcache_buf),
     )));
 
     trace!("Exiting boot services and jumping to kernel...");

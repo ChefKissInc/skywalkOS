@@ -2,7 +2,7 @@
 
 use core::ops::ControlFlow;
 
-use tungstenkit::{
+use fireworkkit::{
     msg::{KernelMessage, Message},
     syscall::SystemCall,
     TerminationReason,

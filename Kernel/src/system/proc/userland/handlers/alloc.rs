@@ -2,7 +2,7 @@
 
 use core::ops::ControlFlow;
 
-use tungstenkit::TerminationReason;
+use fireworkkit::TerminationReason;
 
 use crate::system::{proc::scheduler::Scheduler, RegisterState};
 
