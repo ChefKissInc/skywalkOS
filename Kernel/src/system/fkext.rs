@@ -32,7 +32,7 @@ fn load_fkext(
         "FireworkKit extension {} matched <{}> for personality {personality}",
         info.identifier, ent.id
     );
-    let thread = scheduler.spawn_proc(payload);
+    let thread = scheduler.spawn_proc(info.identifier.clone(), payload);
     let new = super::state::OSDTEntry {
         id: dt_id_gen.next(),
         parent: Some(ent.id.into()),

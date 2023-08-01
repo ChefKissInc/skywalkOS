@@ -11,14 +11,14 @@ macro_rules! exc_msg {
             panic!("Received {} exception: {}", $name, $msg);
         } else {
             use core::fmt::Write;
-            let image_base = (*crate::system::state::SYS_STATE.get())
+            let mut scheduler = (*crate::system::state::SYS_STATE.get())
                 .scheduler
                 .as_ref()
                 .unwrap()
-                .lock()
-                .current_process_mut()
-                .unwrap()
-                .image_base;
+                .lock();
+            let cur_proc = scheduler.current_process_mut().unwrap();
+            let image_base = cur_proc.image_base;
+            let proc_path = &cur_proc.path;
             writeln!(
                 crate::system::serial::SERIAL.lock(),
                 "Received {} exception in user-land: {}",
@@ -32,11 +32,17 @@ macro_rules! exc_msg {
                 "Image Base: 0x{image_base:>016X}"
             )
             .unwrap();
+            writeln!(
+                crate::system::serial::SERIAL.lock(),
+                "Process Path: {proc_path}"
+            )
+            .unwrap();
 
             if let Some(v) = unsafe { (*crate::system::state::SYS_STATE.get()).terminal.as_mut() } {
                 writeln!(v, "Received {} exception in user-land: {}", $name, $msg).unwrap();
                 writeln!(v, "{}", $regs).unwrap();
                 writeln!(v, "Image Base: 0x{image_base:>016X}").unwrap();
+                writeln!(v, "Process Path: {proc_path}").unwrap();
             }
         }
     };

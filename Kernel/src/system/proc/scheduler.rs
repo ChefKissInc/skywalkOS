@@ -119,7 +119,7 @@ impl Scheduler {
         unsafe { core::arch::asm!("int 128", options(nostack, preserves_flags)) }
     }
 
-    pub fn spawn_proc(&mut self, exec_data: &[u8]) -> &mut super::Thread {
+    pub fn spawn_proc(&mut self, path: String, exec_data: &[u8]) -> &mut super::Thread {
         let exec = elf::ElfBytes::<elf::endian::NativeEndian>::minimal_parse(exec_data).unwrap();
         assert_eq!(exec.ehdr.e_type, elf::abi::ET_DYN);
         assert_eq!(exec.ehdr.class, elf::file::Class::ELF64);
@@ -163,7 +163,7 @@ impl Scheduler {
 
         let pid = self.pid_gen.next();
         self.processes
-            .insert(pid, super::Process::new(pid, String::new(), virt_addr));
+            .insert(pid, super::Process::new(pid, path, virt_addr));
         let proc = self.processes.get_mut(&pid).unwrap();
         unsafe { proc.cr3.map_higher_half() }
         proc.track_alloc(virt_addr, data.len() as _, Some(true));
