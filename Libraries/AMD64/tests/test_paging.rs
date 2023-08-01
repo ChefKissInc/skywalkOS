@@ -1,13 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-#![deny(
-    warnings,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::cargo,
-    unused_extern_crates,
-    rust_2021_compatibility
-)]
+#![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 
 use amd64::paging::pml4::PML4 as PML4Trait;
 

@@ -1,4 +1,0 @@
-[unstable]
-build-std = ["alloc", "compiler_builtins", "core"]
-build-std-features = ["compiler-builtins-mem"]
-unstable-options = true
