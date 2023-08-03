@@ -93,17 +93,38 @@ impl Process {
     }
 
     pub fn track_alloc(&mut self, addr: u64, size: u64, writable: Option<bool>) {
+        if self.allocations.contains_key(&addr) {
+            panic!("PID {}: Address {addr:#X} already allocated", self.id);
+        }
+
         let page_count = (size + 0xFFF) / 0x1000;
-        trace!(
-            "PID {}: Tracking {addr:#X} ({page_count} pages, {size} bytes)",
-            self.id
-        );
+
+        if unsafe {
+            !(*crate::system::state::SYS_STATE.get())
+                .pmm
+                .as_ref()
+                .unwrap()
+                .lock()
+                .is_allocated(
+                    (addr - fireworkkit::USER_PHYS_VIRT_OFFSET) as *mut _,
+                    page_count,
+                )
+        } {
+            panic!("PID {}: Address {addr:#X} not allocated", self.id);
+        }
+
+        debug!("PID {}: Tracking {addr:#X} ({size} bytes)", self.id);
         self.allocations.insert(addr, (size, writable.is_some()));
 
         let Some(writable) = writable else {
             return;
         };
 
+        debug!(
+            "PID {}: Mapping {page_count} pages ({})",
+            self.id,
+            if writable { "writable" } else { "read-only" }
+        );
         unsafe {
             self.cr3.map_pages(
                 addr,
@@ -134,7 +155,7 @@ impl Process {
         unsafe {
             (*crate::system::state::SYS_STATE.get())
                 .pmm
-                .as_mut()
+                .as_ref()
                 .unwrap()
                 .lock()
                 .free(
@@ -149,6 +170,10 @@ impl Process {
     }
 
     pub fn track_msg(&mut self, id: u64, addr: u64) {
+        if !self.allocations.contains_key(&addr) {
+            panic!("PID {}: Address {addr:#X} not allocated", self.id);
+        }
+
         trace!("PID {}: Marking {addr:#X} as message {id}", self.id);
         self.msg_id_to_addr.insert(id, addr);
         self.addr_to_msg_id.insert(addr, id);
@@ -156,12 +181,18 @@ impl Process {
 
     pub fn free_msg(&mut self, id: u64) {
         trace!("PID {}: Freeing message {id}", self.id);
-        let addr = self.msg_id_to_addr.remove(&id).unwrap();
+        let Some(addr) = self.msg_id_to_addr.remove(&id) else {
+            panic!("PID {}: Message {id} not allocated", self.id);
+        };
         self.addr_to_msg_id.remove(&addr).unwrap();
         self.free_alloc(addr);
     }
 
     pub fn is_msg(&self, addr: u64) -> bool {
+        if !self.allocations.contains_key(&addr) {
+            panic!("PID {}: Address {addr:#X} not allocated", self.id);
+        }
+
         self.addr_to_msg_id.contains_key(&addr)
     }
 
@@ -170,7 +201,7 @@ impl Process {
         let addr = unsafe {
             (*crate::system::state::SYS_STATE.get())
                 .pmm
-                .as_mut()
+                .as_ref()
                 .unwrap()
                 .lock()
                 .alloc(page_count)

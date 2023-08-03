@@ -129,10 +129,14 @@ impl BitmapAllocator {
     pub unsafe fn alloc(&mut self, count: u64) -> Option<*mut u8> {
         let l = self.last_index;
 
-        self.internal_alloc(count, self.highest_addr / 0x1000).or({
-            self.last_index = 0;
-            self.internal_alloc(count, l)
-        })
+        let ret = self
+            .internal_alloc(count, self.highest_addr / 0x1000)
+            .or_else(|| {
+                self.last_index = 0;
+                self.internal_alloc(count, l)
+            });
+        debug!("Allocated {count} pages at {ret:#X?}");
+        ret
     }
 
     pub unsafe fn free(&mut self, ptr: *mut u8, count: u64) {
@@ -144,5 +148,17 @@ impl BitmapAllocator {
         }
 
         self.free_pages += count;
+    }
+
+    pub fn is_allocated(&self, ptr: *mut u8, count: u64) -> bool {
+        let idx = ptr as u64 / 0x1000;
+
+        for i in idx..(idx + count) {
+            if !crate::utils::bitmap::bit_test(self.bitmap, i) {
+                return false;
+            }
+        }
+
+        true
     }
 }
