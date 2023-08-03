@@ -21,16 +21,17 @@ impl log::Log for Logger {
 
         let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         if record.metadata().level() <= log::Level::Info || state.verbose {
-            if let Some(terminal) = &mut state.terminal {
-                writeln!(
-                    terminal,
-                    "{} {} > {}",
-                    record.level(),
-                    record.target(),
-                    record.args()
-                )
-                .unwrap();
-            }
+            let Some(terminal) = &mut state.terminal else {
+                return;
+            };
+            writeln!(
+                terminal,
+                "{} {} > {}",
+                record.level(),
+                record.target(),
+                record.args()
+            )
+            .unwrap();
         }
     }
 

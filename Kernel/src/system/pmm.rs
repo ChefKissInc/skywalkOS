@@ -1,6 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use sulphur_dioxide::MemoryEntry;
+use sulphur_dioxide::{MemoryData, MemoryEntry};
 
 pub struct BitmapAllocator {
     bitmap: &'static mut [u64],
@@ -40,18 +40,20 @@ impl BitmapAllocator {
 
         // Find a memory hole for the bitmap
         for mmap_ent in mmap {
-            if let MemoryEntry::Usable(v) = mmap_ent {
-                if v.length >= bitmap_sz {
-                    bitmap = unsafe {
-                        core::slice::from_raw_parts_mut(
-                            (v.base + amd64::paging::PHYS_VIRT_OFFSET) as *mut _,
-                            bitmap_sz as _,
-                        )
-                    };
-                    bitmap.fill(!0u64);
+            let MemoryEntry::Usable(v) = mmap_ent else {
+                continue;
+            };
 
-                    break;
-                }
+            if v.length >= bitmap_sz {
+                bitmap = unsafe {
+                    core::slice::from_raw_parts_mut(
+                        (v.base + amd64::paging::PHYS_VIRT_OFFSET) as *mut _,
+                        bitmap_sz as _,
+                    )
+                };
+                bitmap.fill(!0u64);
+
+                break;
             }
         }
 
@@ -59,25 +61,24 @@ impl BitmapAllocator {
 
         // Populate the bitmap
         for mmap_ent in mmap {
-            if let MemoryEntry::Usable(v) = mmap_ent {
-                debug!("Base: {:#X?}, End: {:#X?}", v.base, v.base + v.length);
+            let MemoryEntry::Usable(v) = mmap_ent else {
+                continue;
+            };
 
-                let v = if v.base == bitmap.as_ptr() as u64 {
-                    let mut v = *v;
-                    v.base += bitmap_sz;
-                    v.length -= bitmap_sz;
-                    v
-                } else {
-                    *v
-                };
+            debug!("Base: {:#X?}, End: {:#X?}", v.base, v.base + v.length);
 
-                if (v.base / 0x1000) > 512 {
-                    free_pages += v.length / 0x1000;
-                }
+            let v = if v.base == bitmap.as_ptr() as u64 {
+                MemoryData::new(v.base + bitmap_sz, v.length - bitmap_sz)
+            } else {
+                *v
+            };
 
-                for i in 0..(v.length / 0x1000) {
-                    crate::utils::bitmap::bit_reset(bitmap, (v.base + (i * 0x1000)) / 0x1000);
-                }
+            if (v.base / 0x1000) > 512 {
+                free_pages += v.length / 0x1000;
+            }
+
+            for i in 0..(v.length / 0x1000) {
+                crate::utils::bitmap::bit_reset(bitmap, (v.base + (i * 0x1000)) / 0x1000);
             }
         }
 

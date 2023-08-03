@@ -72,7 +72,7 @@ pub fn send(
                 PageTableEntry::new().with_present(true).with_user(true),
             );
         }
-        let tids = process.tids.clone();
+        let tids = process.thread_ids.clone();
         return handle_new(scheduler, target, &tids, msg);
     }
     cur.messages.push_front(msg);
@@ -84,16 +84,16 @@ pub fn receive(
     state: &mut RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
     let process = scheduler.current_process_mut().unwrap();
-    if let Some(msg) = process.messages.pop_back() {
-        state.rax = msg.id;
-        state.rdi = msg.pid;
-        state.rsi = msg.data.as_ptr() as u64;
-        state.rdx = msg.data.len() as u64;
-        ControlFlow::Continue(())
-    } else {
+    let Some(msg) = process.messages.pop_back() else {
         scheduler.current_thread_mut().unwrap().state = ThreadState::Suspended;
-        ControlFlow::Break(None)
-    }
+        return ControlFlow::Break(None);
+    };
+
+    state.rax = msg.id;
+    state.rdi = msg.pid;
+    state.rsi = msg.data.as_ptr() as u64;
+    state.rdx = msg.data.len() as u64;
+    ControlFlow::Continue(())
 }
 
 pub fn ack(
@@ -109,7 +109,7 @@ pub fn ack(
     let cur_pid = scheduler.current_pid.unwrap();
     let pid = if src_pid == 0 { cur_pid } else { src_pid };
     let process = scheduler.processes.get_mut(&pid).unwrap();
-    let addr = *process.message_allocations.get(&msg_id).unwrap();
+    let addr = *process.msg_id_to_addr.get(&msg_id).unwrap();
     let size = process.allocations.get(&addr).copied().unwrap().0;
     if src_pid == 0 {
         let msg: KernelMessage = unsafe {

@@ -17,12 +17,11 @@ impl IncrementalIDGen {
     }
 
     pub fn next(&mut self) -> u64 {
-        if let Some(ret) = self.freed.pop() {
-            ret
-        } else {
+        let Some(ret) = self.freed.pop() else {
             self.last_used += 1;
-            self.last_used
-        }
+            return self.last_used;
+        };
+        ret
     }
 
     pub fn free(&mut self, num: u64) {

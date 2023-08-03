@@ -41,7 +41,7 @@ unsafe extern "sysv64" fn irq_handler(state: &mut RegisterState) {
     let process = scheduler.processes.get_mut(&pid).unwrap();
     process.track_msg(msg.id, virt);
 
-    let tids = process.tids.clone();
+    let tids = process.thread_ids.clone();
     if handlers::message::handle_new(&mut scheduler, pid, &tids, msg).is_break() {
         drop(scheduler);
         super::scheduler::schedule(state);
@@ -75,17 +75,19 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
         }
     };
 
-    if let ControlFlow::Break(reason) = flow {
-        if let Some(reason) = reason {
-            debug!(
-                "PID {} performed illegal action (<{reason:?}>), terminating.",
-                scheduler.current_pid.unwrap()
-            );
-            handlers::process_teardown(&mut scheduler);
-        }
-        drop(scheduler);
-        super::scheduler::schedule(state);
+    let ControlFlow::Break(reason) = flow else {
+        return;
+    };
+
+    if let Some(reason) = reason {
+        debug!(
+            "PID {} performed illegal action (<{reason:?}>), good riddance.",
+            scheduler.current_pid.unwrap()
+        );
+        handlers::process_teardown(&mut scheduler);
     }
+    drop(scheduler);
+    super::scheduler::schedule(state);
 }
 
 pub fn setup() {

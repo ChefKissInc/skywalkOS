@@ -44,34 +44,34 @@ impl core::fmt::Display for RegisterState {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         writeln!(
             f,
-            "R15: 0x{:>016X}, R14: 0x{:>016X}, R13: 0x{:>016X}, R12: 0x{:>016X}",
+            "R15: {:#016X}, R14: {:#016X}, R13: {:#016X}, R12: {:#016X}",
             self.r15, self.r14, self.r13, self.r12
         )?;
         writeln!(
             f,
-            "R11: 0x{:>016X}, R10: 0x{:>016X}, R9:  0x{:>016X}, R8:  0x{:>016X}",
+            "R11: {:#016X}, R10: {:#016X}, R9:  {:#016X}, R8:  {:#016X}",
             self.r11, self.r10, self.r9, self.r8
         )?;
         writeln!(
             f,
-            "RBP: 0x{:>016X}, RDI: 0x{:>016X}, RSI: 0x{:>016X}, RDX: 0x{:>016X}",
+            "RBP: {:#016X}, RDI: {:#016X}, RSI: {:#016X}, RDX: {:#016X}",
             self.rbp, self.rdi, self.rsi, self.rdx
         )?;
         writeln!(
             f,
-            "RCX: 0x{:>016X}, RBX: 0x{:>016X}, RAX: 0x{:>016X}",
+            "RCX: {:#016X}, RBX: {:#016X}, RAX: {:#016X}",
             self.rcx, self.rbx, self.rax
         )?;
         writeln!(
             f,
-            "INT: 0x{:>016X}, ERR: 0x{:>016X}, RIP: 0x{:>016X}",
+            "INT: {:#016X}, ERR: {:#016X}, RIP: {:#016X}",
             self.int_num, self.err_code, self.rip
         )?;
         writeln!(
             f,
-            "CS:  0x{:>016X}, RFL: 0x{:>016X}, RSP: 0x{:>016X}",
+            "CS:  {:#016X}, RFL: {:#016X}, RSP: {:#016X}",
             self.cs, self.rflags, self.rsp
         )?;
-        write!(f, "SS:  0x{:>016X}", self.ss)
+        write!(f, "SS:  {:#016X}", self.ss)
     }
 }

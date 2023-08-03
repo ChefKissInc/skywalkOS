@@ -105,7 +105,7 @@ pub fn init_paging(state: &mut crate::system::state::SystemState) {
     unsafe { pml4.init() }
     state.pml4 = Some(pml4);
 
-    if let Some(terminal) = &mut state.terminal {
-        terminal.map_fb();
+    if let Some(v) = state.terminal.as_mut() {
+        v.map_fb();
     }
 }

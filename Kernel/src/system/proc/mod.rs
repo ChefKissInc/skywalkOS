@@ -71,8 +71,9 @@ pub struct Process {
     pub cr3: Box<userland::page_table::UserPML4>,
     pub messages: VecDeque<Message>,
     pub allocations: HashMap<u64, (u64, bool)>,
-    pub message_allocations: HashMap<u64, u64>,
-    pub tids: Vec<u64>,
+    pub msg_id_to_addr: HashMap<u64, u64>,
+    pub addr_to_msg_id: HashMap<u64, u64>,
+    pub thread_ids: Vec<u64>,
 }
 
 impl Process {
@@ -85,26 +86,34 @@ impl Process {
             cr3: Box::new(userland::page_table::UserPML4::new(id)),
             messages: VecDeque::new(),
             allocations: HashMap::new(),
-            message_allocations: HashMap::new(),
-            tids: vec![],
+            msg_id_to_addr: HashMap::new(),
+            addr_to_msg_id: HashMap::new(),
+            thread_ids: vec![],
         }
     }
 
     pub fn track_alloc(&mut self, addr: u64, size: u64, writable: Option<bool>) {
-        trace!("PID {}: Tracked {addr:#X} ({size}B)", self.id);
+        let page_count = (size + 0xFFF) / 0x1000;
+        trace!(
+            "PID {}: Tracking {addr:#X} ({page_count} pages, {size} bytes)",
+            self.id
+        );
         self.allocations.insert(addr, (size, writable.is_some()));
-        if let Some(writable) = writable {
-            unsafe {
-                self.cr3.map_pages(
-                    addr,
-                    addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
-                    (size + 0xFFF) / 0x1000,
-                    PageTableEntry::new()
-                        .with_present(true)
-                        .with_writable(writable)
-                        .with_user(true),
-                );
-            }
+
+        let Some(writable) = writable else {
+            return;
+        };
+
+        unsafe {
+            self.cr3.map_pages(
+                addr,
+                addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
+                page_count,
+                PageTableEntry::new()
+                    .with_present(true)
+                    .with_writable(writable)
+                    .with_user(true),
+            );
         }
     }
 
@@ -116,8 +125,11 @@ impl Process {
 
     pub fn free_alloc(&mut self, addr: u64) {
         let (size, mapped) = self.allocations.remove(&addr).unwrap();
-
         let page_count = (size + 0xFFF) / 0x1000;
+        trace!(
+            "PID {}: Freeing {addr:#X} ({page_count} pages, {size} bytes)",
+            self.id
+        );
 
         unsafe {
             (*crate::system::state::SYS_STATE.get())
@@ -134,19 +146,23 @@ impl Process {
         if mapped {
             unsafe { self.cr3.unmap_pages(addr, page_count) }
         }
-
-        trace!("PID {}: Freed {addr:#X} ({size}B)", self.id);
     }
 
     pub fn track_msg(&mut self, id: u64, addr: u64) {
-        self.message_allocations.insert(id, addr);
-        trace!("PID {}: Marked {addr:#X} as message {id}", self.id);
+        trace!("PID {}: Marking {addr:#X} as message {id}", self.id);
+        self.msg_id_to_addr.insert(id, addr);
+        self.addr_to_msg_id.insert(addr, id);
     }
 
     pub fn free_msg(&mut self, id: u64) {
-        let addr = self.message_allocations.remove(&id).unwrap();
+        trace!("PID {}: Freeing message {id}", self.id);
+        let addr = self.msg_id_to_addr.remove(&id).unwrap();
+        self.addr_to_msg_id.remove(&addr).unwrap();
         self.free_alloc(addr);
-        trace!("PID {}: Freed message {id}", self.id);
+    }
+
+    pub fn is_msg(&self, addr: u64) -> bool {
+        self.addr_to_msg_id.contains_key(&addr)
     }
 
     pub fn allocate(&mut self, size: u64) -> (u64, u64) {

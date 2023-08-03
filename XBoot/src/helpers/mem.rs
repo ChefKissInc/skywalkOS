@@ -22,10 +22,7 @@ impl MemoryManager {
     }
 
     pub fn mem_type_from_desc(&self, desc: &MemoryDescriptor) -> Option<MemoryEntry> {
-        let mut data = MemoryData {
-            base: desc.phys_start,
-            length: desc.page_count * 0x1000,
-        };
+        let data = MemoryData::new(desc.phys_start, desc.page_count * 0x1000);
 
         match desc.ty {
             MemoryType::CONVENTIONAL => Some(MemoryEntry::Usable(data)),
@@ -40,9 +37,10 @@ impl MemoryManager {
                 let top = data.base + data.length;
 
                 if top > base + size {
-                    data.length -= size;
-                    data.base += size;
-                    Some(MemoryEntry::BootLoaderReclaimable(data))
+                    Some(MemoryEntry::BootLoaderReclaimable(MemoryData::new(
+                        data.base + size,
+                        data.length - size,
+                    )))
                 } else {
                     None
                 }

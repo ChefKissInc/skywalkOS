@@ -22,7 +22,7 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
     unsafe { st.boot_services().set_image_handle(image) }
     if let Err(e) = st.boot_services().set_watchdog_timer(0, 0x10000, None) {
         warn!("Failed to disarm watchdog timer: {e}.");
-    };
+    }
     uefi_services::init(&mut st).unwrap();
     let fb_info = helpers::fb::init();
     helpers::setup::setup();

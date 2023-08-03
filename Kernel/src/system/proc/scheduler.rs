@@ -45,15 +45,7 @@ pub unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
         }
     }
 
-    if let Some(thread) = this.next_thread_mut() {
-        *state = thread.regs;
-        thread.state = super::ThreadState::Active;
-        let pid = thread.pid;
-        let tid = Some(thread.id);
-        this.processes.get_mut(&pid).unwrap().cr3.set();
-        this.current_tid = tid;
-        this.current_pid = Some(pid);
-    } else {
+    let Some(thread) = this.next_thread_mut() else {
         *state = RegisterState {
             rip: idle as usize as _,
             cs: SegmentSelector::new(1, PrivilegeLevel::Supervisor).0.into(),
@@ -65,7 +57,16 @@ pub unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
         sys_state.pml4.as_mut().unwrap().set();
         this.current_tid = None;
         this.current_pid = None;
-    }
+        return;
+    };
+
+    *state = thread.regs;
+    thread.state = super::ThreadState::Active;
+    let pid = thread.pid;
+    let tid = Some(thread.id);
+    this.processes.get_mut(&pid).unwrap().cr3.set();
+    this.current_tid = tid;
+    this.current_pid = Some(pid);
 }
 
 impl Scheduler {
@@ -153,11 +154,13 @@ impl Scheduler {
             };
             for reloc in relas {
                 let ptr = unsafe { &mut *data.as_mut_ptr().add(reloc.r_offset as _).cast::<u64>() };
-                *ptr = if reloc.r_addend.is_negative() {
-                    virt_addr - reloc.r_addend.wrapping_abs() as u64
-                } else {
-                    virt_addr + reloc.r_addend as u64
-                };
+                match reloc.r_type {
+                    elf::abi::R_X86_64_NONE => {}
+                    elf::abi::R_X86_64_RELATIVE => {
+                        *ptr = virt_addr + reloc.r_addend.wrapping_abs() as u64
+                    }
+                    v => unimplemented!("{v:#X?}"),
+                }
             }
         }
 
@@ -168,7 +171,7 @@ impl Scheduler {
         unsafe { proc.cr3.map_higher_half() }
         proc.track_alloc(virt_addr, data.len() as _, Some(true));
         let tid = self.tid_gen.next();
-        proc.tids.push(tid);
+        proc.thread_ids.push(tid);
         self.threads.insert(
             tid,
             super::Thread::new(

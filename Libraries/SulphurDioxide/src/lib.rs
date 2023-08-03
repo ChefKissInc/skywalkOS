@@ -24,6 +24,14 @@ pub struct MemoryData {
     pub length: u64,
 }
 
+impl MemoryData {
+    #[inline]
+    #[must_use]
+    pub const fn new(base: u64, length: u64) -> Self {
+        Self { base, length }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub enum MemoryEntry {
