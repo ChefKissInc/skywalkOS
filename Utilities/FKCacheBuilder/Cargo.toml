@@ -12,6 +12,7 @@ name = "fkcachebuilder"
 
 [profile.release]
 strip = true
+lto = true
 
 [dependencies]
 postcard = { version = "1.0.6", default-features = false, features = ["alloc"] }

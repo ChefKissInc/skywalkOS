@@ -12,6 +12,7 @@ name = "kernel"
 
 [profile.release]
 strip = true
+lto = true
 
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
