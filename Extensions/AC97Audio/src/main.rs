@@ -51,7 +51,7 @@ impl AC97 {
             );
             dev.cfg_read8(PCICfgOffset::InterruptLine)
         };
-        debug!("IRQ: {:#X?}", irq);
+        debug!("IRQ: {irq:#X?}");
         unsafe { SystemCall::register_irq_handler(irq) }
         let audio_bus = unsafe { dev.cfg_read16::<_, u16>(PCICfgOffset::BaseAddr1) & !1u16 };
         let pcm_out_bdl_last_ent = Port::new(audio_bus + regs::AudioBusReg::PCMOutLastEnt as u16);

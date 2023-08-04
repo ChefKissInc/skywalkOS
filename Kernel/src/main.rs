@@ -37,7 +37,7 @@ extern "C" fn kernel_main(boot_info: &'static sulphur_dioxide::BootInfo) -> ! {
 
     let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     state.terminal = boot_info.frame_buffer.map(|fb_info| {
-        debug!("Got boot display: {:X?}", fb_info);
+        debug!("Got boot display: {fb_info:X?}");
         let mut terminal = crate::system::terminal::Terminal::new(unsafe {
             paper_fb::fb::FrameBuffer::new(
                 fb_info.base,

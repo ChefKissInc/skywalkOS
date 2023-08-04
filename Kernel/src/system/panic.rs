@@ -26,7 +26,7 @@ extern "C" fn callback(
                 rustc_demangle::try_demangle(symbol.name).map_or_else(
                     |_| {
                         error!(
-                            "{:>4}: {:>#19X}+{:>#04X} -> {}",
+                            "{:>4}: {:#019X}+{:#04X} -> {}",
                             data.counter,
                             symbol.start,
                             ip - symbol.start,
@@ -35,7 +35,7 @@ extern "C" fn callback(
                     },
                     |demangled| {
                         error!(
-                            "{:>4}: {:>#19X}+{:>#04X} -> {demangled:#}",
+                            "{:>4}: {:#019X}+{:#04X} -> {demangled:#}",
                             data.counter,
                             symbol.start,
                             ip - symbol.start,
@@ -94,13 +94,13 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
                 .find(|v| ip >= v.start && ip < v.end)
                 .map_or_else(
                     || {
-                        error!("{:>4}: {:>#19X}+{:>#04X} -> ???", data.counter, ip, 0);
+                        error!("{:>4}: {ip:>#19X}+{0:>#04X} -> ???", data.counter);
                     },
                     |symbol| {
                         rustc_demangle::try_demangle(symbol.name).map_or_else(
                             |_| {
                                 error!(
-                                    "{:>4}: {:>#19X}+{:>#04X} -> {}",
+                                    "{:>4}: {:#019X}+{:#04X} -> {}",
                                     data.counter,
                                     symbol.start,
                                     ip - symbol.start,
@@ -109,11 +109,10 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
                             },
                             |demangled| {
                                 error!(
-                                    "{:>4}: {:>#19X}+{:>#04X} -> {:#}",
+                                    "{:>4}: {:#019X}+{:#04X} -> {demangled:#}",
                                     data.counter,
                                     symbol.start,
                                     ip - symbol.start,
-                                    demangled
                                 );
                             },
                         );

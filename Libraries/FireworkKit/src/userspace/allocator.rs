@@ -36,5 +36,5 @@ unsafe impl core::alloc::GlobalAlloc for Allocator {
 
 #[alloc_error_handler]
 fn alloc_error(layout: core::alloc::Layout) -> ! {
-    panic!("Failed to allocate memory: {:#X?}", layout);
+    panic!("Failed to allocate memory: {layout:#X?}");
 }

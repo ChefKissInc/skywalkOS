@@ -64,10 +64,9 @@ pub fn parse(
         };
         let npages = (memsz + 0xFFF) / 0x1000;
         trace!(
-            "vaddr: {:#X}, paddr: {:#X}, npages: {:#X}",
+            "vaddr: {:#X}, paddr: {:#X}, npages: {npages:#X}",
             phdr.p_vaddr,
-            phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET,
-            npages
+            phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET
         );
         assert_eq!(
             bs.allocate_pages(

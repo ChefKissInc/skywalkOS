@@ -40,7 +40,7 @@ impl MADTData {
                     proc_lapics.push(lapic);
                 }
                 InterruptController::InputOutputAPIC(ioapic) => {
-                    debug!("{ioapic:#X?}: {:#X?}", ioapic.read_ver(),);
+                    debug!("{ioapic:#X?}: {:#X?}", ioapic.read_ver());
                     unsafe {
                         (*crate::system::state::SYS_STATE.get())
                             .pml4

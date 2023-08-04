@@ -29,7 +29,7 @@ macro_rules! exc_msg {
             writeln!(crate::system::serial::SERIAL.lock(), "{}", $regs).unwrap();
             writeln!(
                 crate::system::serial::SERIAL.lock(),
-                "Image Base: {image_base:#016X}"
+                "Image Base: {image_base:#018X}"
             )
             .unwrap();
             writeln!(
@@ -41,7 +41,7 @@ macro_rules! exc_msg {
             if let Some(v) = unsafe { (*crate::system::state::SYS_STATE.get()).terminal.as_mut() } {
                 writeln!(v, "Received {} exception in user-land: {}", $name, $msg).unwrap();
                 writeln!(v, "{}", $regs).unwrap();
-                writeln!(v, "Image Base: {image_base:#016X}").unwrap();
+                writeln!(v, "Image Base: {image_base:#018X}").unwrap();
                 writeln!(v, "Process Path: {proc_path}").unwrap();
             }
         }
