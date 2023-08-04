@@ -7,13 +7,15 @@ use amd64::{
         pat::{PATEntry, PageAttributeTable},
         ModelSpecificReg,
     },
-    paging::{pml4::PML4 as PML4Trait, PageTableEntry},
+    paging::PageTableEntry,
 };
 
 #[repr(transparent)]
 pub struct PageTableLvl4(amd64::paging::PageTable);
 
 impl PageTableLvl4 {
+    const VIRT_OFF: u64 = amd64::paging::PHYS_VIRT_OFFSET;
+
     #[inline]
     pub const fn new() -> Self {
         Self(amd64::paging::PageTable::new())
@@ -37,17 +39,54 @@ impl PageTableLvl4 {
         debug_assert!(!flags.pcd());
         self.map_pages(virt, phys, count, flags.with_huge_or_pat(true));
     }
-}
 
-impl PML4Trait for PageTableLvl4 {
-    const VIRT_OFF: u64 = amd64::paging::PHYS_VIRT_OFFSET;
-
-    fn get_entry(&mut self, offset: u64) -> &mut amd64::paging::PageTableEntry {
-        &mut self.0.entries[offset as usize]
+    fn alloc_entry_fn(&self) -> Box<dyn Fn() -> u64> {
+        Box::new(|| {
+            Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
+                - amd64::paging::PHYS_VIRT_OFFSET
+        })
     }
 
-    fn alloc_entry(&self) -> u64 {
-        Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
-            - amd64::paging::PHYS_VIRT_OFFSET
+    pub unsafe fn set(&mut self) {
+        self.0.set(Self::VIRT_OFF);
+    }
+
+    pub unsafe fn map_pages(
+        &mut self,
+        virt: u64,
+        phys: u64,
+        count: u64,
+        flags: amd64::paging::PageTableEntry,
+    ) {
+        self.0.map_pages(
+            &self.alloc_entry_fn(),
+            virt,
+            Self::VIRT_OFF,
+            phys,
+            count,
+            flags,
+        );
+    }
+
+    pub unsafe fn map_huge_pages(
+        &mut self,
+        virt: u64,
+        phys: u64,
+        count: u64,
+        flags: amd64::paging::PageTableEntry,
+    ) {
+        self.0.map_huge_pages(
+            &self.alloc_entry_fn(),
+            virt,
+            Self::VIRT_OFF,
+            phys,
+            count,
+            flags,
+        );
+    }
+
+    pub unsafe fn map_higher_half(&mut self) {
+        self.0
+            .map_higher_half(&self.alloc_entry_fn(), Self::VIRT_OFF);
     }
 }

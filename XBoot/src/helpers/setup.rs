@@ -1,6 +1,7 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use amd64::paging::pml4::PML4;
+use alloc::boxed::Box;
+
 use uefi::{
     proto::console::text::Key,
     table::boot::{EventType, TimerTrigger, Tpl},
@@ -21,7 +22,12 @@ pub fn setup() {
     }
 
     trace!("    2. Modifying paging mappings to map higher-half...");
-    unsafe { super::PML4::get().map_higher_half() }
+    unsafe {
+        amd64::paging::PageTable::get_from_cr3().map_higher_half(
+            &|| Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64,
+            0,
+        );
+    }
 }
 
 pub fn check_boot_flags() -> (bool, bool) {

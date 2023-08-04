@@ -2,7 +2,6 @@
 
 use core::fmt::Write;
 
-use amd64::paging::pml4::PML4;
 use paper_fb::{fb::FrameBuffer, pixel::Colour};
 
 mod font;

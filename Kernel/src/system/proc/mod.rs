@@ -2,7 +2,7 @@
 
 use alloc::{boxed::Box, collections::VecDeque, string::String, vec::Vec};
 
-use amd64::paging::{pml4::PML4, PageTableEntry};
+use amd64::paging::PageTableEntry;
 use fireworkkit::msg::Message;
 use hashbrown::HashMap;
 

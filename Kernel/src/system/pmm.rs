@@ -105,21 +105,22 @@ impl BitmapAllocator {
             self.last_index += 1;
             if set {
                 p = 0;
-            } else {
-                p += 1;
+                continue;
+            }
 
-                if p == count {
-                    let page = self.last_index - count;
+            p += 1;
 
-                    // Mark memory hole as used
-                    for i in page..self.last_index {
-                        crate::utils::bitmap::bit_set(self.bitmap, i);
-                    }
+            if p == count {
+                let page = self.last_index - count;
 
-                    self.free_pages -= count;
-
-                    return Some((page * 0x1000) as *mut _);
+                // Mark memory hole as used
+                for i in page..self.last_index {
+                    crate::utils::bitmap::bit_set(self.bitmap, i);
                 }
+
+                self.free_pages -= count;
+
+                return Some((page * 0x1000) as *mut _);
             }
         }
 
@@ -129,14 +130,11 @@ impl BitmapAllocator {
     pub unsafe fn alloc(&mut self, count: u64) -> Option<*mut u8> {
         let l = self.last_index;
 
-        let ret = self
-            .internal_alloc(count, self.highest_addr / 0x1000)
+        self.internal_alloc(count, self.highest_addr / 0x1000)
             .or_else(|| {
                 self.last_index = 0;
                 self.internal_alloc(count, l)
-            });
-        debug!("Allocated {count} pages at {ret:#X?}");
-        ret
+            })
     }
 
     pub unsafe fn free(&mut self, ptr: *mut u8, count: u64) {

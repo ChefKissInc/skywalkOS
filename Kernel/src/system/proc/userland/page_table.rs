@@ -3,41 +3,66 @@
 use alloc::boxed::Box;
 use core::mem::size_of;
 
-use amd64::paging::pml4::PML4;
-
 #[repr(C)]
 pub struct UserPML4(amd64::paging::PageTable, u64);
 
 impl UserPML4 {
+    const VIRT_OFF: u64 = amd64::paging::PHYS_VIRT_OFFSET;
+
     #[inline]
     pub const fn new(pid: u64) -> Self {
         Self(amd64::paging::PageTable::new(), pid)
     }
-}
 
-impl PML4 for UserPML4 {
-    const VIRT_OFF: u64 = amd64::paging::PHYS_VIRT_OFFSET;
+    fn alloc_entry_fn(&self) -> Box<dyn Fn() -> u64> {
+        let pid = self.1;
+        Box::new(move || {
+            let phys = Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
+                - amd64::paging::PHYS_VIRT_OFFSET;
 
-    fn get_entry(&mut self, offset: u64) -> &mut amd64::paging::PageTableEntry {
-        &mut self.0.entries[offset as usize]
+            let scheduler = unsafe {
+                (*crate::system::state::SYS_STATE.get())
+                    .scheduler
+                    .as_mut()
+                    .unwrap()
+                    .get_mut()
+            };
+            scheduler.processes.get_mut(&pid).unwrap().track_alloc(
+                phys + fireworkkit::USER_PHYS_VIRT_OFFSET,
+                size_of::<amd64::paging::PageTable>() as _,
+                None,
+            );
+            phys
+        })
     }
 
-    fn alloc_entry(&self) -> u64 {
-        let phys = Box::leak(Box::new(Self::new(self.1))) as *mut _ as u64
-            - amd64::paging::PHYS_VIRT_OFFSET;
+    pub unsafe fn set(&mut self) {
+        self.0.set(Self::VIRT_OFF);
+    }
 
-        let scheduler = unsafe {
-            (*crate::system::state::SYS_STATE.get())
-                .scheduler
-                .as_mut()
-                .unwrap()
-                .get_mut()
-        };
-        scheduler.processes.get_mut(&self.1).unwrap().track_alloc(
-            phys + fireworkkit::USER_PHYS_VIRT_OFFSET,
-            size_of::<Self>() as _,
-            None,
+    pub unsafe fn map_pages(
+        &mut self,
+        virt: u64,
+        phys: u64,
+        count: u64,
+        flags: amd64::paging::PageTableEntry,
+    ) {
+        self.0.map_pages(
+            &self.alloc_entry_fn(),
+            virt,
+            Self::VIRT_OFF,
+            phys,
+            count,
+            flags,
         );
-        phys
+    }
+
+    pub unsafe fn unmap_pages(&mut self, virt: u64, count: u64) {
+        self.0.unmap_pages(virt, Self::VIRT_OFF, count);
+    }
+
+    pub unsafe fn map_higher_half(&mut self) {
+        self.0
+            .map_higher_half(&self.alloc_entry_fn(), Self::VIRT_OFF);
     }
 }

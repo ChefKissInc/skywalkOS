@@ -3,7 +3,6 @@
 use alloc::{string::String, vec::Vec};
 use core::cell::SyncUnsafeCell;
 
-use amd64::paging::pml4::PML4;
 use hashbrown::HashMap;
 
 use crate::{
