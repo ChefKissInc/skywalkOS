@@ -2,41 +2,19 @@
 
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 
-use amd64::paging::pml4::PML4 as PML4Trait;
-
-#[repr(transparent)]
-pub struct PML4(amd64::paging::PageTable);
-
-impl PML4 {
-    #[inline]
-    pub fn new() -> Self {
-        Self(amd64::paging::PageTable {
-            entries: [amd64::paging::PageTableEntry::default(); 512],
-        })
-    }
-}
-
-impl PML4Trait for PML4 {
-    const VIRT_OFF: u64 = 0;
-
-    fn get_entry(&mut self, offset: u64) -> &mut amd64::paging::PageTableEntry {
-        &mut self.0.entries[offset as usize]
-    }
-
-    fn alloc_entry(&self) -> u64 {
-        Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
-    }
+fn alloc_entry() -> u64 {
+    Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
 }
 
 #[test]
 fn test_map_higher_half_phys() {
     unsafe {
-        let mut pml4 = Box::new(PML4::new());
-        pml4.map_higher_half();
+        let mut pml4 = Box::new(amd64::paging::PageTable::new());
+        pml4.map_higher_half(&alloc_entry, 0);
 
         for i in 0..2048 {
             assert_eq!(
-                pml4.virt_to_entry_addr(amd64::paging::PHYS_VIRT_OFFSET + 0x20_0000 * i),
+                pml4.virt_to_entry_addr(amd64::paging::PHYS_VIRT_OFFSET + 0x20_0000 * i, 0),
                 Some(0x20_0000 * i)
             );
         }
@@ -46,12 +24,12 @@ fn test_map_higher_half_phys() {
 #[test]
 fn test_map_higher_half_kern() {
     unsafe {
-        let mut pml4 = Box::new(PML4::new());
-        pml4.map_higher_half();
+        let mut pml4 = Box::new(amd64::paging::PageTable::new());
+        pml4.map_higher_half(&alloc_entry, 0);
 
         for i in 0..1024 {
             assert_eq!(
-                pml4.virt_to_entry_addr(amd64::paging::KERNEL_VIRT_OFFSET + 0x20_0000 * i),
+                pml4.virt_to_entry_addr(amd64::paging::KERNEL_VIRT_OFFSET + 0x20_0000 * i, 0),
                 Some(0x20_0000 * i)
             );
         }

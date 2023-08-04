@@ -1,4 +1,4 @@
-name: Run clippy and run tests
+name: Run lints and tests
 
 on:
   push:
@@ -12,8 +12,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  clippy:
-    name: Clippy lints
+  lints:
+    name: Lints
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

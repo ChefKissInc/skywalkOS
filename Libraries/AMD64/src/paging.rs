@@ -102,6 +102,24 @@ impl PageTable {
         &mut *pml4
     }
 
+    pub unsafe fn virt_to_entry_addr(&mut self, virt: u64, virt_off: u64) -> Option<u64> {
+        let offs = PageTableOffsets::new(virt);
+        let pdp = self.get(offs.pml4, virt_off)?;
+        let pd = pdp.get(offs.pdp, virt_off)?;
+
+        if pd.entries[offs.pd as usize].huge_or_pat() {
+            return Some(pd.entries[offs.pd as usize].address() << 12);
+        }
+
+        let pt = pd.get(offs.pd, virt_off)?;
+
+        if pt.entries[offs.pt as usize].present() {
+            return Some(pt.entries[offs.pt as usize].address() << 12);
+        }
+
+        None
+    }
+
     pub unsafe fn map_pages(
         &mut self,
         alloc_entry: AllocEntryFn,
