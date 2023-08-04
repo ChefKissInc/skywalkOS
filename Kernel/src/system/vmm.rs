@@ -40,11 +40,8 @@ impl PageTableLvl4 {
         self.map_pages(virt, phys, count, flags.with_huge_or_pat(true));
     }
 
-    fn alloc_entry_fn(&self) -> Box<dyn Fn() -> u64> {
-        Box::new(|| {
-            Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
-                - amd64::paging::PHYS_VIRT_OFFSET
-        })
+    fn alloc_entry() -> u64 {
+        Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64 - Self::VIRT_OFF
     }
 
     pub unsafe fn set(&mut self) {
@@ -58,14 +55,8 @@ impl PageTableLvl4 {
         count: u64,
         flags: amd64::paging::PageTableEntry,
     ) {
-        self.0.map_pages(
-            &self.alloc_entry_fn(),
-            virt,
-            Self::VIRT_OFF,
-            phys,
-            count,
-            flags,
-        );
+        self.0
+            .map_pages(&Self::alloc_entry, virt, Self::VIRT_OFF, phys, count, flags);
     }
 
     pub unsafe fn map_huge_pages(
@@ -75,18 +66,11 @@ impl PageTableLvl4 {
         count: u64,
         flags: amd64::paging::PageTableEntry,
     ) {
-        self.0.map_huge_pages(
-            &self.alloc_entry_fn(),
-            virt,
-            Self::VIRT_OFF,
-            phys,
-            count,
-            flags,
-        );
+        self.0
+            .map_huge_pages(&Self::alloc_entry, virt, Self::VIRT_OFF, phys, count, flags);
     }
 
     pub unsafe fn map_higher_half(&mut self) {
-        self.0
-            .map_higher_half(&self.alloc_entry_fn(), Self::VIRT_OFF);
+        self.0.map_higher_half(&Self::alloc_entry, Self::VIRT_OFF);
     }
 }

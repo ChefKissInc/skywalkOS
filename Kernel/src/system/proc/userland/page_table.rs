@@ -14,26 +14,23 @@ impl UserPML4 {
         Self(amd64::paging::PageTable::new(), pid)
     }
 
-    fn alloc_entry_fn(&self) -> Box<dyn Fn() -> u64> {
-        let pid = self.1;
-        Box::new(move || {
-            let phys = Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
-                - amd64::paging::PHYS_VIRT_OFFSET;
+    fn alloc_entry(pid: u64) -> u64 {
+        let phys = Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as u64
+            - amd64::paging::PHYS_VIRT_OFFSET;
 
-            let scheduler = unsafe {
-                (*crate::system::state::SYS_STATE.get())
-                    .scheduler
-                    .as_mut()
-                    .unwrap()
-                    .get_mut()
-            };
-            scheduler.processes.get_mut(&pid).unwrap().track_alloc(
-                phys + fireworkkit::USER_PHYS_VIRT_OFFSET,
-                size_of::<amd64::paging::PageTable>() as _,
-                None,
-            );
-            phys
-        })
+        let scheduler = unsafe {
+            (*crate::system::state::SYS_STATE.get())
+                .scheduler
+                .as_mut()
+                .unwrap()
+                .get_mut()
+        };
+        scheduler.processes.get_mut(&pid).unwrap().track_alloc(
+            phys + fireworkkit::USER_PHYS_VIRT_OFFSET,
+            size_of::<amd64::paging::PageTable>() as _,
+            None,
+        );
+        phys
     }
 
     pub unsafe fn set(&mut self) {
@@ -47,8 +44,9 @@ impl UserPML4 {
         count: u64,
         flags: amd64::paging::PageTableEntry,
     ) {
+        let pid = self.1;
         self.0.map_pages(
-            &self.alloc_entry_fn(),
+            &move || Self::alloc_entry(pid),
             virt,
             Self::VIRT_OFF,
             phys,
@@ -62,7 +60,8 @@ impl UserPML4 {
     }
 
     pub unsafe fn map_higher_half(&mut self) {
+        let pid = self.1;
         self.0
-            .map_higher_half(&self.alloc_entry_fn(), Self::VIRT_OFF);
+            .map_higher_half(&move || Self::alloc_entry(pid), Self::VIRT_OFF);
     }
 }
