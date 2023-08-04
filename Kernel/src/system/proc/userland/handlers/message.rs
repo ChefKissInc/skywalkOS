@@ -63,9 +63,9 @@ pub fn send(
     let cur = scheduler.current_process_mut().unwrap();
     cur.track_msg(msg.id, addr);
     if target != src {
-        let process = scheduler.processes.get_mut(&target).unwrap();
+        let process = scheduler.processes.get(&target).unwrap();
         unsafe {
-            process.cr3.map_pages(
+            process.cr3.lock().map_pages(
                 addr,
                 addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
                 (size + 0xFFF) / 0x1000,
@@ -122,7 +122,12 @@ pub fn ack(
     scheduler.msg_id_gen.free(msg_id);
     if src_pid != 0 && src_pid != cur_pid {
         let process = scheduler.current_process_mut().unwrap();
-        unsafe { process.cr3.unmap_pages(addr, (size + 0xFFF) / 0x1000) }
+        unsafe {
+            process
+                .cr3
+                .lock()
+                .unmap_pages(addr, (size + 0xFFF) / 0x1000);
+        }
     }
 
     ControlFlow::Continue(())

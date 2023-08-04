@@ -272,7 +272,7 @@ pub fn setup(state: &mut crate::system::state::SystemState) {
 
     let virt_addr = addr + amd64::paging::PHYS_VIRT_OFFSET;
     unsafe {
-        pml4.map_mmio(
+        pml4.lock().map_mmio(
             virt_addr,
             addr,
             1,

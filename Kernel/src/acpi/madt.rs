@@ -46,6 +46,7 @@ impl MADTData {
                             .pml4
                             .as_mut()
                             .unwrap()
+                            .lock()
                             .map_mmio(
                                 u64::from(ioapic.address) + amd64::paging::PHYS_VIRT_OFFSET,
                                 u64::from(ioapic.address),

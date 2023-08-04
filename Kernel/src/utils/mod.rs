@@ -101,9 +101,9 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
 pub fn init_paging(state: &mut crate::system::state::SystemState) {
     debug!("Initialising paging");
 
-    let pml4 = Box::leak(Box::new(crate::system::vmm::PageTableLvl4::new()));
+    let mut pml4 = Box::new(crate::system::vmm::PageTableLvl4::new());
     unsafe { pml4.init() }
-    state.pml4 = Some(pml4);
+    state.pml4 = Some(pml4.into());
 
     if let Some(v) = state.terminal.as_mut() {
         v.map_fb();

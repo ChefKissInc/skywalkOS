@@ -68,12 +68,13 @@ pub struct Process {
     pub id: u64,
     pub path: String,
     pub image_base: u64,
-    pub cr3: Box<userland::page_table::UserPML4>,
+    pub cr3: spin::Mutex<Box<userland::page_table::UserPML4>>,
     pub messages: VecDeque<Message>,
     pub allocations: HashMap<u64, (u64, bool)>,
     pub msg_id_to_addr: HashMap<u64, u64>,
     pub addr_to_msg_id: HashMap<u64, u64>,
     pub thread_ids: Vec<u64>,
+    pub alloc_lock: spin::Mutex<()>,
 }
 
 impl Process {
@@ -83,16 +84,19 @@ impl Process {
             id,
             path,
             image_base,
-            cr3: Box::new(userland::page_table::UserPML4::new(id)),
+            cr3: Box::new(userland::page_table::UserPML4::new(id)).into(),
             messages: VecDeque::new(),
             allocations: HashMap::new(),
             msg_id_to_addr: HashMap::new(),
             addr_to_msg_id: HashMap::new(),
             thread_ids: vec![],
+            alloc_lock: spin::Mutex::new(()),
         }
     }
 
     pub fn track_alloc(&mut self, addr: u64, size: u64, writable: Option<bool>) {
+        let _lock = self.alloc_lock.lock();
+
         if self.allocations.contains_key(&addr) {
             panic!("PID {}: Address {addr:#X} already allocated", self.id);
         }
@@ -126,7 +130,8 @@ impl Process {
             if writable { "writable" } else { "read-only" }
         );
         unsafe {
-            self.cr3.map_pages(
+            drop(_lock);
+            self.cr3.lock().map_pages(
                 addr,
                 addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
                 page_count,
@@ -139,12 +144,17 @@ impl Process {
     }
 
     pub fn track_kernelside_alloc(&mut self, addr: u64, size: u64) -> u64 {
+        let _lock = self.alloc_lock.lock();
+
         let addr = addr - amd64::paging::PHYS_VIRT_OFFSET + fireworkkit::USER_PHYS_VIRT_OFFSET;
+        drop(_lock);
         self.track_alloc(addr, size, Some(false));
         addr
     }
 
     pub fn free_alloc(&mut self, addr: u64) {
+        let _lock = self.alloc_lock.lock();
+
         let (size, mapped) = self.allocations.remove(&addr).unwrap();
         let page_count = (size + 0xFFF) / 0x1000;
         trace!(
@@ -165,11 +175,14 @@ impl Process {
         }
 
         if mapped {
-            unsafe { self.cr3.unmap_pages(addr, page_count) }
+            drop(_lock);
+            unsafe { self.cr3.lock().unmap_pages(addr, page_count) }
         }
     }
 
     pub fn track_msg(&mut self, id: u64, addr: u64) {
+        let _lock = self.alloc_lock.lock();
+
         if !self.allocations.contains_key(&addr) {
             panic!("PID {}: Address {addr:#X} not allocated", self.id);
         }
@@ -180,15 +193,20 @@ impl Process {
     }
 
     pub fn free_msg(&mut self, id: u64) {
+        let _lock = self.alloc_lock.lock();
+
         trace!("PID {}: Freeing message {id}", self.id);
         let Some(addr) = self.msg_id_to_addr.remove(&id) else {
             panic!("PID {}: Message {id} not allocated", self.id);
         };
         self.addr_to_msg_id.remove(&addr).unwrap();
+        drop(_lock);
         self.free_alloc(addr);
     }
 
     pub fn is_msg(&self, addr: u64) -> bool {
+        let _lock = self.alloc_lock.lock();
+
         if !self.allocations.contains_key(&addr) {
             panic!("PID {}: Address {addr:#X} not allocated", self.id);
         }
@@ -197,6 +215,8 @@ impl Process {
     }
 
     pub fn allocate(&mut self, size: u64) -> (u64, u64) {
+        let _lock = self.alloc_lock.lock();
+
         let page_count = (size + 0xFFF) / 0x1000;
         let addr = unsafe {
             (*crate::system::state::SYS_STATE.get())
@@ -208,6 +228,7 @@ impl Process {
                 .unwrap() as u64
         };
         let virt = addr + fireworkkit::USER_PHYS_VIRT_OFFSET;
+        drop(_lock);
         self.track_alloc(virt, size, Some(true));
         (virt, page_count)
     }

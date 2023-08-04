@@ -53,7 +53,7 @@ pub unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
             ss: SegmentSelector::new(2, PrivilegeLevel::Supervisor).0.into(),
             ..Default::default()
         };
-        sys_state.pml4.as_mut().unwrap().set();
+        sys_state.pml4.as_mut().unwrap().lock().set();
         this.current_tid = None;
         this.current_pid = None;
         return;
@@ -63,7 +63,7 @@ pub unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
     thread.state = super::ThreadState::Active;
     let pid = thread.pid;
     let tid = Some(thread.id);
-    this.processes.get_mut(&pid).unwrap().cr3.set();
+    this.processes.get_mut(&pid).unwrap().cr3.lock().set();
     this.current_tid = tid;
     this.current_pid = Some(pid);
 }
@@ -167,7 +167,7 @@ impl Scheduler {
         self.processes
             .insert(pid, super::Process::new(pid, path, virt_addr));
         let proc = self.processes.get_mut(&pid).unwrap();
-        unsafe { proc.cr3.map_higher_half() }
+        unsafe { proc.cr3.lock().map_higher_half() }
         proc.track_alloc(virt_addr, data.len() as _, Some(true));
         let tid = self.tid_gen.next();
         proc.thread_ids.push(tid);
@@ -186,6 +186,10 @@ impl Scheduler {
 
     pub fn current_thread_mut(&mut self) -> Option<&mut super::Thread> {
         self.threads.get_mut(&self.current_tid?)
+    }
+
+    pub fn current_process(&self) -> Option<&super::Process> {
+        self.processes.get(&self.current_pid?)
     }
 
     pub fn current_process_mut(&mut self) -> Option<&mut super::Process> {

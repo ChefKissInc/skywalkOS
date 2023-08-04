@@ -48,7 +48,7 @@ pub fn get_hpet(state: &mut crate::system::state::SystemState) -> super::timer::
     acpi.find("HPET")
         .map(|v| unsafe {
             let addr = v as *const _ as u64;
-            pml4.map_mmio(
+            pml4.lock().map_mmio(
                 addr,
                 addr - amd64::paging::PHYS_VIRT_OFFSET,
                 1,

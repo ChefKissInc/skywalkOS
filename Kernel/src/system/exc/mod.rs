@@ -11,12 +11,12 @@ macro_rules! exc_msg {
             panic!("Received {} exception: {}", $name, $msg);
         } else {
             use core::fmt::Write;
-            let mut scheduler = (*crate::system::state::SYS_STATE.get())
+            let scheduler = (*crate::system::state::SYS_STATE.get())
                 .scheduler
                 .as_ref()
                 .unwrap()
                 .lock();
-            let cur_proc = scheduler.current_process_mut().unwrap();
+            let cur_proc = scheduler.current_process().unwrap();
             let image_base = cur_proc.image_base;
             let proc_path = &cur_proc.path;
             writeln!(

@@ -1,6 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use alloc::{string::String, vec::Vec};
+use alloc::{boxed::Box, string::String, vec::Vec};
 use core::cell::SyncUnsafeCell;
 
 use hashbrown::HashMap;
@@ -28,7 +28,7 @@ pub struct SystemState {
     pub verbose: bool,
     pub serial_enabled: bool,
     pub pmm: Option<spin::Mutex<BitmapAllocator>>,
-    pub pml4: Option<&'static mut PageTableLvl4>,
+    pub pml4: Option<spin::Mutex<Box<PageTableLvl4>>>,
     pub terminal: Option<Terminal>,
     pub acpi: Option<ACPIState>,
     pub madt: Option<spin::Mutex<MADTData>>,
