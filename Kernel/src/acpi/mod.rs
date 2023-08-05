@@ -41,9 +41,9 @@ impl ACPIState {
     }
 }
 
-pub fn get_hpet(state: &mut crate::system::state::SystemState) -> super::timer::hpet::Hpet {
+pub fn get_hpet(state: &crate::system::state::SystemState) -> super::timer::hpet::Hpet {
     let acpi = state.acpi.as_ref().unwrap();
-    let pml4 = state.pml4.as_mut().unwrap();
+    let pml4 = state.pml4.as_ref().unwrap();
 
     acpi.find("HPET")
         .map(|v| unsafe {

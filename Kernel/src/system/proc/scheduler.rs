@@ -53,7 +53,7 @@ pub unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
             ss: SegmentSelector::new(2, PrivilegeLevel::Supervisor).0.into(),
             ..Default::default()
         };
-        sys_state.pml4.as_mut().unwrap().lock().set();
+        sys_state.pml4.as_ref().unwrap().lock().set();
         this.current_tid = None;
         this.current_pid = None;
         return;

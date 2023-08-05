@@ -268,7 +268,7 @@ pub fn setup(state: &mut crate::system::state::SystemState) {
         }
         madt.lapic_addr
     };
-    let pml4 = state.pml4.as_mut().unwrap();
+    let pml4 = state.pml4.as_ref().unwrap();
 
     let virt_addr = addr + amd64::paging::PHYS_VIRT_OFFSET;
     unsafe {

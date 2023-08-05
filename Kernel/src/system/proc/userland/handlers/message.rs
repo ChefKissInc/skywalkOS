@@ -121,7 +121,7 @@ pub fn ack(
     process.free_msg(msg_id);
     scheduler.msg_id_gen.free(msg_id);
     if src_pid != 0 && src_pid != cur_pid {
-        let process = scheduler.current_process_mut().unwrap();
+        let process = scheduler.current_process().unwrap();
         unsafe {
             process
                 .cr3
