@@ -3,6 +3,7 @@
 use alloc::boxed::Box;
 use core::mem::size_of;
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct UserPML4(amd64::paging::PageTable, u64);
 

@@ -164,24 +164,16 @@ impl Scheduler {
         }
 
         let pid = self.pid_gen.next();
-        self.processes
-            .insert(pid, super::Process::new(pid, path, virt_addr));
-        let proc = self.processes.get_mut(&pid).unwrap();
+        let proc = self
+            .processes
+            .try_insert(pid, super::Process::new(pid, path, virt_addr))
+            .unwrap();
         unsafe { proc.cr3.lock().map_higher_half() }
         proc.track_alloc(virt_addr, data.len() as _, Some(true));
         let tid = self.tid_gen.next();
-        proc.thread_ids.push(tid);
-        self.threads.insert(
-            tid,
-            super::Thread::new(
-                tid,
-                pid,
-                virt_addr + exec.ehdr.e_entry,
-                proc.allocate(super::STACK_SIZE).0,
-            ),
-        );
-
-        self.threads.get_mut(&tid).unwrap()
+        let stack_addr = proc.allocate(super::STACK_SIZE).0;
+        let thread = proc.new_thread(tid, virt_addr + exec.ehdr.e_entry, stack_addr);
+        self.threads.try_insert(tid, thread).unwrap()
     }
 
     pub fn current_thread_mut(&mut self) -> Option<&mut super::Thread> {

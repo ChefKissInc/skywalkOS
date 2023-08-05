@@ -4,7 +4,7 @@ use alloc::{boxed::Box, collections::VecDeque, string::String, vec::Vec};
 
 use amd64::paging::PageTableEntry;
 use fireworkkit::msg::Message;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 
 use super::gdt::{PrivilegeLevel, SegmentSelector};
 
@@ -13,7 +13,7 @@ pub mod userland;
 
 pub const STACK_SIZE: u64 = 0x14000;
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ThreadState {
     Active,
     Inactive,
@@ -32,6 +32,7 @@ impl ThreadState {
     }
 }
 
+#[derive(Debug)]
 pub struct Thread {
     pub id: u64,
     pub pid: u64,
@@ -44,7 +45,7 @@ pub struct Thread {
 
 impl Thread {
     #[inline]
-    pub fn new(id: u64, pid: u64, rip: u64, stack_addr: u64) -> Self {
+    fn new(id: u64, pid: u64, rip: u64, stack_addr: u64) -> Self {
         Self {
             id,
             pid,
@@ -64,6 +65,7 @@ impl Thread {
     }
 }
 
+#[derive(Debug)]
 pub struct Process {
     pub id: u64,
     pub path: String,
@@ -73,7 +75,7 @@ pub struct Process {
     pub allocations: HashMap<u64, (u64, bool)>,
     pub msg_id_to_addr: HashMap<u64, u64>,
     pub addr_to_msg_id: HashMap<u64, u64>,
-    pub thread_ids: Vec<u64>,
+    pub thread_ids: HashSet<u64>,
     pub alloc_lock: spin::Mutex<()>,
 }
 
@@ -89,9 +91,16 @@ impl Process {
             allocations: HashMap::new(),
             msg_id_to_addr: HashMap::new(),
             addr_to_msg_id: HashMap::new(),
-            thread_ids: vec![],
+            thread_ids: HashSet::new(),
             alloc_lock: spin::Mutex::new(()),
         }
+    }
+
+    #[inline]
+    pub fn new_thread(&mut self, id: u64, rip: u64, stack_addr: u64) -> Thread {
+        let thread = Thread::new(id, self.id, rip, stack_addr);
+        self.thread_ids.insert(id);
+        thread
     }
 
     pub fn track_alloc(&mut self, addr: u64, size: u64, writable: Option<bool>) {

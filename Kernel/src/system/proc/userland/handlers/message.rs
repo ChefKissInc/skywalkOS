@@ -7,6 +7,7 @@ use fireworkkit::{
     msg::{KernelMessage, Message},
     TerminationReason,
 };
+use hashbrown::HashSet;
 
 use crate::system::{
     proc::{scheduler::Scheduler, ThreadState},
@@ -16,15 +17,13 @@ use crate::system::{
 pub fn handle_new(
     scheduler: &mut Scheduler,
     pid: u64,
-    tids: &[u64],
+    tids: HashSet<u64>,
     msg: Message,
 ) -> ControlFlow<Option<TerminationReason>> {
     let idle = scheduler.current_tid.is_none();
-    let mut was_suspended = false;
     for tid in tids {
-        let thread = scheduler.threads.get_mut(tid).unwrap();
+        let thread = scheduler.threads.get_mut(&tid).unwrap();
         if thread.state.is_suspended() {
-            was_suspended = true;
             thread.state = ThreadState::Inactive;
             thread.regs.rax = msg.id;
             thread.regs.rdi = msg.pid;
@@ -33,13 +32,11 @@ pub fn handle_new(
             if idle {
                 return ControlFlow::Break(None);
             }
-            break;
+            return ControlFlow::Continue(());
         }
     }
-    if !was_suspended {
-        let process = scheduler.processes.get_mut(&pid).unwrap();
-        process.messages.push_front(msg);
-    }
+    let process = scheduler.processes.get_mut(&pid).unwrap();
+    process.messages.push_front(msg);
     ControlFlow::Continue(())
 }
 
@@ -73,7 +70,7 @@ pub fn send(
             );
         }
         let tids = process.thread_ids.clone();
-        return handle_new(scheduler, target, &tids, msg);
+        return handle_new(scheduler, target, tids, msg);
     }
     cur.messages.push_front(msg);
     ControlFlow::Continue(())

@@ -16,34 +16,34 @@ pub mod page_table;
 unsafe extern "sysv64" fn irq_handler(state: &mut RegisterState) {
     let irq = (state.int_num - 0x20) as u8;
     crate::acpi::ioapic::set_irq_mask(irq, true);
-    let mut scheduler = (*crate::system::state::SYS_STATE.get())
+    let mut this = (*crate::system::state::SYS_STATE.get())
         .scheduler
         .as_ref()
         .unwrap()
         .lock();
-    let pid = scheduler.irq_handlers.get(&irq).copied().unwrap();
-    let s = postcard::to_allocvec(&KernelMessage::IRQFired(irq))
+    let pid = this.irq_handlers.get(&irq).copied().unwrap();
+    let s: &mut [u8] = postcard::to_allocvec(&KernelMessage::IRQFired(irq))
         .unwrap()
         .leak();
 
-    let virt = scheduler
+    let virt = this
         .processes
         .get_mut(&pid)
         .unwrap()
         .track_kernelside_alloc(s.as_ptr() as _, s.len() as _);
 
     let msg = Message::new(
-        scheduler.msg_id_gen.next(),
+        this.msg_id_gen.next(),
         0,
         core::slice::from_raw_parts(virt as *const _, s.len() as _),
     );
-    scheduler.message_sources.insert(msg.id, 0);
-    let process = scheduler.processes.get_mut(&pid).unwrap();
+    this.message_sources.insert(msg.id, 0);
+    let process = this.processes.get_mut(&pid).unwrap();
     process.track_msg(msg.id, virt);
 
     let tids = process.thread_ids.clone();
-    if handlers::message::handle_new(&mut scheduler, pid, &tids, msg).is_break() {
-        drop(scheduler);
+    if handlers::message::handle_new(&mut this, pid, tids, msg).is_break() {
+        drop(this);
         super::scheduler::schedule(state);
     }
 }

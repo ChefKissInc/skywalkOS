@@ -53,25 +53,27 @@ pub fn register_irq_handler(
 }
 
 pub fn thread_teardown(scheduler: &mut Scheduler) -> ControlFlow<Option<TerminationReason>> {
-    let id = scheduler.current_tid.unwrap();
+    let id = scheduler.current_tid.take().unwrap();
     scheduler.threads.remove(&id);
     scheduler.tid_gen.free(id);
-    scheduler.current_tid = None;
 
-    let pid = scheduler.current_pid.unwrap();
-    if !scheduler.threads.iter().any(|(_, v)| v.pid == pid) {
+    let proc = scheduler.current_process_mut().unwrap();
+    proc.thread_ids.remove(&id);
+    if proc.thread_ids.is_empty() {
+        let pid = scheduler.current_pid.take().unwrap();
         scheduler.processes.remove(&pid);
         scheduler.pid_gen.free(pid);
-        scheduler.current_pid = None;
     }
 
     ControlFlow::Break(None)
 }
 
 pub fn process_teardown(scheduler: &mut Scheduler) {
-    let pid = scheduler.current_pid.unwrap();
-    scheduler.processes.remove(&pid);
+    let pid = scheduler.current_pid.take().unwrap();
+    let proc = scheduler.processes.remove(&pid).unwrap();
+    for tid in &proc.thread_ids {
+        scheduler.threads.remove(tid);
+        scheduler.tid_gen.free(*tid);
+    }
     scheduler.pid_gen.free(pid);
-    scheduler.current_pid = None;
-    scheduler.threads.retain(|_, v| v.pid != pid);
 }

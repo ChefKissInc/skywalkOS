@@ -13,7 +13,7 @@ pub mod terminal;
 pub mod tss;
 pub mod vmm;
 
-#[derive(Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 #[repr(C)]
 pub struct RegisterState {
     pub r15: u64,
