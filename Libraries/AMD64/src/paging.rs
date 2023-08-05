@@ -65,20 +65,6 @@ impl PageTable {
     }
 
     #[inline]
-    unsafe fn set_and_return(
-        &mut self,
-        offset: u64,
-        flags: PageTableEntry,
-        phys: u64,
-        virt_off: u64,
-    ) -> &mut Self {
-        let entry = &mut self.entries[offset as usize];
-        *entry = flags.with_address(phys >> 12);
-
-        &mut *(((entry.address() << 12) + virt_off) as *mut Self)
-    }
-
-    #[inline]
     unsafe fn get(&self, offset: u64, virt_off: u64) -> Option<&mut Self> {
         let entry = &self.entries[offset as usize];
 
@@ -87,6 +73,26 @@ impl PageTable {
         }
 
         None
+    }
+
+    #[inline]
+    unsafe fn get_or_alloc(
+        &mut self,
+        alloc_entry: AllocEntryFn,
+        offset: u64,
+        virt_off: u64,
+        flags: PageTableEntry,
+    ) -> &mut Self {
+        let entry = &mut self.entries[offset as usize];
+
+        if entry.present() {
+            return &mut *(((entry.address() << 12) + virt_off) as *mut Self);
+        }
+
+        let phys = alloc_entry();
+        *entry = flags.with_address(phys >> 12);
+
+        &mut *((phys + virt_off) as *mut Self)
     }
 
     #[inline]
@@ -133,44 +139,31 @@ impl PageTable {
             let phys = phys + 0x1000 * i;
             let virt = virt + 0x1000 * i;
             let offs = PageTableOffsets::new(virt);
-            let pdp = if let Some(v) = self.get(offs.pml4, virt_off) {
-                v
-            } else {
-                let address = alloc_entry();
-                self.set_and_return(offs.pml4, flags, address, virt_off)
-            };
-            let pd = if let Some(v) = pdp.get(offs.pdp, virt_off) {
-                v
-            } else {
-                let address = alloc_entry();
-                pdp.set_and_return(offs.pdp, flags, address, virt_off)
-            };
-            let pt = if let Some(v) = pd.get(offs.pd, virt_off) {
-                v
-            } else {
-                let address = alloc_entry();
-                pd.set_and_return(offs.pd, flags, address, virt_off)
-            };
+            let pdp = self.get_or_alloc(alloc_entry, offs.pml4, virt_off, flags);
+            let pd = pdp.get_or_alloc(alloc_entry, offs.pdp, virt_off, flags);
+            let pt = pd.get_or_alloc(alloc_entry, offs.pd, virt_off, flags);
             pt.entries[offs.pt as usize] = flags.with_address(phys >> 12);
         }
     }
 
-    pub unsafe fn unmap_pages(&mut self, virt: u64, virt_off: u64, count: u64) {
+    pub unsafe fn unmap_pages(&mut self, virt: u64, virt_off: u64, count: u64) -> bool {
         for i in 0..count {
             let virt = virt + 0x1000 * i;
             let offs = PageTableOffsets::new(virt);
             let Some(pdp) = self.get(offs.pml4, virt_off) else {
-                continue;
+                return false;
             };
             let Some(pd) = pdp.get(offs.pdp, virt_off) else {
-                continue;
+                return false;
             };
             let Some(pt) = pd.get(offs.pd, virt_off) else {
-                continue;
+                return false;
             };
             pt.entries[offs.pt as usize] = PageTableEntry::new();
             core::arch::asm!("invlpg [{}]", in(reg) virt, options(nostack, preserves_flags));
         }
+
+        true
     }
 
     pub unsafe fn map_huge_pages(
@@ -186,18 +179,8 @@ impl PageTable {
             let phys = phys + 0x20_0000 * i;
             let virt = virt + 0x20_0000 * i;
             let offs = PageTableOffsets::new(virt);
-            let pdp = if let Some(v) = self.get(offs.pml4, virt_off) {
-                v
-            } else {
-                let address = alloc_entry();
-                self.set_and_return(offs.pml4, flags, address, virt_off)
-            };
-            let pd = if let Some(v) = pdp.get(offs.pdp, virt_off) {
-                v
-            } else {
-                let address = alloc_entry();
-                pdp.set_and_return(offs.pdp, flags, address, virt_off)
-            };
+            let pdp = self.get_or_alloc(alloc_entry, offs.pml4, virt_off, flags);
+            let pd = pdp.get_or_alloc(alloc_entry, offs.pdp, virt_off, flags);
             pd.entries[offs.pd as usize] = flags.with_huge_or_pat(true).with_address(phys >> 12);
         }
     }
