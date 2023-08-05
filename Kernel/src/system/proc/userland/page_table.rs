@@ -22,7 +22,7 @@ impl UserPML4 {
         let scheduler = unsafe {
             (*crate::system::state::SYS_STATE.get())
                 .scheduler
-                .as_ref()
+                .as_mut()
                 .unwrap()
                 .get_mut()
         };
