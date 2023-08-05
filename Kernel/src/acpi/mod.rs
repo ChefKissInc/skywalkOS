@@ -2,6 +2,8 @@
 
 use alloc::vec::Vec;
 
+use self::tables::hpet::Hpet;
+
 pub mod apic;
 pub mod ioapic;
 pub mod madt;
@@ -46,11 +48,10 @@ pub fn get_hpet(state: &crate::system::state::SystemState) -> super::timer::hpet
     let pml4 = state.pml4.as_ref().unwrap();
 
     acpi.find("HPET")
-        .map(|v| unsafe {
-            let addr = v as *const _ as u64;
+        .map(|v: &Hpet| unsafe {
             pml4.lock().map_mmio(
-                addr,
-                addr - amd64::paging::PHYS_VIRT_OFFSET,
+                v.address.address() + amd64::paging::PHYS_VIRT_OFFSET,
+                v.address.address(),
                 1,
                 amd64::paging::PageTableEntry::new()
                     .with_present(true)
