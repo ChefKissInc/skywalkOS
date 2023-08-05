@@ -47,10 +47,10 @@ pub unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
     let Some(thread) = this.next_thread_mut() else {
         *state = RegisterState {
             rip: idle as usize as _,
-            cs: SegmentSelector::new(1, PrivilegeLevel::Supervisor).0.into(),
+            cs: SegmentSelector::new(1, PrivilegeLevel::Supervisor).into(),
             rflags: 0x202,
             rsp: this.kern_stack.as_ptr() as u64 + this.kern_stack.len() as u64,
-            ss: SegmentSelector::new(2, PrivilegeLevel::Supervisor).0.into(),
+            ss: SegmentSelector::new(2, PrivilegeLevel::Supervisor).into(),
             ..Default::default()
         };
         sys_state.pml4.as_ref().unwrap().lock().set();

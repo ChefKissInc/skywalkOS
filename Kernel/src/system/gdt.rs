@@ -24,6 +24,13 @@ impl SegmentSelector {
     }
 }
 
+impl From<SegmentSelector> for u64 {
+    #[inline]
+    fn from(value: SegmentSelector) -> Self {
+        value.0 as _
+    }
+}
+
 #[derive(Default, BitfieldSpecifier, Debug, Clone, Copy)]
 #[bits = 5]
 #[repr(u8)]
@@ -195,9 +202,9 @@ impl GDTReg {
             "mov es, {3}",
             "mov ss, {3}",
             in(reg) self,
-            in(reg) u64::from(SegmentSelector::new(1, PrivilegeLevel::Supervisor).0),
+            in(reg) u64::from(SegmentSelector::new(1, PrivilegeLevel::Supervisor)),
             lateout(reg) _,
-            in(reg) u64::from(SegmentSelector::new(2, PrivilegeLevel::Supervisor).0),
+            in(reg) u64::from(SegmentSelector::new(2, PrivilegeLevel::Supervisor)),
             options(preserves_flags)
         );
     }

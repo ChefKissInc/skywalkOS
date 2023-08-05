@@ -52,10 +52,10 @@ impl Thread {
             state: ThreadState::Inactive,
             regs: super::RegisterState {
                 rip,
-                cs: SegmentSelector::new(3, PrivilegeLevel::User).0.into(),
+                cs: SegmentSelector::new(3, PrivilegeLevel::User).into(),
                 rflags: 0x202,
                 rsp: stack_addr + STACK_SIZE,
-                ss: SegmentSelector::new(4, PrivilegeLevel::User).0.into(),
+                ss: SegmentSelector::new(4, PrivilegeLevel::User).into(),
                 ..Default::default()
             },
             fs_base: 0,
