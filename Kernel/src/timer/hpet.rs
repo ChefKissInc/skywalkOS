@@ -24,7 +24,7 @@ impl super::Timer for Hpet {
 
         while self.inner.counter_value() < target {
             unsafe {
-                core::arch::asm!("pause", options(nostack, preserves_flags));
+                core::arch::x86_64::_mm_pause();
             }
         }
     }

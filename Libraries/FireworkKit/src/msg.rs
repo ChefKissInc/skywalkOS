@@ -31,12 +31,12 @@ impl Message {
 #[cfg(feature = "userspace")]
 impl Message {
     #[must_use]
-    pub unsafe fn receive() -> Self {
+    pub unsafe fn recv() -> Self {
         let (mut id, mut pid): (u64, u64);
         let (mut ptr, mut len): (u64, u64);
         core::arch::asm!(
             "int 249",
-            in("rdi") SystemCall::ReceiveMessage as u64,
+            in("rdi") SystemCall::MsgRecv as u64,
             out("rax") id,
             lateout("rdi") pid,
             out("rsi") ptr,
@@ -53,7 +53,7 @@ impl Message {
     pub unsafe fn send(self) {
         core::arch::asm!(
             "int 249",
-            in("rdi") SystemCall::SendMessage as u64,
+            in("rdi") SystemCall::MsgSend as u64,
             in("rsi") self.pid,
             in("rdx") self.data.as_ptr() as u64,
             in("rcx") self.data.len() as u64,
@@ -71,7 +71,7 @@ impl Drop for Message {
         unsafe {
             core::arch::asm!(
                 "int 249",
-                in("rdi") SystemCall::AckMessage as u64,
+                in("rdi") SystemCall::MsgAck as u64,
                 in("rsi") self.id,
                 options(nostack, preserves_flags),
             );

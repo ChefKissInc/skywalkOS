@@ -1,8 +1,12 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
 use alloc::{string::String, vec::Vec};
-use core::cell::SyncUnsafeCell;
+use core::{cell::SyncUnsafeCell, ops::ControlFlow};
 
+use fireworkkit::{
+    msg::{KernelMessage, Message},
+    TerminationReason,
+};
 use hashbrown::HashMap;
 
 use crate::{
@@ -29,43 +33,51 @@ pub struct Scheduler {
     pub msg_id_gen: crate::utils::incr_id::IncrementalIDGen,
 }
 
+unsafe extern "sysv64" fn irq_handler(state: &mut RegisterState) {
+    let irq = (state.int_num - 0x20) as u8;
+    crate::acpi::ioapic::set_irq_mask(irq, true);
+    let mut this = (*crate::system::state::SYS_STATE.get())
+        .scheduler
+        .as_ref()
+        .unwrap()
+        .lock();
+    let pid = this.irq_handlers.get(&irq).copied().unwrap();
+    let s: &mut [u8] = postcard::to_allocvec(&KernelMessage::IRQFired(irq))
+        .unwrap()
+        .leak();
+
+    let virt = this
+        .processes
+        .get_mut(&pid)
+        .unwrap()
+        .track_kernelside_alloc(s.as_ptr() as _, s.len() as _);
+
+    let msg = Message::new(
+        this.msg_id_gen.next(),
+        0,
+        core::slice::from_raw_parts(virt as *const _, s.len() as _),
+    );
+    this.message_sources.insert(msg.id, 0);
+    let process = this.processes.get_mut(&pid).unwrap();
+    process.track_msg(msg.id, virt);
+
+    let tids = process.thread_ids.clone();
+    if super::userland::handlers::msg::handle_new(&mut this, pid, tids, msg).is_break() {
+        this.schedule(state);
+    }
+}
+
 extern "C" fn idle() {
     crate::hlt_loop!();
 }
 
 pub unsafe extern "sysv64" fn schedule(state: &mut RegisterState) {
-    let sys_state = &mut *crate::system::state::SYS_STATE.get();
-    let mut this = sys_state.scheduler.as_ref().unwrap().lock();
-
-    if let Some(old_thread) = this.current_thread_mut() {
-        old_thread.regs = *state;
-        if !old_thread.state.is_suspended() {
-            old_thread.state = super::ThreadState::Inactive;
-        }
-    }
-
-    let Some(thread) = this.next_thread_mut() else {
-        *state = RegisterState {
-            rip: idle as usize as _,
-            cs: SegmentSelector::new(1, PrivilegeLevel::Supervisor).into(),
-            rflags: 0x202,
-            rsp: this.kern_stack.as_ptr() as u64 + this.kern_stack.len() as u64,
-            ss: SegmentSelector::new(2, PrivilegeLevel::Supervisor).into(),
-            ..Default::default()
-        };
-        sys_state.pml4.as_ref().unwrap().lock().set();
-        this.current_tid = None;
-        this.current_pid = None;
-        return;
-    };
-
-    *state = thread.regs;
-    thread.state = super::ThreadState::Active;
-    let pid = thread.pid;
-    let tid = Some(thread.id);
-    this.processes.get_mut(&pid).unwrap().cr3.lock().set();
-    this.current_tid = tid;
-    this.current_pid = Some(pid);
+    (*crate::system::state::SYS_STATE.get())
+        .scheduler
+        .as_ref()
+        .unwrap()
+        .lock()
+        .schedule(state);
 }
 
 impl Scheduler {
@@ -198,5 +210,95 @@ impl Scheduler {
             .values_mut()
             .skip(i)
             .find(|v| v.state.is_inactive())
+    }
+
+    pub unsafe fn schedule(&mut self, state: &mut RegisterState) {
+        if let Some(old_thread) = self.current_thread_mut() {
+            old_thread.regs = *state;
+            if !old_thread.state.is_suspended() {
+                old_thread.state = super::ThreadState::Inactive;
+            }
+        }
+
+        let Some(thread) = self.next_thread_mut() else {
+            *state = RegisterState {
+                rip: idle as usize as _,
+                cs: SegmentSelector::new(1, PrivilegeLevel::Supervisor).into(),
+                rflags: 0x202,
+                rsp: self.kern_stack.as_ptr() as u64 + self.kern_stack.len() as u64,
+                ss: SegmentSelector::new(2, PrivilegeLevel::Supervisor).into(),
+                ..Default::default()
+            };
+            (*crate::system::state::SYS_STATE.get())
+                .pml4
+                .as_ref()
+                .unwrap()
+                .lock()
+                .set_cr3();
+            self.current_tid = None;
+            self.current_pid = None;
+            return;
+        };
+
+        *state = thread.regs;
+        thread.state = super::ThreadState::Active;
+        let pid = thread.pid;
+        let tid = Some(thread.id);
+        self.processes.get_mut(&pid).unwrap().cr3.lock().set_cr3();
+        self.current_tid = tid;
+        self.current_pid = Some(pid);
+    }
+
+    pub fn register_irq(
+        &mut self,
+        state: &RegisterState,
+    ) -> ControlFlow<Option<TerminationReason>> {
+        let irq = state.rsi as u8;
+        if irq > 0xDF {
+            return ControlFlow::Break(Some(TerminationReason::MalformedArgument));
+        }
+        let pid = self.current_pid.unwrap();
+        if self.irq_handlers.try_insert(irq, pid).is_err() {
+            return ControlFlow::Break(Some(TerminationReason::AlreadyExists));
+        }
+
+        crate::acpi::ioapic::wire_legacy_irq(irq, false);
+        crate::intrs::idt::set_handler(
+            irq + 0x20,
+            1,
+            PrivilegeLevel::Supervisor,
+            irq_handler,
+            true,
+            true,
+        );
+
+        ControlFlow::Continue(())
+    }
+
+    pub fn thread_teardown(&mut self) -> ControlFlow<Option<TerminationReason>> {
+        let id = self.current_tid.take().unwrap();
+        self.threads.remove(&id);
+        self.tid_gen.free(id);
+
+        let proc = self.current_process_mut().unwrap();
+        proc.thread_ids.remove(&id);
+        if proc.thread_ids.is_empty() {
+            let pid = self.current_pid.take().unwrap();
+            self.processes.remove(&pid);
+            self.pid_gen.free(pid);
+        }
+
+        ControlFlow::Break(None)
+    }
+
+    pub fn process_teardown(&mut self) {
+        self.current_tid = None;
+        let pid = self.current_pid.take().unwrap();
+        let proc = self.processes.remove(&pid).unwrap();
+        for tid in &proc.thread_ids {
+            self.threads.remove(tid);
+            self.tid_gen.free(*tid);
+        }
+        self.pid_gen.free(pid);
     }
 }

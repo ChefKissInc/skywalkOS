@@ -123,19 +123,19 @@ impl PCIDevice {
     #[must_use]
     pub unsafe fn cfg_read8<A: Into<u8>, R: From<u8>>(&self, off: A) -> R {
         PCIRequest::Read8(self.addr, off.into()).send(self.pid);
-        Message::receive().data[0].into()
+        Message::recv().data[0].into()
     }
 
     #[must_use]
     pub unsafe fn cfg_read16<A: Into<u8>, R: From<u16>>(&self, off: A) -> R {
         PCIRequest::Read16(self.addr, off.into()).send(self.pid);
-        u16::from_le_bytes(Message::receive().data.try_into().unwrap()).into()
+        u16::from_le_bytes(Message::recv().data.try_into().unwrap()).into()
     }
 
     #[must_use]
     pub unsafe fn cfg_read32<A: Into<u8>, R: From<u32>>(&self, off: A) -> R {
         PCIRequest::Read32(self.addr, off.into()).send(self.pid);
-        u32::from_le_bytes(Message::receive().data.try_into().unwrap()).into()
+        u32::from_le_bytes(Message::recv().data.try_into().unwrap()).into()
     }
 
     pub unsafe fn cfg_write8<A: Into<u8>, R: Into<u8>>(&self, off: A, value: R) {

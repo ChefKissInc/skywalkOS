@@ -62,7 +62,7 @@ pub fn send(
     if target != src {
         let process = scheduler.processes.get(&target).unwrap();
         unsafe {
-            process.cr3.lock().map_pages(
+            process.cr3.lock().map(
                 addr,
                 addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
                 (size + 0xFFF) / 0x1000,
@@ -76,7 +76,7 @@ pub fn send(
     ControlFlow::Continue(())
 }
 
-pub fn receive(
+pub fn recv(
     scheduler: &mut Scheduler,
     state: &mut RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
@@ -117,13 +117,10 @@ pub fn ack(
     }
     process.free_msg(msg_id);
     scheduler.msg_id_gen.free(msg_id);
-    if src_pid != 0 && src_pid != cur_pid {
+    if pid != cur_pid {
         let process = scheduler.current_process().unwrap();
         unsafe {
-            process
-                .cr3
-                .lock()
-                .unmap_pages(addr, (size + 0xFFF) / 0x1000);
+            process.cr3.lock().unmap(addr, (size + 0xFFF) / 0x1000);
         }
     }
 

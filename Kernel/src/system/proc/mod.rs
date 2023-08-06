@@ -103,7 +103,7 @@ impl Process {
         thread
     }
 
-    pub fn track_alloc(&mut self, addr: u64, size: u64, writable: Option<bool>) {
+    pub fn track_alloc(&mut self, addr: u64, size: u64, write_prot: Option<bool>) {
         let _lock = self.alloc_lock.lock();
 
         if self.allocations.contains_key(&addr) {
@@ -127,9 +127,9 @@ impl Process {
         }
 
         debug!("PID {}: Tracking {addr:#X} ({size} bytes)", self.id);
-        self.allocations.insert(addr, (size, writable.is_some()));
+        self.allocations.insert(addr, (size, write_prot.is_some()));
 
-        let Some(writable) = writable else {
+        let Some(writable) = write_prot else {
             return;
         };
 
@@ -140,7 +140,7 @@ impl Process {
         );
         unsafe {
             drop(_lock);
-            self.cr3.lock().map_pages(
+            self.cr3.lock().map(
                 addr,
                 addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
                 page_count,
@@ -185,7 +185,7 @@ impl Process {
 
         if mapped {
             drop(_lock);
-            unsafe { self.cr3.lock().unmap_pages(addr, page_count) }
+            unsafe { self.cr3.lock().unmap(addr, page_count) }
         }
     }
 

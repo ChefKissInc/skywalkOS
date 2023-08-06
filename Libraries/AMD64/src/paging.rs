@@ -49,13 +49,13 @@ pub struct PageTableEntry {
 
 #[repr(C, align(4096))]
 #[derive(Debug)]
-pub struct PageTable {
+pub struct PageTable<const VIRT_OFF: u64> {
     pub entries: [PageTableEntry; 512],
 }
 
 type AllocEntryFn<'a> = &'a dyn Fn() -> u64;
 
-impl PageTable {
+impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
     #[inline]
     #[must_use]
     pub const fn new() -> Self {
@@ -65,11 +65,11 @@ impl PageTable {
     }
 
     #[inline]
-    unsafe fn get(&self, offset: u64, virt_off: u64) -> Option<&mut Self> {
+    unsafe fn get(&self, offset: u64) -> Option<&mut Self> {
         let entry = &self.entries[offset as usize];
 
         if entry.present() {
-            return Some(&mut *(((entry.address() << 12) + virt_off) as *mut Self));
+            return Some(&mut *(((entry.address() << 12) + VIRT_OFF) as *mut Self));
         }
 
         None
@@ -80,44 +80,43 @@ impl PageTable {
         &mut self,
         alloc_entry: AllocEntryFn,
         offset: u64,
-        virt_off: u64,
         flags: PageTableEntry,
     ) -> &mut Self {
         let entry = &mut self.entries[offset as usize];
 
         if entry.present() {
-            return &mut *(((entry.address() << 12) + virt_off) as *mut Self);
+            return &mut *(((entry.address() << 12) + VIRT_OFF) as *mut Self);
         }
 
         let phys = alloc_entry();
         *entry = flags.with_address(phys >> 12);
 
-        &mut *((phys + virt_off) as *mut Self)
+        &mut *((phys + VIRT_OFF) as *mut Self)
     }
 
     #[inline]
-    pub unsafe fn set(&mut self, virt_off: u64) {
-        core::arch::asm!("mov cr3, {}", in(reg) self as *mut _ as u64 - virt_off, options(nostack, preserves_flags));
+    pub unsafe fn set_cr3(&mut self) {
+        core::arch::asm!("mov cr3, {}", in(reg) self as *mut _ as u64 - VIRT_OFF, options(nostack, preserves_flags));
     }
 
     #[inline]
     #[must_use]
-    pub unsafe fn get_from_cr3() -> &'static mut Self {
+    pub unsafe fn from_cr3() -> &'static mut Self {
         let pml4: *mut Self;
         core::arch::asm!("mov {}, cr3", out(reg) pml4, options(nostack, preserves_flags));
         &mut *pml4
     }
 
-    pub unsafe fn virt_to_entry_addr(&mut self, virt: u64, virt_off: u64) -> Option<u64> {
+    pub unsafe fn virt_to_entry_addr(&mut self, virt: u64) -> Option<u64> {
         let offs = PageTableOffsets::new(virt);
-        let pdp = self.get(offs.pml4, virt_off)?;
-        let pd = pdp.get(offs.pdp, virt_off)?;
+        let pdp = self.get(offs.pml4)?;
+        let pd = pdp.get(offs.pdp)?;
 
         if pd.entries[offs.pd as usize].huge_or_pat() {
             return Some(pd.entries[offs.pd as usize].address() << 12);
         }
 
-        let pt = pd.get(offs.pd, virt_off)?;
+        let pt = pd.get(offs.pd)?;
 
         if pt.entries[offs.pt as usize].present() {
             return Some(pt.entries[offs.pt as usize].address() << 12);
@@ -126,11 +125,10 @@ impl PageTable {
         None
     }
 
-    pub unsafe fn map_pages(
+    pub unsafe fn map(
         &mut self,
         alloc_entry: AllocEntryFn,
         virt: u64,
-        virt_off: u64,
         phys: u64,
         count: u64,
         flags: PageTableEntry,
@@ -139,24 +137,24 @@ impl PageTable {
             let phys = phys + 0x1000 * i;
             let virt = virt + 0x1000 * i;
             let offs = PageTableOffsets::new(virt);
-            let pdp = self.get_or_alloc(alloc_entry, offs.pml4, virt_off, flags);
-            let pd = pdp.get_or_alloc(alloc_entry, offs.pdp, virt_off, flags);
-            let pt = pd.get_or_alloc(alloc_entry, offs.pd, virt_off, flags);
+            let pdp = self.get_or_alloc(alloc_entry, offs.pml4, flags);
+            let pd = pdp.get_or_alloc(alloc_entry, offs.pdp, flags);
+            let pt = pd.get_or_alloc(alloc_entry, offs.pd, flags);
             pt.entries[offs.pt as usize] = flags.with_address(phys >> 12);
         }
     }
 
-    pub unsafe fn unmap_pages(&mut self, virt: u64, virt_off: u64, count: u64) -> bool {
+    pub unsafe fn unmap(&mut self, virt: u64, count: u64) -> bool {
         for i in 0..count {
             let virt = virt + 0x1000 * i;
             let offs = PageTableOffsets::new(virt);
-            let Some(pdp) = self.get(offs.pml4, virt_off) else {
+            let Some(pdp) = self.get(offs.pml4) else {
                 return false;
             };
-            let Some(pd) = pdp.get(offs.pdp, virt_off) else {
+            let Some(pd) = pdp.get(offs.pdp) else {
                 return false;
             };
-            let Some(pt) = pd.get(offs.pd, virt_off) else {
+            let Some(pt) = pd.get(offs.pd) else {
                 return false;
             };
             pt.entries[offs.pt as usize] = PageTableEntry::new();
@@ -166,11 +164,11 @@ impl PageTable {
         true
     }
 
-    pub unsafe fn map_huge_pages(
+    pub unsafe fn map_huge(
         &mut self,
         alloc_entry: AllocEntryFn,
         virt: u64,
-        virt_off: u64,
+
         phys: u64,
         count: u64,
         flags: PageTableEntry,
@@ -179,20 +177,20 @@ impl PageTable {
             let phys = phys + 0x20_0000 * i;
             let virt = virt + 0x20_0000 * i;
             let offs = PageTableOffsets::new(virt);
-            let pdp = self.get_or_alloc(alloc_entry, offs.pml4, virt_off, flags);
-            let pd = pdp.get_or_alloc(alloc_entry, offs.pdp, virt_off, flags);
+            let pdp = self.get_or_alloc(alloc_entry, offs.pml4, flags);
+            let pd = pdp.get_or_alloc(alloc_entry, offs.pdp, flags);
             pd.entries[offs.pd as usize] = flags.with_huge_or_pat(true).with_address(phys >> 12);
         }
     }
 
-    pub unsafe fn unmap_huge_pages(&mut self, virt: u64, virt_off: u64, count: u64) -> bool {
+    pub unsafe fn unmap_huge(&mut self, virt: u64, count: u64) -> bool {
         for i in 0..count {
             let virt = virt + 0x20_0000 * i;
             let offs = PageTableOffsets::new(virt);
-            let Some(pdp) = self.get(offs.pml4, virt_off) else {
+            let Some(pdp) = self.get(offs.pml4) else {
                 return false;
             };
-            let Some(pd) = pdp.get(offs.pdp, virt_off) else {
+            let Some(pd) = pdp.get(offs.pdp) else {
                 return false;
             };
             pd.entries[offs.pt as usize] = PageTableEntry::new();
@@ -202,19 +200,17 @@ impl PageTable {
         true
     }
 
-    pub unsafe fn map_higher_half(&mut self, alloc_entry: AllocEntryFn, virt_off: u64) {
-        self.map_huge_pages(
+    pub unsafe fn map_higher_half(&mut self, alloc_entry: AllocEntryFn) {
+        self.map_huge(
             alloc_entry,
             PHYS_VIRT_OFFSET,
-            virt_off,
             0,
             2048,
             PageTableEntry::new().with_present(true).with_writable(true),
         );
-        self.map_huge_pages(
+        self.map_huge(
             alloc_entry,
             KERNEL_VIRT_OFFSET,
-            virt_off,
             0,
             1024,
             PageTableEntry::new().with_present(true).with_writable(true),

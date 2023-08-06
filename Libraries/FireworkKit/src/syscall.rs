@@ -14,16 +14,16 @@ pub enum AccessSize {
 #[repr(u64)]
 pub enum SystemCall {
     KPrint,
-    ReceiveMessage,
-    SendMessage,
+    MsgRecv,
+    MsgSend,
     Quit,
     Yield,
     PortIn,
     PortOut,
-    RegisterIRQHandler,
+    RegisterIRQ,
     Allocate,
     Free,
-    AckMessage,
+    MsgAck,
     NewOSDTEntry,
     GetOSDTEntryInfo,
     SetOSDTEntryProp,
@@ -42,7 +42,7 @@ impl SystemCall {
     pub unsafe fn register_irq_handler(irq: u8) {
         core::arch::asm!(
             "int 249",
-            in("rdi") Self::RegisterIRQHandler as u64,
+            in("rdi") Self::RegisterIRQ as u64,
             in("sil") irq,
             options(nostack, preserves_flags),
         );

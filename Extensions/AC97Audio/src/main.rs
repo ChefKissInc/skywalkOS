@@ -194,7 +194,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
     this.play_audio(include_bytes!("test.dat"));
 
     loop {
-        let msg = unsafe { Message::receive() };
+        let msg = unsafe { Message::recv() };
         if msg.pid != 0 {
             continue;
         }

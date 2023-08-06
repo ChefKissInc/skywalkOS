@@ -2,51 +2,12 @@
 
 use core::ops::ControlFlow;
 
-use fireworkkit::{
-    msg::{KernelMessage, Message},
-    syscall::SystemCall,
-    TerminationReason,
-};
+use fireworkkit::{syscall::SystemCall, TerminationReason};
 
 use crate::system::{gdt::PrivilegeLevel, RegisterState};
 
-mod handlers;
+pub mod handlers;
 pub mod page_table;
-
-unsafe extern "sysv64" fn irq_handler(state: &mut RegisterState) {
-    let irq = (state.int_num - 0x20) as u8;
-    crate::acpi::ioapic::set_irq_mask(irq, true);
-    let mut this = (*crate::system::state::SYS_STATE.get())
-        .scheduler
-        .as_ref()
-        .unwrap()
-        .lock();
-    let pid = this.irq_handlers.get(&irq).copied().unwrap();
-    let s: &mut [u8] = postcard::to_allocvec(&KernelMessage::IRQFired(irq))
-        .unwrap()
-        .leak();
-
-    let virt = this
-        .processes
-        .get_mut(&pid)
-        .unwrap()
-        .track_kernelside_alloc(s.as_ptr() as _, s.len() as _);
-
-    let msg = Message::new(
-        this.msg_id_gen.next(),
-        0,
-        core::slice::from_raw_parts(virt as *const _, s.len() as _),
-    );
-    this.message_sources.insert(msg.id, 0);
-    let process = this.processes.get_mut(&pid).unwrap();
-    process.track_msg(msg.id, virt);
-
-    let tids = process.thread_ids.clone();
-    if handlers::message::handle_new(&mut this, pid, tids, msg).is_break() {
-        drop(this);
-        super::scheduler::schedule(state);
-    }
-}
 
 unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
     let sys_state = &mut *crate::system::state::SYS_STATE.get();
@@ -59,16 +20,16 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
 
         match v {
             SystemCall::KPrint => handlers::kprint(state),
-            SystemCall::ReceiveMessage => handlers::message::receive(&mut scheduler, state),
-            SystemCall::SendMessage => handlers::message::send(&mut scheduler, state),
-            SystemCall::Quit => handlers::thread_teardown(&mut scheduler),
+            SystemCall::MsgRecv => handlers::msg::recv(&mut scheduler, state),
+            SystemCall::MsgSend => handlers::msg::send(&mut scheduler, state),
+            SystemCall::Quit => scheduler.thread_teardown(),
             SystemCall::Yield => ControlFlow::Break(None),
             SystemCall::PortIn => handlers::port::port_in(state),
             SystemCall::PortOut => handlers::port::port_out(state),
-            SystemCall::RegisterIRQHandler => handlers::register_irq_handler(&mut scheduler, state),
+            SystemCall::RegisterIRQ => scheduler.register_irq(state),
             SystemCall::Allocate => handlers::alloc::alloc(&mut scheduler, state),
             SystemCall::Free => handlers::alloc::free(&mut scheduler, state),
-            SystemCall::AckMessage => handlers::message::ack(&mut scheduler, state),
+            SystemCall::MsgAck => handlers::msg::ack(&mut scheduler, state),
             SystemCall::NewOSDTEntry => handlers::osdtentry::new_entry(state),
             SystemCall::GetOSDTEntryInfo => handlers::osdtentry::get_info(&mut scheduler, state),
             SystemCall::SetOSDTEntryProp => handlers::osdtentry::set_prop(&mut scheduler, state),
@@ -84,10 +45,9 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             "PID {} performed illegal action (<{reason:?}>), good riddance.",
             scheduler.current_pid.unwrap()
         );
-        handlers::process_teardown(&mut scheduler);
+        scheduler.process_teardown();
     }
-    drop(scheduler);
-    super::scheduler::schedule(state);
+    scheduler.schedule(state);
 }
 
 pub fn setup() {

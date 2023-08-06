@@ -199,7 +199,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
     }
 
     loop {
-        let msg = unsafe { Message::receive() };
+        let msg = unsafe { Message::recv() };
         if msg.pid == 0 {
             continue;
         }

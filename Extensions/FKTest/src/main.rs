@@ -151,7 +151,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
     let mut s = String::new();
     write!(KWriter, "# ").unwrap();
     loop {
-        let msg = unsafe { Message::receive() };
+        let msg = unsafe { Message::recv() };
         if msg.pid != 0 {
             continue;
         }
