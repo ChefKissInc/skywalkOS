@@ -111,15 +111,26 @@ impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
         let offs = PageTableOffsets::new(virt);
         let pdp = self.get(offs.pml4)?;
         let pd = pdp.get(offs.pdp)?;
-
-        if pd.entries[offs.pd as usize].huge_or_pat() {
-            return Some(pd.entries[offs.pd as usize].address() << 12);
-        }
-
         let pt = pd.get(offs.pd)?;
 
         if pt.entries[offs.pt as usize].present() {
             return Some(pt.entries[offs.pt as usize].address() << 12);
+        }
+
+        None
+    }
+
+    pub unsafe fn virt_to_entry_addr_huge(&mut self, virt: u64) -> Option<u64> {
+        let offs = PageTableOffsets::new(virt);
+        let pdp = self.get(offs.pml4)?;
+        let pd = pdp.get(offs.pdp)?;
+
+        if !pd.entries[offs.pd as usize].huge_or_pat() {
+            return None;
+        }
+
+        if pd.entries[offs.pd as usize].present() {
+            return Some(pd.entries[offs.pd as usize].address() << 12);
         }
 
         None
@@ -147,6 +158,7 @@ impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
     pub unsafe fn unmap(&mut self, virt: u64, count: u64) -> bool {
         for i in 0..count {
             let virt = virt + 0x1000 * i;
+            core::arch::asm!("invlpg [{}]", in(reg) virt, options(nostack, preserves_flags));
             let offs = PageTableOffsets::new(virt);
             let Some(pdp) = self.get(offs.pml4) else {
                 return false;
@@ -158,7 +170,6 @@ impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
                 return false;
             };
             pt.entries[offs.pt as usize] = PageTableEntry::new();
-            core::arch::asm!("invlpg [{}]", in(reg) virt, options(nostack, preserves_flags));
         }
 
         true
