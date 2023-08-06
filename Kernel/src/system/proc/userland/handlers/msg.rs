@@ -23,17 +23,18 @@ pub fn handle_new(
     let idle = scheduler.current_tid.is_none();
     for tid in tids {
         let thread = scheduler.threads.get_mut(&tid).unwrap();
-        if thread.state.is_suspended() {
-            thread.state = ThreadState::Inactive;
-            thread.regs.rax = msg.id;
-            thread.regs.rdi = msg.pid;
-            thread.regs.rsi = msg.data.as_ptr() as _;
-            thread.regs.rdx = msg.data.len() as _;
-            if idle {
-                return ControlFlow::Break(None);
-            }
-            return ControlFlow::Continue(());
+        if !thread.state.is_suspended() {
+            continue;
         }
+        thread.state = ThreadState::Inactive;
+        thread.regs.rax = msg.id;
+        thread.regs.rdi = msg.pid;
+        thread.regs.rsi = msg.data.as_ptr() as _;
+        thread.regs.rdx = msg.data.len() as _;
+        if idle {
+            return ControlFlow::Break(None);
+        }
+        return ControlFlow::Continue(());
     }
     let process = scheduler.processes.get_mut(&pid).unwrap();
     process.messages.push_front(msg);
@@ -45,13 +46,16 @@ pub fn send(
     state: &RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
     let target = state.rsi;
+    let src = scheduler.current_pid.unwrap();
+    if src == target {
+        return ControlFlow::Break(Some(TerminationReason::MalformedArgument));
+    }
 
     if !scheduler.processes.contains_key(&target) {
         return ControlFlow::Break(Some(TerminationReason::NotFound));
     }
 
     let (addr, size) = (state.rdx, state.rcx);
-    let src = scheduler.current_pid.unwrap();
     let msg = Message::new(scheduler.msg_id_gen.next(), src, unsafe {
         core::slice::from_raw_parts(addr as *const _, size as _)
     });
@@ -59,21 +63,18 @@ pub fn send(
 
     let cur = scheduler.current_process_mut().unwrap();
     cur.track_msg(msg.id, addr);
-    if target != src {
-        let process = scheduler.processes.get(&target).unwrap();
-        unsafe {
-            process.cr3.lock().map(
-                addr,
-                addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
-                (size + 0xFFF) / 0x1000,
-                PageTableEntry::new().with_present(true).with_user(true),
-            );
-        }
-        let tids = process.thread_ids.clone();
-        return handle_new(scheduler, target, tids, msg);
+
+    let process = scheduler.processes.get(&target).unwrap();
+    unsafe {
+        process.cr3.lock().map(
+            addr,
+            addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
+            (size + 0xFFF) / 0x1000,
+            PageTableEntry::new().with_present(true).with_user(true),
+        );
     }
-    cur.messages.push_front(msg);
-    ControlFlow::Continue(())
+    let tids = process.thread_ids.clone();
+    handle_new(scheduler, target, tids, msg)
 }
 
 pub fn recv(

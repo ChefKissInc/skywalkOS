@@ -98,7 +98,7 @@ impl Scheduler {
 
             core::arch::asm!(
                 "ltr ax",
-                in("ax") crate::system::gdt::SegmentSelector::new(5, crate::system::gdt::PrivilegeLevel::Supervisor).0,
+                in("ax") SegmentSelector::new(5, crate::system::gdt::PrivilegeLevel::Supervisor).0,
                 options(nostack, preserves_flags),
             );
         }
