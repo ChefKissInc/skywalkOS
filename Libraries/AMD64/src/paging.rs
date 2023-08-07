@@ -179,7 +179,6 @@ impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
         &mut self,
         alloc_entry: AllocEntryFn,
         virt: u64,
-
         phys: u64,
         count: u64,
         flags: PageTableEntry,

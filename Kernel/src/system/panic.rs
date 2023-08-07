@@ -20,7 +20,7 @@ extern "C" fn callback(
         .find(|v| ip >= v.start && ip < v.end)
         .map_or_else(
             || {
-                error!("{:>4}: {ip:>#19X}+{0:>#04X} -> ???", data.counter);
+                error!("{:>4}: {ip:>#19X}+{:>#04X} -> ???", data.counter, 0);
             },
             |symbol| {
                 rustc_demangle::try_demangle(symbol.name).map_or_else(
@@ -94,7 +94,7 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
                 .find(|v| ip >= v.start && ip < v.end)
                 .map_or_else(
                     || {
-                        error!("{:>4}: {ip:>#19X}+{0:>#04X} -> ???", data.counter);
+                        error!("{:>4}: {ip:>#19X}+{:>#04X} -> ???", data.counter, 0);
                     },
                     |symbol| {
                         rustc_demangle::try_demangle(symbol.name).map_or_else(
