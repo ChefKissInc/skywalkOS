@@ -23,24 +23,12 @@ extern "C" fn callback(
                 error!("{:>4}: {ip:>#19X}+{:>#04X} -> ???", data.counter, 0);
             },
             |symbol| {
-                rustc_demangle::try_demangle(symbol.name).map_or_else(
-                    |_| {
-                        error!(
-                            "{:>4}: {:#019X}+{:#04X} -> {}",
-                            data.counter,
-                            symbol.start,
-                            ip - symbol.start,
-                            symbol.name
-                        );
-                    },
-                    |demangled| {
-                        error!(
-                            "{:>4}: {:#019X}+{:#04X} -> {demangled:#}",
-                            data.counter,
-                            symbol.start,
-                            ip - symbol.start,
-                        );
-                    },
+                error!(
+                    "{:>4}: {:#019X}+{:#04X} -> {}",
+                    data.counter,
+                    symbol.start,
+                    ip - symbol.start,
+                    rustc_demangle::demangle(symbol.name)
                 );
             },
         );
@@ -97,24 +85,12 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
                         error!("{:>4}: {ip:>#19X}+{:>#04X} -> ???", data.counter, 0);
                     },
                     |symbol| {
-                        rustc_demangle::try_demangle(symbol.name).map_or_else(
-                            |_| {
-                                error!(
-                                    "{:>4}: {:#019X}+{:#04X} -> {}",
-                                    data.counter,
-                                    symbol.start,
-                                    ip - symbol.start,
-                                    symbol.name
-                                );
-                            },
-                            |demangled| {
-                                error!(
-                                    "{:>4}: {:#019X}+{:#04X} -> {demangled:#}",
-                                    data.counter,
-                                    symbol.start,
-                                    ip - symbol.start,
-                                );
-                            },
+                        error!(
+                            "{:>4}: {:#019X}+{:#04X} -> {}",
+                            data.counter,
+                            symbol.start,
+                            ip - symbol.start,
+                            rustc_demangle::demangle(symbol.name)
                         );
                     },
                 );
