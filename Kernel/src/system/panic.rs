@@ -20,11 +20,11 @@ extern "C" fn callback(
         .find(|v| ip >= v.start && ip < v.end)
         .map_or_else(
             || {
-                error!("{:>4}: {ip:>#19X}+{:>#04X} -> ???", data.counter, 0);
+                error!("{:>4}: {ip:#018X}+{:#06X} -> ???", data.counter, 0);
             },
             |symbol| {
                 error!(
-                    "{:>4}: {:#019X}+{:#04X} -> {}",
+                    "{:>4}: {:#018X}+{:#06X} -> {}",
                     data.counter,
                     symbol.start,
                     ip - symbol.start,
@@ -82,11 +82,11 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
                 .find(|v| ip >= v.start && ip < v.end)
                 .map_or_else(
                     || {
-                        error!("{:>4}: {ip:>#19X}+{:>#04X} -> ???", data.counter, 0);
+                        error!("{:>4}: {ip:#018X}+{:#06X} -> ???", data.counter, 0);
                     },
                     |symbol| {
                         error!(
-                            "{:>4}: {:#019X}+{:#04X} -> {}",
+                            "{:>4}: {:#018X}+{:#06X} -> {}",
                             data.counter,
                             symbol.start,
                             ip - symbol.start,
