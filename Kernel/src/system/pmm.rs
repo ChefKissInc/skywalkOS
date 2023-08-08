@@ -29,8 +29,8 @@ impl BitmapAllocator {
             }
         }
 
-        let bitmap_sz = (highest_addr / 0x1000) / 8;
-        debug!("highest_addr: {highest_addr:#X?}, bitmap_sz: {bitmap_sz:#X?}");
+        let bitmap_sz = (highest_addr / 0x1000) / 8 + 8;
+        debug!("Highest usable address: {highest_addr:#X?}, Bitmap size: {bitmap_sz} bytes");
 
         let mut bitmap = Default::default();
 
@@ -49,7 +49,7 @@ impl BitmapAllocator {
                 bitmap = unsafe {
                     core::slice::from_raw_parts_mut(
                         (v.base + amd64::paging::PHYS_VIRT_OFFSET) as *mut _,
-                        bitmap_sz as _,
+                        (bitmap_sz / 8) as _,
                     )
                 };
                 bitmap.fill(!0u64);
@@ -87,8 +87,8 @@ impl BitmapAllocator {
             }
 
             let count = v.length / 0x1000;
-            for i in 0..count {
-                crate::utils::bitmap::bit_reset(bitmap, base + i);
+            for i in base..base + count {
+                crate::utils::bitmap::bit_reset(bitmap, i);
             }
             free_pages += count;
         }
