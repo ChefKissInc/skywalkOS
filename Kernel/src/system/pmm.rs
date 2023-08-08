@@ -17,16 +17,15 @@ impl BitmapAllocator {
 
         // Find the highest available address
         for mmap_ent in mmap {
-            match mmap_ent {
-                MemoryEntry::Usable(v) | MemoryEntry::BootLoaderReclaimable(v) => {
-                    let top = v.base + v.length;
-                    debug!("{mmap_ent:X?}, top: {top:#X?}");
+            let MemoryEntry::Usable(v) = mmap_ent else {
+                continue;
+            };
 
-                    if top > highest_addr {
-                        highest_addr = top;
-                    }
-                }
-                _ => {}
+            let top = v.base + v.length;
+            debug!("{mmap_ent:X?}, top: {top:#X?}");
+
+            if top > highest_addr {
+                highest_addr = top;
             }
         }
 
@@ -35,11 +34,16 @@ impl BitmapAllocator {
 
         let mut bitmap = Default::default();
 
-        // Find a memory hole for the bitmap
+        // Find a place for the bitmap
         for mmap_ent in mmap {
             let MemoryEntry::Usable(v) = mmap_ent else {
                 continue;
             };
+
+            // Skip the first 2 MiB
+            if v.base <= 0x20_0000 {
+                continue;
+            }
 
             if v.length >= bitmap_sz {
                 bitmap = unsafe {
@@ -64,24 +68,29 @@ impl BitmapAllocator {
 
             debug!("Base: {:#X?}, End: {:#X?}", v.base, v.base + v.length);
 
-            let v = if v.base == bitmap.as_ptr() as u64 {
+            let v = if v.base == (bitmap.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET) {
+                trace!("Bitmap is here");
                 MemoryData::new(v.base + bitmap_sz, v.length - bitmap_sz)
             } else {
                 *v
             };
 
-            if (v.base / 0x1000) > 512 {
-                free_pages += v.length / 0x1000;
+            if v.length == 0 {
+                continue;
             }
 
-            for i in 0..(v.length / 0x1000) {
-                crate::utils::bitmap::bit_reset(bitmap, (v.base + (i * 0x1000)) / 0x1000);
-            }
-        }
+            let base = v.base / 0x1000;
 
-        // Set all regions under 2 MiB as reserved cause firmware stores stuff here
-        for i in 0..512 {
-            crate::utils::bitmap::bit_set(bitmap, i);
+            // First 2 MiB might be reserved by firmware regardless of what the memory map says
+            if base <= 512 {
+                continue;
+            }
+
+            let count = v.length / 0x1000;
+            for i in 0..count {
+                crate::utils::bitmap::bit_reset(bitmap, base + i);
+            }
+            free_pages += count;
         }
 
         let total_pages = highest_addr / 0x1000;
