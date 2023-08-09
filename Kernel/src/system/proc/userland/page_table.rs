@@ -1,11 +1,14 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
+use alloc::boxed::Box;
+
+use amd64::paging::PageTable;
+
+use crate::system::proc::AllocationType;
+
 #[derive(Debug)]
 #[repr(C)]
-pub struct UserPML4(
-    amd64::paging::PageTable<{ amd64::paging::PHYS_VIRT_OFFSET }>,
-    u64,
-);
+pub struct UserPML4(PageTable<{ amd64::paging::PHYS_VIRT_OFFSET }>, u64);
 
 impl UserPML4 {
     #[inline]
@@ -15,13 +18,14 @@ impl UserPML4 {
 
     fn alloc_entry(pid: u64) -> u64 {
         let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-        let phys = unsafe { sys_state.pmm.as_ref().unwrap().lock().alloc(1).unwrap() as _ };
+        let phys = Box::leak(Box::new(PageTable::<0>::new())) as *mut _ as u64
+            - amd64::paging::PHYS_VIRT_OFFSET;
 
         let scheduler = sys_state.scheduler.as_mut().unwrap().get_mut();
         scheduler.processes.get_mut(&pid).unwrap().track_alloc(
             phys + fireworkkit::USER_PHYS_VIRT_OFFSET,
-            4096,
-            None,
+            0x1000,
+            AllocationType::Kernel,
         );
 
         phys

@@ -1,15 +1,17 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
+use alloc::boxed::Box;
+
 use amd64::{
     msr::{
         pat::{PATEntry, PageAttributeTable},
         ModelSpecificReg,
     },
-    paging::PageTableEntry,
+    paging::{PageTable, PageTableEntry},
 };
 
 #[repr(transparent)]
-pub struct PageTableLvl4(amd64::paging::PageTable<{ amd64::paging::PHYS_VIRT_OFFSET }>);
+pub struct PageTableLvl4(PageTable<{ amd64::paging::PHYS_VIRT_OFFSET }>);
 
 impl PageTableLvl4 {
     #[inline]
@@ -37,8 +39,8 @@ impl PageTableLvl4 {
     }
 
     fn alloc_entry() -> u64 {
-        let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-        unsafe { sys_state.pmm.as_ref().unwrap().lock().alloc(1).unwrap() as _ }
+        Box::leak(Box::new(PageTable::<0>::new())) as *mut _ as u64
+            - amd64::paging::PHYS_VIRT_OFFSET
     }
 
     pub unsafe fn set_cr3(&mut self) {

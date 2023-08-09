@@ -12,6 +12,7 @@ use hashbrown::HashMap;
 use crate::{
     system::{
         gdt::{PrivilegeLevel, SegmentSelector},
+        proc::AllocationType,
         tss::TaskSegmentSelector,
         RegisterState,
     },
@@ -128,7 +129,7 @@ impl Scheduler {
         let state = unsafe { &*crate::system::state::SYS_STATE.get() };
         let lapic = state.lapic.as_ref().unwrap();
         lapic.write_timer(lapic.read_timer().with_mask(false));
-        unsafe { core::arch::asm!("int 128", options(nostack, preserves_flags)) }
+        unsafe { core::arch::asm!("int 128", options(nomem, nostack, preserves_flags)) }
     }
 
     pub fn spawn_proc(&mut self, path: String, exec_data: &[u8]) -> &mut super::Thread {
@@ -181,7 +182,7 @@ impl Scheduler {
             .try_insert(pid, super::Process::new(pid, path, virt_addr))
             .unwrap();
         unsafe { proc.cr3.lock().map_higher_half() }
-        proc.track_alloc(virt_addr, data.len() as _, Some(true));
+        proc.track_alloc(virt_addr, data.len() as _, AllocationType::Writable);
         let tid = self.tid_gen.next();
         let stack_addr = proc.allocate(super::STACK_SIZE).0;
         let thread = proc.new_thread(tid, virt_addr + exec.ehdr.e_entry, stack_addr);

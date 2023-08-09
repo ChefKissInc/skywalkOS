@@ -65,6 +65,13 @@ impl Thread {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum AllocationType {
+    Kernel,
+    Readable,
+    Writable,
+}
+
 #[derive(Debug)]
 pub struct Process {
     pub id: u64,
@@ -72,7 +79,7 @@ pub struct Process {
     pub image_base: u64,
     pub cr3: spin::Mutex<Box<userland::page_table::UserPML4>>,
     pub messages: VecDeque<Message>,
-    pub allocations: HashMap<u64, (u64, bool)>,
+    pub allocations: HashMap<u64, (u64, AllocationType)>,
     pub msg_id_to_addr: HashMap<u64, u64>,
     pub addr_to_msg_id: HashMap<u64, u64>,
     pub thread_ids: HashSet<u64>,
@@ -103,7 +110,7 @@ impl Process {
         thread
     }
 
-    pub fn track_alloc(&mut self, addr: u64, size: u64, write_prot: Option<bool>) {
+    pub fn track_alloc(&mut self, addr: u64, size: u64, ty: AllocationType) {
         let _lock = self.alloc_lock.lock();
 
         if self.allocations.contains_key(&addr) {
@@ -112,32 +119,35 @@ impl Process {
 
         let page_count = (size + 0xFFF) / 0x1000;
 
-        if unsafe {
-            !(*crate::system::state::SYS_STATE.get())
-                .pmm
-                .as_ref()
-                .unwrap()
-                .lock()
-                .is_allocated(
-                    (addr - fireworkkit::USER_PHYS_VIRT_OFFSET) as *mut _,
-                    page_count,
-                )
-        } {
-            panic!("PID {}: Address {addr:#X} not allocated", self.id);
-        }
-
-        debug!("PID {}: Tracking {addr:#X} ({size} bytes)", self.id);
-        self.allocations.insert(addr, (size, write_prot.is_some()));
-
-        let Some(writable) = write_prot else {
-            return;
-        };
+        assert!(
+            unsafe {
+                (*crate::system::state::SYS_STATE.get())
+                    .pmm
+                    .as_ref()
+                    .unwrap()
+                    .lock()
+                    .is_allocated(
+                        (addr - fireworkkit::USER_PHYS_VIRT_OFFSET) as *mut _,
+                        page_count,
+                    )
+            },
+            "PID {}: Address {addr:#X} not allocated",
+            self.id,
+        );
 
         debug!(
-            "PID {}: Mapping {page_count} pages ({})",
+            "PID {}: Tracking {addr:#X} ({ty:?}, {size} byte{}, {page_count} page{}, will map: {})",
             self.id,
-            if writable { "writable" } else { "read-only" }
+            if size > 1 { "s" } else { "" },
+            if page_count > 1 { "s" } else { "" },
+            !matches!(ty, AllocationType::Kernel)
         );
+        self.allocations.insert(addr, (size, ty));
+
+        if matches!(ty, AllocationType::Kernel) {
+            return;
+        }
+
         unsafe {
             drop(_lock);
             self.cr3.lock().map(
@@ -146,7 +156,7 @@ impl Process {
                 page_count,
                 PageTableEntry::new()
                     .with_present(true)
-                    .with_writable(writable)
+                    .with_writable(matches!(ty, AllocationType::Writable))
                     .with_user(true),
             );
         }
@@ -157,17 +167,17 @@ impl Process {
 
         let addr = addr - amd64::paging::PHYS_VIRT_OFFSET + fireworkkit::USER_PHYS_VIRT_OFFSET;
         drop(_lock);
-        self.track_alloc(addr, size, Some(false));
+        self.track_alloc(addr, size, AllocationType::Readable);
         addr
     }
 
     pub fn free_alloc(&mut self, addr: u64) {
         let _lock = self.alloc_lock.lock();
 
-        let (size, mapped) = self.allocations.remove(&addr).unwrap();
+        let (size, ty) = self.allocations.remove(&addr).unwrap();
         let page_count = (size + 0xFFF) / 0x1000;
         trace!(
-            "PID {}: Freeing {addr:#X} ({page_count} pages, {size} bytes)",
+            "PID {}: Freeing {addr:#X} ({ty:?}, {page_count} pages, {size} bytes)",
             self.id
         );
 
@@ -183,7 +193,7 @@ impl Process {
                 );
         }
 
-        if mapped {
+        if !matches!(ty, AllocationType::Kernel) {
             drop(_lock);
             unsafe { self.cr3.lock().unmap(addr, page_count) }
         }
@@ -196,7 +206,7 @@ impl Process {
             panic!("PID {}: Address {addr:#X} not allocated", self.id);
         }
 
-        trace!("PID {}: Marking {addr:#X} as message {id}", self.id);
+        debug!("PID {}: Marking {addr:#X} as message {id}", self.id);
         self.msg_id_to_addr.insert(id, addr);
         self.addr_to_msg_id.insert(addr, id);
     }
@@ -204,7 +214,7 @@ impl Process {
     pub fn free_msg(&mut self, id: u64) {
         let _lock = self.alloc_lock.lock();
 
-        trace!("PID {}: Freeing message {id}", self.id);
+        debug!("PID {}: Freeing message {id}", self.id);
         let Some(addr) = self.msg_id_to_addr.remove(&id) else {
             panic!("PID {}: Message {id} not allocated", self.id);
         };
@@ -238,7 +248,7 @@ impl Process {
         };
         let virt = addr + fireworkkit::USER_PHYS_VIRT_OFFSET;
         drop(_lock);
-        self.track_alloc(virt, size, Some(true));
+        self.track_alloc(virt, size, AllocationType::Writable);
         (virt, page_count)
     }
 }

@@ -41,7 +41,7 @@ impl Message {
             lateout("rdi") pid,
             out("rsi") ptr,
             out("rdx") len,
-            options(nostack, preserves_flags),
+            options(nomem, nostack, preserves_flags),
         );
         Self {
             id,
@@ -57,7 +57,7 @@ impl Message {
             in("rsi") self.pid,
             in("rdx") self.data.as_ptr() as u64,
             in("rcx") self.data.len() as u64,
-            options(nostack, preserves_flags),
+            options(nomem, nostack, preserves_flags),
         );
     }
 }
@@ -73,7 +73,7 @@ impl Drop for Message {
                 "int 249",
                 in("rdi") SystemCall::MsgAck as u64,
                 in("rsi") self.id,
-                options(nostack, preserves_flags),
+                options(nomem, nostack, preserves_flags),
             );
         }
     }

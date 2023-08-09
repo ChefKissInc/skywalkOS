@@ -96,14 +96,14 @@ impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
 
     #[inline]
     pub unsafe fn set_cr3(&mut self) {
-        core::arch::asm!("mov cr3, {}", in(reg) self as *mut _ as u64 - VIRT_OFF, options(nostack, preserves_flags));
+        core::arch::asm!("mov cr3, {}", in(reg) self as *mut _ as u64 - VIRT_OFF, options(nomem, nostack, preserves_flags));
     }
 
     #[inline]
     #[must_use]
     pub unsafe fn from_cr3() -> &'static mut Self {
         let pml4: *mut Self;
-        core::arch::asm!("mov {}, cr3", out(reg) pml4, options(nostack, preserves_flags));
+        core::arch::asm!("mov {}, cr3", out(reg) pml4, options(nomem, nostack, preserves_flags));
         &mut *pml4
     }
 
@@ -203,7 +203,7 @@ impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
             let Some(pd) = pdp.get(offs.pdp) else {
                 return false;
             };
-            pd.entries[offs.pt as usize] = PageTableEntry::new();
+            pd.entries[offs.pd as usize] = PageTableEntry::new();
             core::arch::asm!("invlpg [{}]", in(reg) virt, options(nostack, preserves_flags));
         }
 
