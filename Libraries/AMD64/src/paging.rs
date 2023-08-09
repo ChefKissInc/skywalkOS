@@ -114,7 +114,7 @@ impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
         let pt = pd.get(offs.pd)?;
 
         if pt.entries[offs.pt as usize].present() {
-            return Some(pt.entries[offs.pt as usize].address() << 12);
+            return Some((pt.entries[offs.pt as usize].address() << 12) + (virt & 0xFFF));
         }
 
         None
@@ -130,7 +130,7 @@ impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
         }
 
         if pd.entries[offs.pd as usize].present() {
-            return Some(pd.entries[offs.pd as usize].address() << 12);
+            return Some((pd.entries[offs.pd as usize].address() << 12) + (virt & 0x1FFFFF));
         }
 
         None
