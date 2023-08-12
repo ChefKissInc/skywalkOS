@@ -8,7 +8,7 @@ struct CallbackData<'a> {
 }
 
 extern "C" fn callback(
-    unwind_ctx: &mut UnwindContext<'_>,
+    unwind_ctx: &UnwindContext<'_>,
     arg: *mut core::ffi::c_void,
 ) -> UnwindReasonCode {
     let data = unsafe { &mut *arg.cast::<CallbackData>() };

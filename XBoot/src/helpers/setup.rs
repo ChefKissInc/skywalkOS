@@ -17,7 +17,7 @@ pub fn setup() {
             "and rax, {wp_bit}",
             "mov cr0, rax",
             wp_bit = const !(1u64 << 16),
-            options(nostack, preserves_flags, nomem),
+            options(nomem, nostack, preserves_flags),
         );
     }
 

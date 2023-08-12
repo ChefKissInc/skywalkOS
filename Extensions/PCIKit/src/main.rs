@@ -27,48 +27,6 @@ trait PCIControllerIO: Sync {
     unsafe fn write32(&self, addr: PCIAddress, off: u8, value: u32);
 }
 
-struct PCIDevice<'a> {
-    addr: PCIAddress,
-    controller: &'a PCIController,
-}
-
-#[allow(dead_code)]
-impl<'a> PCIDevice<'a> {
-    #[inline]
-    #[must_use]
-    pub const fn new(addr: PCIAddress, controller: &'a PCIController) -> Self {
-        Self { addr, controller }
-    }
-
-    pub unsafe fn is_multifunction(&self) -> bool {
-        self.read8::<_, u8>(PCICfgOffset::HeaderType) & 0x80 != 0
-    }
-
-    pub unsafe fn read8<A: Into<u8>, R: From<u8>>(&self, off: A) -> R {
-        self.controller.read8(self.addr, off.into()).into()
-    }
-
-    pub unsafe fn read16<A: Into<u8>, R: From<u16>>(&self, off: A) -> R {
-        self.controller.read16(self.addr, off.into()).into()
-    }
-
-    pub unsafe fn read32<A: Into<u8>, R: From<u32>>(&self, off: A) -> R {
-        self.controller.read32(self.addr, off.into()).into()
-    }
-
-    pub unsafe fn write8<A: Into<u8>, R: Into<u8>>(&self, off: A, value: R) {
-        self.controller.write8(self.addr, off.into(), value.into());
-    }
-
-    pub unsafe fn write16<A: Into<u8>, R: Into<u16>>(&self, off: A, value: R) {
-        self.controller.write16(self.addr, off.into(), value.into());
-    }
-
-    pub unsafe fn write32<A: Into<u8>, R: Into<u32>>(&self, off: A, value: R) {
-        self.controller.write32(self.addr, off.into(), value.into());
-    }
-}
-
 struct PCIController;
 
 impl PCIController {

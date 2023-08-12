@@ -2,7 +2,7 @@
 
 use alloc::{boxed::Box, collections::VecDeque, string::String, vec::Vec};
 
-use amd64::paging::PageTableEntry;
+use amd64::paging::PageTableFlags;
 use fireworkkit::msg::Message;
 use hashbrown::{HashMap, HashSet};
 
@@ -135,7 +135,7 @@ impl Process {
             self.id,
         );
 
-        debug!(
+        trace!(
             "PID {}: Tracking {addr:#X} ({ty:?}, {size} byte{}, {page_count} page{}, will map: {})",
             self.id,
             if size > 1 { "s" } else { "" },
@@ -154,8 +154,7 @@ impl Process {
                 addr,
                 addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
                 page_count,
-                PageTableEntry::new()
-                    .with_present(true)
+                PageTableFlags::new_present()
                     .with_writable(matches!(ty, AllocationType::Writable))
                     .with_user(true),
             );
@@ -206,7 +205,7 @@ impl Process {
             panic!("PID {}: Address {addr:#X} not allocated", self.id);
         }
 
-        debug!("PID {}: Marking {addr:#X} as message {id}", self.id);
+        trace!("PID {}: Marking {addr:#X} as message {id}", self.id);
         self.msg_id_to_addr.insert(id, addr);
         self.addr_to_msg_id.insert(addr, id);
     }
@@ -214,7 +213,7 @@ impl Process {
     pub fn free_msg(&mut self, id: u64) {
         let _lock = self.alloc_lock.lock();
 
-        debug!("PID {}: Freeing message {id}", self.id);
+        trace!("PID {}: Freeing message {id}", self.id);
         let Some(addr) = self.msg_id_to_addr.remove(&id) else {
             panic!("PID {}: Message {id} not allocated", self.id);
         };

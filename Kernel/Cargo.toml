@@ -12,7 +12,6 @@ name = "kernel"
 
 [profile.release]
 strip = true
-lto = true
 
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
@@ -31,7 +30,7 @@ paper-fb = { path = "../Libraries/PaperFrameBuffer" }
 postcard = { version = "1.0.6", default-features = false, features = ["alloc"] }
 rustc-demangle = "0.1.23"
 seq-macro = "0.3.5"
-serde = { version = "1.0.181", default-features = false, features = ["derive"] }
+serde = { version = "1.0.183", default-features = false, features = ["derive"] }
 spin = { version = "0.9.8", default-features = false, features = [
     "barrier",
     "lock_api",
@@ -43,7 +42,7 @@ spin = { version = "0.9.8", default-features = false, features = [
 ] }
 sulphur-dioxide = { path = "../Libraries/SulphurDioxide" }
 fireworkkit = { path = "../Libraries/FireworkKit" }
-unwinding = { version = "0.1.7", default-features = false, features = [
+unwinding = { version = "0.2.0", default-features = false, features = [
     "fde-static",
     "hide-trace",
     "panic",

@@ -2,7 +2,7 @@
 
 use alloc::boxed::Box;
 
-use amd64::paging::PageTable;
+use amd64::paging::{PageTable, PageTableFlags};
 
 use crate::system::proc::AllocationType;
 
@@ -35,13 +35,7 @@ impl UserPML4 {
         self.0.set_cr3();
     }
 
-    pub unsafe fn map(
-        &mut self,
-        virt: u64,
-        phys: u64,
-        count: u64,
-        flags: amd64::paging::PageTableEntry,
-    ) {
+    pub unsafe fn map(&mut self, virt: u64, phys: u64, count: u64, flags: PageTableFlags) {
         let pid = self.1;
         self.0
             .map(&move || Self::alloc_entry(pid), virt, phys, count, flags);

@@ -78,7 +78,7 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
             in(reg) stack_ptr,
             in(reg) kernel_main,
             in("rdi") helpers::phys_to_kern_ref(boot_info),
-            options(nostack, nomem, noreturn),
+            options(nomem, nostack, noreturn),
         );
     }
 }

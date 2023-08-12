@@ -7,7 +7,7 @@ use amd64::{
         pat::{PATEntry, PageAttributeTable},
         ModelSpecificReg,
     },
-    paging::{PageTable, PageTableEntry},
+    paging::{PageTable, PageTableFlags},
 };
 
 #[repr(transparent)]
@@ -17,6 +17,35 @@ impl PageTableLvl4 {
     #[inline]
     pub const fn new() -> Self {
         Self(amd64::paging::PageTable::new())
+    }
+
+    fn alloc_entry() -> u64 {
+        Box::leak(Box::new(PageTable::<0>::new())) as *mut _ as u64
+            - amd64::paging::PHYS_VIRT_OFFSET
+    }
+
+    pub unsafe fn set_cr3(&mut self) {
+        self.0.set_cr3();
+    }
+
+    #[allow(dead_code)]
+    pub unsafe fn map(&mut self, virt: u64, phys: u64, count: u64, flags: PageTableFlags) {
+        self.0.map(&Self::alloc_entry, virt, phys, count, flags);
+    }
+
+    pub unsafe fn map_or_update(
+        &mut self,
+        virt: u64,
+        phys: u64,
+        count: u64,
+        flags: PageTableFlags,
+    ) {
+        self.0
+            .map_or_update(&Self::alloc_entry, virt, phys, count, flags);
+    }
+
+    pub unsafe fn map_higher_half(&mut self) {
+        self.0.map_higher_half(&Self::alloc_entry);
     }
 
     pub unsafe fn init(&mut self) {
@@ -32,43 +61,7 @@ impl PageTableLvl4 {
         self.set_cr3();
     }
 
-    pub unsafe fn map_mmio(&mut self, virt: u64, phys: u64, count: u64, flags: PageTableEntry) {
-        debug_assert!(!flags.pwt());
-        debug_assert!(!flags.pcd());
-        self.map(virt, phys, count, flags.with_huge_or_pat(true));
-    }
-
-    fn alloc_entry() -> u64 {
-        Box::leak(Box::new(PageTable::<0>::new())) as *mut _ as u64
-            - amd64::paging::PHYS_VIRT_OFFSET
-    }
-
-    pub unsafe fn set_cr3(&mut self) {
-        self.0.set_cr3();
-    }
-
-    pub unsafe fn map(
-        &mut self,
-        virt: u64,
-        phys: u64,
-        count: u64,
-        flags: amd64::paging::PageTableEntry,
-    ) {
-        self.0.map(&Self::alloc_entry, virt, phys, count, flags);
-    }
-
-    pub unsafe fn map_huge(
-        &mut self,
-        virt: u64,
-        phys: u64,
-        count: u64,
-        flags: amd64::paging::PageTableEntry,
-    ) {
-        self.0
-            .map_huge(&Self::alloc_entry, virt, phys, count, flags);
-    }
-
-    pub unsafe fn map_higher_half(&mut self) {
-        self.0.map_higher_half(&Self::alloc_entry);
+    pub unsafe fn map_mmio(&mut self, virt: u64, phys: u64, count: u64, flags: PageTableFlags) {
+        self.map_or_update(virt, phys, count, flags.with_pat_entry(1));
     }
 }

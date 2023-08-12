@@ -2,59 +2,113 @@
 
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 
+use amd64::paging::{
+    PageTable, PageTableEntry, PageTableFlags, KERNEL_VIRT_OFFSET, PAGE_SIZE, PHYS_VIRT_OFFSET,
+};
+
+#[test]
+fn test_flags() {
+    assert_eq!(
+        PageTableFlags::new_present()
+            .with_writable(true)
+            .as_entry(false),
+        PageTableEntry::new().with_present(true).with_writable(true)
+    );
+    assert_eq!(
+        PageTableFlags::new_present()
+            .with_writable(true)
+            .with_pat_entry(5)
+            .as_entry(false),
+        PageTableEntry::new()
+            .with_present(true)
+            .with_writable(true)
+            .with_pwt(true)
+            .with_pat(true)
+    );
+    assert_eq!(
+        PageTableFlags::new_present()
+            .with_writable(true)
+            .with_pat_entry(7)
+            .as_entry(false),
+        PageTableEntry::new()
+            .with_present(true)
+            .with_writable(true)
+            .with_pwt(true)
+            .with_pcd(true)
+            .with_pat(true)
+    );
+    assert_eq!(
+        PageTableFlags::new_present()
+            .with_writable(true)
+            .with_pat_entry(5)
+            .as_entry(true),
+        PageTableEntry::new()
+            .with_present(true)
+            .with_writable(true)
+            .with_pwt(true)
+            .with_huge_or_pat(true)
+    );
+    assert_eq!(
+        PageTableFlags::new_present()
+            .with_writable(true)
+            .with_pat_entry(7)
+            .as_entry(true),
+        PageTableEntry::new()
+            .with_present(true)
+            .with_writable(true)
+            .with_pwt(true)
+            .with_pcd(true)
+            .with_huge_or_pat(true)
+    );
+}
+
 fn alloc_entry() -> u64 {
-    Box::leak(Box::new(amd64::paging::PageTable::<0>::new())) as *mut _ as u64
+    Box::leak(Box::new(PageTable::<0>::new())) as *mut _ as u64
 }
 
 #[test]
 fn test_no_entry() {
     unsafe {
-        let mut pml4 = Box::new(amd64::paging::PageTable::<0>::new());
-        assert_eq!(pml4.virt_to_entry_addr(0), None);
-        assert_eq!(pml4.virt_to_entry_addr_huge(0), None);
+        let mut pml4 = Box::new(PageTable::<0>::new());
+        assert_eq!(pml4.virt_to_phys(0), None);
     }
 }
 
 #[test]
 fn test_map() {
     unsafe {
-        let mut pml4 = Box::new(amd64::paging::PageTable::<0>::new());
+        let mut pml4 = Box::new(PageTable::<0>::new());
         pml4.map(
             &alloc_entry,
             0x20_0000,
             0x20_0000,
             1,
-            amd64::paging::PageTableEntry::new().with_present(true),
+            PageTableFlags::new_present(),
         );
-        assert_eq!(pml4.virt_to_entry_addr(0x20_0000), Some(0x20_0000));
+        assert_eq!(pml4.virt_to_phys(0x20_0000), Some(0x20_0000));
     }
 }
 
 #[test]
-fn test_map_higher_half_phys() {
+fn test_map_higher_half() {
     unsafe {
-        let mut pml4 = Box::new(amd64::paging::PageTable::<0>::new());
+        let mut pml4 = Box::new(PageTable::<0>::new());
         pml4.map_higher_half(&alloc_entry);
 
-        for i in 0..2048 {
+        assert_eq!(pml4.virt_to_phys(PHYS_VIRT_OFFSET), None);
+        assert_eq!(pml4.virt_to_phys(KERNEL_VIRT_OFFSET), None);
+
+        for i in 1..0xFFFFF {
             assert_eq!(
-                pml4.virt_to_entry_addr_huge(amd64::paging::PHYS_VIRT_OFFSET + 0x20_0000 * i),
-                Some(0x20_0000 * i),
+                pml4.virt_to_phys(PHYS_VIRT_OFFSET + PAGE_SIZE * i),
+                Some(PAGE_SIZE * i),
             );
         }
-    }
-}
 
-#[test]
-fn test_map_higher_half_kern() {
-    unsafe {
-        let mut pml4 = Box::new(amd64::paging::PageTable::<0>::new());
-        pml4.map_higher_half(&alloc_entry);
-
-        for i in 0..1024 {
+        for i in 1..0x7FFFF {
             assert_eq!(
-                pml4.virt_to_entry_addr_huge(amd64::paging::KERNEL_VIRT_OFFSET + 0x20_0000 * i),
-                Some(0x20_0000 * i),
+                pml4.virt_to_phys(KERNEL_VIRT_OFFSET + PAGE_SIZE * i),
+                Some(PAGE_SIZE * i),
             );
         }
     }

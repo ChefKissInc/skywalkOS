@@ -2,7 +2,7 @@
 
 use alloc::vec::Vec;
 
-use amd64::paging::PageTableEntry;
+use amd64::paging::PageTableFlags;
 
 use super::tables::madt::ic::{
     ioapic::{InputOutputAPIC, IntrSourceOverride},
@@ -51,7 +51,7 @@ impl MADTData {
                                 u64::from(ioapic.address) + amd64::paging::PHYS_VIRT_OFFSET,
                                 u64::from(ioapic.address),
                                 1,
-                                PageTableEntry::new().with_present(true).with_writable(true),
+                                PageTableFlags::new_present().with_writable(true),
                             );
                     }
                     ioapics.push(ioapic);

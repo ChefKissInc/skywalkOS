@@ -15,7 +15,6 @@ impl BitmapAllocator {
     pub fn new(mmap: &'static [MemoryEntry]) -> Self {
         let mut highest_addr = 0;
 
-        // Find the highest available address
         for mmap_ent in mmap {
             let MemoryEntry::Usable(v) = mmap_ent else {
                 continue;
@@ -34,16 +33,10 @@ impl BitmapAllocator {
 
         let mut bitmap = Default::default();
 
-        // Find a place for the bitmap
         for mmap_ent in mmap {
             let MemoryEntry::Usable(v) = mmap_ent else {
                 continue;
             };
-
-            // Skip the first 2 MiB
-            if v.base <= 0x20_0000 {
-                continue;
-            }
 
             if v.length >= bitmap_sz {
                 bitmap = unsafe {
@@ -60,7 +53,6 @@ impl BitmapAllocator {
 
         let mut free_pages = 0;
 
-        // Populate the bitmap
         for mmap_ent in mmap {
             let MemoryEntry::Usable(v) = mmap_ent else {
                 continue;
@@ -81,11 +73,6 @@ impl BitmapAllocator {
 
             let base = v.base / 0x1000;
 
-            // First 2 MiB might be reserved by firmware regardless of what the memory map says
-            if base <= 512 {
-                continue;
-            }
-
             let count = v.length / 0x1000;
             for i in base..base + count {
                 crate::utils::bitmap::bit_reset(bitmap, i);
@@ -104,22 +91,21 @@ impl BitmapAllocator {
     }
 
     unsafe fn internal_alloc(&mut self, count: u64, limit: u64) -> Option<*mut u8> {
-        let mut p = 0;
+        let mut n = 0;
 
         while self.last_index < limit {
             let set = crate::utils::bitmap::bit_test(self.bitmap, self.last_index);
             self.last_index += 1;
             if set {
-                p = 0;
+                n = 0;
                 continue;
             }
 
-            p += 1;
+            n += 1;
 
-            if p == count {
+            if n == count {
                 let page = self.last_index - count;
 
-                // Mark memory hole as used
                 for i in page..self.last_index {
                     crate::utils::bitmap::bit_set(self.bitmap, i);
                 }
@@ -146,7 +132,6 @@ impl BitmapAllocator {
     pub unsafe fn free(&mut self, ptr: *mut u8, count: u64) {
         let idx = ptr as u64 / 0x1000;
 
-        // Mark memory hole as free
         for i in idx..(idx + count) {
             crate::utils::bitmap::bit_reset(self.bitmap, i);
         }

@@ -2,7 +2,7 @@
 
 use core::ops::ControlFlow;
 
-use amd64::paging::PageTableEntry;
+use amd64::paging::PageTableFlags;
 use fireworkkit::{
     msg::{KernelMessage, Message},
     TerminationReason,
@@ -70,7 +70,7 @@ pub fn send(
             addr,
             addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
             (size + 0xFFF) / 0x1000,
-            PageTableEntry::new().with_present(true).with_user(true),
+            PageTableFlags::new_present().with_user(true),
         );
     }
     let tids = process.thread_ids.clone();

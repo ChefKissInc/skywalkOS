@@ -169,7 +169,8 @@ impl Scheduler {
                 match reloc.r_type {
                     elf::abi::R_X86_64_NONE => {}
                     elf::abi::R_X86_64_RELATIVE => {
-                        *ptr = virt_addr + reloc.r_addend.wrapping_abs() as u64
+                        assert!(reloc.r_addend.is_positive());
+                        *ptr = virt_addr + reloc.r_addend as u64
                     }
                     v => unimplemented!("{v:#X?}"),
                 }

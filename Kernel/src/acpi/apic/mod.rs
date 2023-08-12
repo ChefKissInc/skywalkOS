@@ -1,6 +1,9 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use amd64::msr::{apic::APICBase, ModelSpecificReg};
+use amd64::{
+    msr::{apic::APICBase, ModelSpecificReg},
+    paging::PageTableFlags,
+};
 use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 
@@ -276,9 +279,7 @@ pub fn setup(state: &mut crate::system::state::SystemState) {
             virt_addr,
             addr,
             1,
-            amd64::paging::PageTableEntry::new()
-                .with_present(true)
-                .with_writable(true),
+            PageTableFlags::new_present().with_writable(true),
         );
     }
     debug!("LAPIC address is {addr:#X?}");

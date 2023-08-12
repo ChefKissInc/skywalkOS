@@ -2,6 +2,8 @@
 
 use alloc::vec::Vec;
 
+use amd64::paging::PageTableFlags;
+
 use self::tables::hpet::Hpet;
 
 pub mod apic;
@@ -53,9 +55,7 @@ pub fn get_hpet(state: &crate::system::state::SystemState) -> super::timer::hpet
                 v.address.address() + amd64::paging::PHYS_VIRT_OFFSET,
                 v.address.address(),
                 1,
-                amd64::paging::PageTableEntry::new()
-                    .with_present(true)
-                    .with_writable(true),
+                PageTableFlags::new_present().with_writable(true),
             );
             super::timer::hpet::Hpet::new(v)
         })
