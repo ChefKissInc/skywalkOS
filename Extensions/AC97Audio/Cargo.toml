@@ -12,7 +12,6 @@ name = "ac97audio"
 
 [profile.release]
 strip = true
-lto = true
 
 [dependencies]
 hashbrown = { version = "0.14.0", features = ["nightly"] }
