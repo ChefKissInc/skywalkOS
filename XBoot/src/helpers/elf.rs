@@ -2,6 +2,8 @@
 
 use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 
+use amd64::paging::{KERNEL_VIRT_OFFSET, PAGE_SIZE};
+
 pub fn parse(
     mem_mgr: &mut super::mem::MemoryManager,
     buffer: &[u8],
@@ -14,7 +16,7 @@ pub fn parse(
     assert_eq!(elf.ehdr.class, elf::file::Class::ELF64);
     assert_eq!(elf.ehdr.e_machine, elf::abi::EM_X86_64);
     assert!(
-        elf.ehdr.e_entry >= amd64::paging::KERNEL_VIRT_OFFSET,
+        elf.ehdr.e_entry >= KERNEL_VIRT_OFFSET,
         "Only higher-half kernels"
     );
 
@@ -48,7 +50,7 @@ pub fn parse(
         .filter(|phdr| phdr.p_type == elf::abi::PT_LOAD)
     {
         assert!(
-            phdr.p_vaddr >= amd64::paging::KERNEL_VIRT_OFFSET,
+            phdr.p_vaddr >= KERNEL_VIRT_OFFSET,
             "Only higher-half kernels."
         );
 
@@ -57,33 +59,25 @@ pub fn parse(
         let file_size = phdr.p_filesz as usize;
         let src = &buffer[offset..(offset + file_size)];
         let dest = unsafe {
-            core::slice::from_raw_parts_mut(
-                (phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET) as *mut u8,
-                memsz,
-            )
+            core::slice::from_raw_parts_mut((phdr.p_vaddr - KERNEL_VIRT_OFFSET) as *mut u8, memsz)
         };
-        let npages = (memsz + 0xFFF) / 0x1000;
+        let npages = (memsz + 0xFFF) / PAGE_SIZE as usize;
         trace!(
             "vaddr: {:#X}, paddr: {:#X}, npages: {npages:#X}",
             phdr.p_vaddr,
-            phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET
+            phdr.p_vaddr - KERNEL_VIRT_OFFSET
         );
         assert_eq!(
             bs.allocate_pages(
-                uefi::table::boot::AllocateType::Address(
-                    (phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET) as _,
-                ),
+                uefi::table::boot::AllocateType::Address((phdr.p_vaddr - KERNEL_VIRT_OFFSET) as _,),
                 uefi::table::boot::MemoryType::LOADER_DATA,
                 npages,
             )
             .unwrap(),
-            phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET
+            phdr.p_vaddr - KERNEL_VIRT_OFFSET
         );
 
-        mem_mgr.allocate((
-            phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET,
-            npages as u64,
-        ));
+        mem_mgr.allocate((phdr.p_vaddr - KERNEL_VIRT_OFFSET, npages as u64));
 
         for (a, b) in dest
             .iter_mut()

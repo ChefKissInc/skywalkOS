@@ -2,6 +2,7 @@
 
 use alloc::vec::Vec;
 
+use amd64::paging::PAGE_SIZE;
 use sulphur_dioxide::{MemoryData, MemoryEntry};
 use uefi::table::boot::{MemoryDescriptor, MemoryType};
 
@@ -22,7 +23,7 @@ impl MemoryManager {
     }
 
     pub fn mem_type_from_desc(&self, desc: &MemoryDescriptor) -> Option<MemoryEntry> {
-        let data = MemoryData::new(desc.phys_start, desc.page_count * 0x1000);
+        let data = MemoryData::new(desc.phys_start, desc.page_count * PAGE_SIZE);
 
         match desc.ty {
             MemoryType::CONVENTIONAL => Some(MemoryEntry::Usable(data)),

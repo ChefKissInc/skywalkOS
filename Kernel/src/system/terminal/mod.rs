@@ -2,7 +2,7 @@
 
 use core::fmt::Write;
 
-use amd64::paging::PageTableFlags;
+use amd64::paging::{PageTableFlags, PAGE_SIZE};
 use paper_fb::{fb::FrameBuffer, pixel::Colour};
 
 mod font;
@@ -40,7 +40,7 @@ impl Terminal {
             state.pml4.as_ref().unwrap().lock().map_or_update(
                 base,
                 base - amd64::paging::PHYS_VIRT_OFFSET,
-                ((self.fb.height * self.fb.stride + 0xFFF) / 0x1000) as _,
+                ((self.fb.height * self.fb.stride + 0xFFF) / PAGE_SIZE as usize) as _,
                 PageTableFlags::new_present()
                     .with_writable(true)
                     .with_pat_entry(2),

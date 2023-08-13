@@ -2,7 +2,7 @@
 
 use alloc::boxed::Box;
 
-use amd64::paging::{PageTable, PageTableFlags};
+use amd64::paging::{PageTable, PageTableFlags, PAGE_SIZE};
 
 use crate::system::proc::AllocationType;
 
@@ -24,7 +24,7 @@ impl UserPML4 {
         let scheduler = sys_state.scheduler.as_mut().unwrap().get_mut();
         scheduler.processes.get_mut(&pid).unwrap().track_alloc(
             phys + fireworkkit::USER_PHYS_VIRT_OFFSET,
-            0x1000,
+            PAGE_SIZE,
             AllocationType::Kernel,
         );
 

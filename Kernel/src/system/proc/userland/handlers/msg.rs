@@ -2,7 +2,7 @@
 
 use core::ops::ControlFlow;
 
-use amd64::paging::PageTableFlags;
+use amd64::paging::{PageTableFlags, PAGE_SIZE};
 use fireworkkit::{
     msg::{KernelMessage, Message},
     TerminationReason,
@@ -69,7 +69,7 @@ pub fn send(
         process.cr3.lock().map(
             addr,
             addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
-            (size + 0xFFF) / 0x1000,
+            (size + 0xFFF) / PAGE_SIZE,
             PageTableFlags::new_present().with_user(true),
         );
     }
