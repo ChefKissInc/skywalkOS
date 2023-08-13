@@ -40,8 +40,17 @@ impl BitmapAllocator {
             let MemoryEntry::Usable(v) = v else {
                 return None;
             };
-            Some(v)
+            // Skip the first 2 MiB.
+            Some(if v.base <= 0x20_0000 && v.base + v.length > 0x20_0000 {
+                MemoryData::new(0x20_0000, v.length - 0x20_0000)
+            } else {
+                *v
+            })
         }) {
+            if v.length == 0 {
+                continue;
+            }
+
             debug!("Base: {:#X?}, End: {:#X?}", v.base, v.base + v.length);
             let v = if bitmap.is_empty() && v.length >= bitmap_sz {
                 bitmap = unsafe {
@@ -55,12 +64,8 @@ impl BitmapAllocator {
                 trace!("Bitmap is here");
                 MemoryData::new(v.base + bitmap_sz, v.length - bitmap_sz)
             } else {
-                *v
+                v
             };
-
-            if v.length == 0 {
-                continue;
-            }
 
             let base = v.base / PAGE_SIZE;
             let count = v.length / PAGE_SIZE;
