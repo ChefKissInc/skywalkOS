@@ -16,7 +16,7 @@ strip = true
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
 elf = { version = "0.7.2", default-features = false, features = ["nightly"] }
-log = { version = "0.4.19", default-features = false, features = [
+log = { version = "0.4.20", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }

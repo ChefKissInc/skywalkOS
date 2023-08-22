@@ -15,5 +15,5 @@ strip = true
 
 [dependencies]
 postcard = { version = "1.0.6", default-features = false, features = ["alloc"] }
-ron = { version = "0.8.0" }
+ron = { version = "0.8.1" }
 fireworkkit = { path = "../../Libraries/FireworkKit" }

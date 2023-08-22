@@ -20,17 +20,17 @@ hashbrown = { version = "0.14.0", features = ["nightly", "serde"] }
 itertools = { version = "0.11.0", default-features = false, features = [
     "use_alloc",
 ] }
-log = { version = "0.4.19", default-features = false, features = [
+log = { version = "0.4.20", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
 modular-bitfield = "0.11.2"
-num_enum = { version = "0.6.1", default-features = false }
+num_enum = { version = "0.7.0", default-features = false }
 paper-fb = { path = "../Libraries/PaperFrameBuffer" }
 postcard = { version = "1.0.6", default-features = false, features = ["alloc"] }
 rustc-demangle = "0.1.23"
 seq-macro = "0.3.5"
-serde = { version = "1.0.183", default-features = false, features = ["derive"] }
+serde = { version = "1.0.185", default-features = false, features = ["derive"] }
 spin = { version = "0.9.8", default-features = false, features = [
     "barrier",
     "lock_api",
