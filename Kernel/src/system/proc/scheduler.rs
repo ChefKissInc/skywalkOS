@@ -291,6 +291,7 @@ impl Scheduler {
     }
 
     pub fn process_teardown(&mut self) {
+        // TODO: Teardown any residual messages too.
         self.current_tid = None;
         let pid = self.current_pid.take().unwrap();
         let proc = self.processes.remove(&pid).unwrap();
