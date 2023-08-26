@@ -42,7 +42,7 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
 
     if let Some(reason) = reason {
         debug!(
-            "PID {} performed illegal action (<{reason:?}>), good riddance.",
+            "PID {} performed illegal action (<{reason:?}>). Killing it, good riddance.",
             scheduler.current_pid.unwrap()
         );
         scheduler.process_teardown();

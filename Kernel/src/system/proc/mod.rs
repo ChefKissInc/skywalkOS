@@ -126,10 +126,7 @@ impl Process {
                     .as_ref()
                     .unwrap()
                     .lock()
-                    .is_allocated(
-                        (addr - fireworkkit::USER_PHYS_VIRT_OFFSET) as *mut _,
-                        page_count,
-                    )
+                    .is_allocated((addr - fireworkkit::USER_VIRT_OFFSET) as *mut _, page_count)
             },
             "PID {}: Address {addr:#X} not allocated",
             self.id,
@@ -152,7 +149,7 @@ impl Process {
             drop(_lock);
             self.cr3.lock().map(
                 addr,
-                addr - fireworkkit::USER_PHYS_VIRT_OFFSET,
+                addr - fireworkkit::USER_VIRT_OFFSET,
                 page_count,
                 PageTableFlags::new_present()
                     .with_writable(matches!(ty, AllocationType::Writable))
@@ -164,7 +161,7 @@ impl Process {
     pub fn track_kernelside_alloc(&mut self, addr: u64, size: u64) -> u64 {
         let _lock = self.alloc_lock.lock();
 
-        let addr = addr - amd64::paging::PHYS_VIRT_OFFSET + fireworkkit::USER_PHYS_VIRT_OFFSET;
+        let addr = addr - amd64::paging::PHYS_VIRT_OFFSET + fireworkkit::USER_VIRT_OFFSET;
         drop(_lock);
         self.track_alloc(addr, size, AllocationType::Readable);
         addr
@@ -186,10 +183,7 @@ impl Process {
                 .as_ref()
                 .unwrap()
                 .lock()
-                .free(
-                    (addr - fireworkkit::USER_PHYS_VIRT_OFFSET) as *mut _,
-                    page_count,
-                );
+                .free((addr - fireworkkit::USER_VIRT_OFFSET) as *mut _, page_count);
         }
 
         if !matches!(ty, AllocationType::Kernel) {
@@ -236,6 +230,10 @@ impl Process {
         let _lock = self.alloc_lock.lock();
 
         let page_count = (size + 0xFFF) / 0x1000;
+        trace!(
+            "PID {}: Allocating {page_count} pages ({size} bytes)",
+            self.id
+        );
         let addr = unsafe {
             (*crate::system::state::SYS_STATE.get())
                 .pmm
@@ -245,7 +243,7 @@ impl Process {
                 .alloc(page_count)
                 .unwrap() as u64
         };
-        let virt = addr + fireworkkit::USER_PHYS_VIRT_OFFSET;
+        let virt = addr + fireworkkit::USER_VIRT_OFFSET;
         drop(_lock);
         self.track_alloc(virt, size, AllocationType::Writable);
         (virt, page_count)

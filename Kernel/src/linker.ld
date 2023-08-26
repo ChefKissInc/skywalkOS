@@ -4,54 +4,49 @@ ENTRY(kernel_main)
 OUTPUT_ARCH(x86-64)
 OUTPUT_FORMAT(elf64-x86-64)
 
-KERNEL_VIRT_OFF = 0xFFFFFFFF80000000;
+KERNEL_VIRT_OFFSET = 0xFFFFFFFF80000000;
 
 SECTIONS {
-    . = KERNEL_VIRT_OFF + 0x200000;
-    . = ALIGN(4K);
+    . = KERNEL_VIRT_OFFSET + 0x200000;
+    . = ALIGN(4096);
 
-    .text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VIRT_OFF) {
+    .text : AT(ADDR(.text) - KERNEL_VIRT_OFFSET) {
         __text_start = .;
         *(.text*)
-        . = ALIGN(4K);
+        . = ALIGN(4096);
         __text_end = .;
     }
 
     PROVIDE(__etext = .);
 
-    .rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VIRT_OFF) {
+    .rodata : AT(ADDR(.rodata) - KERNEL_VIRT_OFFSET) {
         __rodata_start = .;
         *(.rodata*)
-        . = ALIGN(4K);
+        . = ALIGN(4096);
         __rodata_end = .;
     }
 
-    .data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VIRT_OFF) {
+    .data : AT(ADDR(.data) - KERNEL_VIRT_OFFSET) {
         __data_start = .;
         *(.data*)
-        . = ALIGN(4K);
+        . = ALIGN(4096);
         __data_end = .;
         __bss_start = .;
         *(.bss*)
-        . = ALIGN(4K);
+        . = ALIGN(4096);
         __bss_end = .;
     }
 
-
-    .tdata ALIGN(4K) : AT(ADDR(.tdata) - KERNEL_VIRT_OFF) {
-        __tdata_start = .;
-        *(.tdata*)
-        . = ALIGN(4K);
-        __tdata_end = .;
-        __tbss_start = .;
-        *(.tbss*)
-        . += 8;
-        . = ALIGN(4K);
-        __tbss_end = .;
+    .eh_frame : AT(ADDR(.eh_frame) - KERNEL_VIRT_OFFSET) {
+        __eh_frame = .;
+        KEEP(*(.eh_frame*));
     }
 
-    .eh_frame ALIGN(4K) : AT(ADDR(.eh_frame) - KERNEL_VIRT_OFF) {
-        __eh_frame = .;
-        KEEP(*(.eh_frame));
+    /DISCARD/ : {
+        *(.comment*)
+        *(.eh_frame*)
+        *(.gcc_except_table*)
+        *(.note*)
+        *(.rel.eh_frame*)
     }
 }

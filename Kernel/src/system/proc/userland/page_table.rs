@@ -23,7 +23,7 @@ impl UserPML4 {
 
         let scheduler = sys_state.scheduler.as_mut().unwrap().get_mut();
         scheduler.processes.get_mut(&pid).unwrap().track_alloc(
-            phys + fireworkkit::USER_PHYS_VIRT_OFFSET,
+            phys + fireworkkit::USER_VIRT_OFFSET,
             PAGE_SIZE,
             AllocationType::Kernel,
         );

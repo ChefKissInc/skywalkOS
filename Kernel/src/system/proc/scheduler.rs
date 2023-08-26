@@ -158,8 +158,8 @@ impl Scheduler {
             data[ext_vaddr..ext_vaddr + fsz].copy_from_slice(&exec_data[foff..foff + fsz]);
         }
 
-        let virt_addr = data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET
-            + fireworkkit::USER_PHYS_VIRT_OFFSET;
+        let virt_addr =
+            data.as_ptr() as u64 - amd64::paging::PHYS_VIRT_OFFSET + fireworkkit::USER_VIRT_OFFSET;
         for v in exec.section_headers().unwrap().iter() {
             let Ok(relas) = exec.section_data_as_relas(&v) else {
                 continue;
@@ -168,10 +168,7 @@ impl Scheduler {
                 let ptr = unsafe { &mut *data.as_mut_ptr().add(reloc.r_offset as _).cast::<u64>() };
                 match reloc.r_type {
                     elf::abi::R_X86_64_NONE => {}
-                    elf::abi::R_X86_64_RELATIVE => {
-                        assert!(reloc.r_addend.is_positive());
-                        *ptr = virt_addr + reloc.r_addend as u64
-                    }
+                    elf::abi::R_X86_64_RELATIVE => *ptr = virt_addr + reloc.r_addend as u64,
                     v => unimplemented!("{v:#X?}"),
                 }
             }

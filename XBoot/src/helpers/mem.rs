@@ -7,7 +7,7 @@ use sulphur_dioxide::{MemoryData, MemoryEntry};
 use uefi::table::boot::{MemoryDescriptor, MemoryType};
 
 pub struct MemoryManager {
-    entries: Vec<(u64, u64)>,
+    entries: Vec<MemoryData>,
 }
 
 impl MemoryManager {
@@ -19,7 +19,7 @@ impl MemoryManager {
     }
 
     pub fn allocate(&mut self, ent: (u64, u64)) {
-        self.entries.push(ent);
+        self.entries.push(MemoryData::new(ent.0, ent.1));
     }
 
     pub fn mem_type_from_desc(&self, desc: &MemoryDescriptor) -> Option<MemoryEntry> {
@@ -28,23 +28,19 @@ impl MemoryManager {
         match desc.ty {
             MemoryType::CONVENTIONAL => Some(MemoryEntry::Usable(data)),
             MemoryType::LOADER_CODE | MemoryType::LOADER_DATA => {
-                let Some((base, size)) = self
-                    .entries
-                    .iter()
-                    .find(|(base, size)| data.base <= base + size)
+                let Some(reserved) = self.entries.iter().find(|v| data.base <= v.base + v.length)
                 else {
                     return Some(MemoryEntry::BootLoaderReclaimable(data));
                 };
-                let top = data.base + data.length;
 
-                if top > base + size {
-                    Some(MemoryEntry::BootLoaderReclaimable(MemoryData::new(
-                        data.base + size,
-                        data.length - size,
-                    )))
-                } else {
-                    None
+                if data.base + data.length > reserved.base + reserved.length {
+                    return Some(MemoryEntry::BootLoaderReclaimable(MemoryData::new(
+                        data.base + reserved.length,
+                        data.length - reserved.length,
+                    )));
                 }
+
+                None
             }
             MemoryType::ACPI_RECLAIM => Some(MemoryEntry::ACPIReclaimable(data)),
             _ => None,

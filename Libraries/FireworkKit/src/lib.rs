@@ -25,7 +25,7 @@ pub mod userspace;
 
 use serde::{Deserialize, Serialize};
 
-pub const USER_PHYS_VIRT_OFFSET: u64 = 0xC000_0000;
+pub const USER_VIRT_OFFSET: u64 = 0xC000_0000;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct FKInfo {
