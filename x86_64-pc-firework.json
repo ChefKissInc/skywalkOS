@@ -12,7 +12,7 @@
     "llvm-target": "x86_64-unknown-none-elf",
     "max-atomic-width": 64,
     "os": "none",
-    "panic-strategy": "unwind",
+    "panic-strategy": "abort",
     "position-independent-executables": true,
     "relro-level": "off",
     "stack-probes": {
