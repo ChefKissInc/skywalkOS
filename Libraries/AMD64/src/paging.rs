@@ -198,9 +198,9 @@ impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
     #[inline]
     #[must_use]
     pub unsafe fn from_cr3() -> &'static mut Self {
-        let pml4: *mut Self;
+        let pml4: u64;
         core::arch::asm!("mov {}, cr3", out(reg) pml4, options(nomem, nostack, preserves_flags));
-        &mut *pml4
+        &mut *((pml4 + VIRT_OFF) as *mut Self)
     }
 
     pub unsafe fn virt_to_phys(&mut self, virt: u64) -> Option<u64> {

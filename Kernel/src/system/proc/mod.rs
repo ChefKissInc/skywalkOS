@@ -65,7 +65,7 @@ impl Thread {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AllocationType {
     Kernel,
     Readable,
@@ -137,11 +137,11 @@ impl Process {
             self.id,
             if size > 1 { "s" } else { "" },
             if page_count > 1 { "s" } else { "" },
-            !matches!(ty, AllocationType::Kernel)
+            ty != AllocationType::Kernel
         );
         self.allocations.insert(addr, (size, ty));
 
-        if matches!(ty, AllocationType::Kernel) {
+        if ty == AllocationType::Kernel {
             return;
         }
 
@@ -152,7 +152,7 @@ impl Process {
                 addr - fireworkkit::USER_VIRT_OFFSET,
                 page_count,
                 PageTableFlags::new_present()
-                    .with_writable(matches!(ty, AllocationType::Writable))
+                    .with_writable(ty == AllocationType::Writable)
                     .with_user(true),
             );
         }
@@ -186,7 +186,7 @@ impl Process {
                 .free((addr - fireworkkit::USER_VIRT_OFFSET) as *mut _, page_count);
         }
 
-        if !matches!(ty, AllocationType::Kernel) {
+        if ty != AllocationType::Kernel {
             drop(_lock);
             unsafe { self.cr3.lock().unmap(addr, page_count) }
         }

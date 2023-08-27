@@ -35,7 +35,7 @@ pub unsafe extern "sysv64" fn handler(regs: &mut crate::system::RegisterState) {
         if (regs.err_code & (1 << 5)) == 0 {
             ""
         } else {
-            " Protection key violatation."
+            " Protection key violation."
         },
         if (regs.err_code & (1 << 15)) == 0 {
             ""
