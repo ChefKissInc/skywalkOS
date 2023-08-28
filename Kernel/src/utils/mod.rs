@@ -27,14 +27,14 @@ macro_rules! hlt_loop {
 #[macro_export]
 macro_rules! sti {
     () => {
-        unsafe { core::arch::asm!("sti", options(nomem, nostack, preserves_flags)) }
+        unsafe { core::arch::asm!("sti", options(nomem, nostack)) }
     };
 }
 
 #[macro_export]
 macro_rules! cli {
     () => {
-        unsafe { core::arch::asm!("cli", options(nomem, nostack, preserves_flags)) }
+        unsafe { core::arch::asm!("cli", options(nomem, nostack)) }
     };
 }
 

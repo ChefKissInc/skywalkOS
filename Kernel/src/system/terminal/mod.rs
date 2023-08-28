@@ -37,7 +37,7 @@ impl Terminal {
         unsafe {
             let state = &mut *super::state::SYS_STATE.get();
             let base = self.fb.base.as_ptr() as u64;
-            state.pml4.as_ref().unwrap().lock().map_or_update(
+            state.pml4.as_ref().unwrap().lock().map(
                 base,
                 base - amd64::paging::PHYS_VIRT_OFFSET,
                 ((self.fb.height * self.fb.stride + 0xFFF) / PAGE_SIZE as usize) as _,

@@ -14,7 +14,7 @@ impl Write for KWriter {
                 in("rdi") SystemCall::KPrint as u64,
                 in("rsi") s.as_ptr() as u64,
                 in("rdx") s.len() as u64,
-                options(nomem, nostack, preserves_flags),
+                options(nomem, nostack),
             );
         }
         Ok(())

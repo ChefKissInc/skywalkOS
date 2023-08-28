@@ -85,7 +85,10 @@ fn test_map() {
             1,
             PageTableFlags::new_present(),
         );
-        assert_eq!(pml4.virt_to_phys(0x20_0000), Some(0x20_0000));
+        assert_eq!(
+            pml4.virt_to_phys(0x20_0000),
+            Some((0x20_0000, PageTableFlags::new_present()))
+        );
     }
 }
 
@@ -101,14 +104,20 @@ fn test_map_higher_half() {
         for i in 1..0xFFFFF {
             assert_eq!(
                 pml4.virt_to_phys(PHYS_VIRT_OFFSET + PAGE_SIZE * i),
-                Some(PAGE_SIZE * i),
+                Some((
+                    PAGE_SIZE * i,
+                    PageTableFlags::new_present().with_writable(true)
+                )),
             );
         }
 
         for i in 1..0x7FFFF {
             assert_eq!(
                 pml4.virt_to_phys(KERNEL_VIRT_OFFSET + PAGE_SIZE * i),
-                Some(PAGE_SIZE * i),
+                Some((
+                    PAGE_SIZE * i,
+                    PageTableFlags::new_present().with_writable(true)
+                )),
             );
         }
     }

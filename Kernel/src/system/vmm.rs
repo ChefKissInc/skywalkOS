@@ -33,17 +33,6 @@ impl PageTableLvl4 {
         self.0.map(&Self::alloc_entry, virt, phys, count, flags);
     }
 
-    pub unsafe fn map_or_update(
-        &mut self,
-        virt: u64,
-        phys: u64,
-        count: u64,
-        flags: PageTableFlags,
-    ) {
-        self.0
-            .map_or_update(&Self::alloc_entry, virt, phys, count, flags);
-    }
-
     pub unsafe fn map_higher_half(&mut self) {
         self.0.map_higher_half(&Self::alloc_entry);
     }
@@ -62,6 +51,6 @@ impl PageTableLvl4 {
     }
 
     pub unsafe fn map_mmio(&mut self, virt: u64, phys: u64, count: u64, flags: PageTableFlags) {
-        self.map_or_update(virt, phys, count, flags.with_pat_entry(1));
+        self.map(virt, phys, count, flags.with_pat_entry(1));
     }
 }

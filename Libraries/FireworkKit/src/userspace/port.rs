@@ -11,7 +11,7 @@ macro_rules! PortIOSystemCallIn {
             in("rsi") $port,
             in("rdx") $size as u64,
             out($out) val,
-            options(nomem, nostack, preserves_flags),
+            options(nomem, nostack),
         );
         val
     }};
@@ -25,7 +25,7 @@ macro_rules! PortIOSystemCallOut {
             in("rsi") $port,
             in("rdx") $size as u64,
             in($in_) $value,
-            options(nomem, nostack, preserves_flags),
+            options(nomem, nostack),
         )
     };
 }
