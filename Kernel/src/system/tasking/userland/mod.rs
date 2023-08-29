@@ -51,5 +51,5 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
 }
 
 pub fn setup() {
-    crate::intrs::idt::set_handler(249, 1, PrivilegeLevel::User, syscall_handler, false, true);
+    crate::interrupts::idt::set_handler(249, 1, PrivilegeLevel::User, syscall_handler, false, true);
 }

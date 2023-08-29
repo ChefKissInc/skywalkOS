@@ -293,7 +293,7 @@ pub fn setup(state: &mut crate::system::state::SystemState) {
             LocalAPICReg::LVTError,
             lvt::LocalVectorTable::new().with_mask(true),
         );
-        crate::intrs::idt::set_handler(
+        crate::interrupts::idt::set_handler(
             0xFE,
             0,
             PrivilegeLevel::Supervisor,
@@ -322,7 +322,7 @@ pub fn setup(state: &mut crate::system::state::SystemState) {
 
     lapic.enable();
 
-    crate::intrs::idt::set_handler(
+    crate::interrupts::idt::set_handler(
         0xFD,
         0,
         PrivilegeLevel::Supervisor,

@@ -7,7 +7,7 @@ use fireworkkit::{
     TerminationReason,
 };
 
-use crate::system::{proc::scheduler::Scheduler, RegisterState};
+use crate::system::{tasking::scheduler::Scheduler, RegisterState};
 
 pub fn new_entry(state: &mut RegisterState) -> ControlFlow<Option<TerminationReason>> {
     let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };

@@ -2,32 +2,32 @@
 
 use crate::system::RegisterState;
 
-pub unsafe extern "sysv64" fn invalid_tss_handler(regs: &mut RegisterState) {
-    super::exc_msg!(
+pub unsafe extern "sysv64" fn invalid_tss(regs: &mut RegisterState) {
+    super::exception_msg!(
         "invalid TSS",
         format!("Segment selector: {:#X?}", regs.err_code),
         regs
     );
 }
 
-pub unsafe extern "sysv64" fn segment_not_present_handler(regs: &mut RegisterState) {
-    super::exc_msg!(
+pub unsafe extern "sysv64" fn segment_not_present(regs: &mut RegisterState) {
+    super::exception_msg!(
         "segment not present",
         format!("Segment selector: {:#X?}", regs.err_code),
         regs
     );
 }
 
-pub unsafe extern "sysv64" fn stack_exc_handler(regs: &mut RegisterState) {
-    super::exc_msg!(
+pub unsafe extern "sysv64" fn stack_exception(regs: &mut RegisterState) {
+    super::exception_msg!(
         "stack exception",
         format!("Segment selector: {:#X?}", regs.err_code),
         regs
     );
 }
 
-pub unsafe extern "sysv64" fn general_prot_fault_handler(regs: &mut RegisterState) {
-    super::exc_msg!(
+pub unsafe extern "sysv64" fn general_protection_fault(regs: &mut RegisterState) {
+    super::exception_msg!(
         "general protection fault",
         format!("Segment selector: {:#X?}", regs.err_code),
         regs

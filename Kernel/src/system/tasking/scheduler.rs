@@ -12,7 +12,7 @@ use hashbrown::HashMap;
 use crate::{
     system::{
         gdt::{PrivilegeLevel, SegmentSelector},
-        proc::AllocationType,
+        tasking::AllocationType,
         tss::TaskSegmentSelector,
         RegisterState,
     },
@@ -29,9 +29,9 @@ pub struct Scheduler {
     pub kern_stack: Vec<u8>,
     pub irq_handlers: HashMap<u8, u64>,
     pub message_sources: HashMap<u64, u64>,
-    pub pid_gen: crate::utils::incr_id::IncrementalIDGen,
-    pub tid_gen: crate::utils::incr_id::IncrementalIDGen,
-    pub msg_id_gen: crate::utils::incr_id::IncrementalIDGen,
+    pub pid_gen: crate::incr_id::IncrementalIDGen,
+    pub tid_gen: crate::incr_id::IncrementalIDGen,
+    pub msg_id_gen: crate::incr_id::IncrementalIDGen,
 }
 
 unsafe extern "sysv64" fn irq_handler(state: &mut RegisterState) {
@@ -107,7 +107,14 @@ impl Scheduler {
         let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         state.lapic.as_ref().unwrap().setup_timer(timer);
 
-        crate::intrs::idt::set_handler(128, 1, PrivilegeLevel::Supervisor, schedule, true, true);
+        crate::interrupts::idt::set_handler(
+            128,
+            1,
+            PrivilegeLevel::Supervisor,
+            schedule,
+            true,
+            true,
+        );
         crate::acpi::ioapic::wire_legacy_irq(96, false);
 
         Self {
@@ -118,9 +125,9 @@ impl Scheduler {
             kern_stack,
             irq_handlers: HashMap::new(),
             message_sources: HashMap::new(),
-            pid_gen: crate::utils::incr_id::IncrementalIDGen::new(),
-            tid_gen: crate::utils::incr_id::IncrementalIDGen::new(),
-            msg_id_gen: crate::utils::incr_id::IncrementalIDGen::new(),
+            pid_gen: crate::incr_id::IncrementalIDGen::new(),
+            tid_gen: crate::incr_id::IncrementalIDGen::new(),
+            msg_id_gen: crate::incr_id::IncrementalIDGen::new(),
         }
     }
 
@@ -262,7 +269,7 @@ impl Scheduler {
         }
 
         crate::acpi::ioapic::wire_legacy_irq(irq, false);
-        crate::intrs::idt::set_handler(
+        crate::interrupts::idt::set_handler(
             irq + 0x20,
             1,
             PrivilegeLevel::Supervisor,

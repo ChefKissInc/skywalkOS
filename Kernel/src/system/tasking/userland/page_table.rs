@@ -4,7 +4,7 @@ use alloc::boxed::Box;
 
 use amd64::paging::{PageTable, PageTableFlags, PAGE_SIZE};
 
-use crate::system::proc::AllocationType;
+use crate::system::tasking::AllocationType;
 
 #[derive(Debug)]
 #[repr(C)]

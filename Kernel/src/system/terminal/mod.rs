@@ -65,7 +65,11 @@ impl Terminal {
         };
         let (x, y) = (self.x * font::FONT_WIDTH, self.y * font::FONT_HEIGHT);
         let colour = colour.as_u32(self.fb.bitmask);
-        for (i, &x_bit) in v.iter().enumerate() {
+        for (i, x_bit) in v
+            .chunks_exact(2)
+            .map(|a| u16::from_ne_bytes([a[0], a[1]]))
+            .enumerate()
+        {
             for bit in (0..font::FONT_WIDTH).filter(|bit| x_bit & (1 << bit) != 0) {
                 self.fb
                     .plot_pixel(x + font::FONT_WIDTH - bit, y + i, colour)

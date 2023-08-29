@@ -6,11 +6,11 @@ use core::cell::SyncUnsafeCell;
 use hashbrown::HashMap;
 
 use super::{
-    pmm::BitmapAllocator, proc::scheduler::Scheduler, terminal::Terminal, vmm::PageTableLvl4,
+    pmm::BitmapAllocator, tasking::scheduler::Scheduler, terminal::Terminal, vmm::PageTableLvl4,
 };
 use crate::{
     acpi::{apic::LocalAPIC, madt::MADTData, ACPIState},
-    utils::incr_id::IncrementalIDGen,
+    incr_id::IncrementalIDGen,
 };
 
 pub static SYS_STATE: SyncUnsafeCell<SystemState> = SyncUnsafeCell::new(SystemState::new());

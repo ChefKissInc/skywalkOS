@@ -4,7 +4,7 @@ use core::ops::ControlFlow;
 
 use fireworkkit::TerminationReason;
 
-use crate::system::{proc::scheduler::Scheduler, RegisterState};
+use crate::system::{tasking::scheduler::Scheduler, RegisterState};
 
 pub fn alloc(
     scheduler: &mut Scheduler,

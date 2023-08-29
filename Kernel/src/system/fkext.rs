@@ -9,8 +9,8 @@ use fireworkkit::{
 };
 use hashbrown::HashMap;
 
-use super::proc::scheduler::Scheduler;
-use crate::utils::incr_id::IncrementalIDGen;
+use super::tasking::scheduler::Scheduler;
+use crate::incr_id::IncrementalIDGen;
 
 fn is_subset<K: Eq + Hash, V: Eq>(a: &HashMap<K, V>, b: &HashMap<K, V>) -> bool {
     if a.len() > b.len() {

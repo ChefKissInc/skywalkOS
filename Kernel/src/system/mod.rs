@@ -1,14 +1,14 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
 pub mod allocator;
-pub mod exc;
+pub mod exceptions;
 pub mod fkext;
 pub mod gdt;
 mod panic;
 pub mod pmm;
-pub mod proc;
 pub mod serial;
 pub mod state;
+pub mod tasking;
 pub mod terminal;
 pub mod tss;
 pub mod vmm;

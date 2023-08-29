@@ -49,6 +49,7 @@ pub struct ProgrammableIntervalTimer {
     channel0: Port<u8, u8>,
     mode_cmd: Port<u8, ModeCommand>,
 }
+
 #[allow(dead_code)]
 impl ProgrammableIntervalTimer {
     #[inline]

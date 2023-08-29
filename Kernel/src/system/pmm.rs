@@ -74,7 +74,7 @@ impl BitmapAllocator {
                 base + count
             );
             for i in base..(base + count) {
-                crate::utils::bitmap::bit_reset(bitmap, i);
+                crate::bitmap::bit_reset(bitmap, i);
             }
             free_pages += count;
         }
@@ -93,7 +93,7 @@ impl BitmapAllocator {
         let mut n = 0;
 
         while self.last_index < limit {
-            let set = crate::utils::bitmap::bit_test(self.bitmap, self.last_index);
+            let set = crate::bitmap::bit_test(self.bitmap, self.last_index);
             self.last_index += 1;
             if set {
                 n = 0;
@@ -106,7 +106,7 @@ impl BitmapAllocator {
                 let page = self.last_index - count;
 
                 for i in page..self.last_index {
-                    crate::utils::bitmap::bit_set(self.bitmap, i);
+                    crate::bitmap::bit_set(self.bitmap, i);
                 }
 
                 self.free_pages -= count;
@@ -132,7 +132,7 @@ impl BitmapAllocator {
         let idx = ptr as u64 / PAGE_SIZE;
 
         for i in idx..(idx + count) {
-            crate::utils::bitmap::bit_reset(self.bitmap, i);
+            crate::bitmap::bit_reset(self.bitmap, i);
         }
 
         self.free_pages += count;
@@ -142,7 +142,7 @@ impl BitmapAllocator {
         let idx = ptr as u64 / PAGE_SIZE;
 
         for i in idx..(idx + count) {
-            if !crate::utils::bitmap::bit_test(self.bitmap, i) {
+            if !crate::bitmap::bit_test(self.bitmap, i) {
                 return false;
             }
         }

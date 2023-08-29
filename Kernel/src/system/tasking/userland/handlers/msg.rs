@@ -10,7 +10,7 @@ use fireworkkit::{
 use hashbrown::HashSet;
 
 use crate::system::{
-    proc::{scheduler::Scheduler, ThreadState},
+    tasking::{scheduler::Scheduler, ThreadState},
     RegisterState,
 };
 

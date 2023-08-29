@@ -21,7 +21,7 @@ impl MADTData {
     #[inline]
     pub fn new(madt: &'static super::tables::madt::MultipleAPICDescTable) -> Self {
         if madt.flags.pcat_compat() {
-            crate::intrs::pic::ProgrammableIntrController::new().remap_and_disable();
+            crate::interrupts::pic::ProgrammableIntrController::new().remap_and_disable();
         }
 
         let mut proc_lapics = Vec::new();
