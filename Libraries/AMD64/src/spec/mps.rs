@@ -1,31 +1,57 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use modular_bitfield::prelude::*;
-
-#[derive(BitfieldSpecifier, Debug, Clone, Copy, PartialEq, Eq)]
-#[bits = 2]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 2 bits
 pub enum Polarity {
-    ConformToBusSpec = 0,
+    ConformToBusSpec = 0b00,
     ActiveHigh = 0b01,
     ActiveLow = 0b11,
 }
 
-#[derive(BitfieldSpecifier, Debug, Clone, Copy, PartialEq, Eq)]
-#[bits = 2]
+impl Polarity {
+    const fn into_bits(self) -> u16 {
+        self as _
+    }
+
+    const fn from_bits(value: u16) -> Self {
+        match value {
+            0b00 => Self::ConformToBusSpec,
+            0b01 => Self::ActiveHigh,
+            0b11 => Self::ActiveLow,
+            _ => panic!("Invalid MPS Polarity"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 2 bits
 pub enum TriggerMode {
-    ConformToBusSpec = 0,
+    ConformToBusSpec = 0b00,
     EdgeTriggered = 0b01,
     LevelTriggered = 0b11,
 }
 
-#[bitfield(bits = 16)]
-#[derive(Debug, Clone, Copy)]
-#[repr(u16)]
+impl TriggerMode {
+    const fn into_bits(self) -> u16 {
+        self as _
+    }
+
+    const fn from_bits(value: u16) -> Self {
+        match value {
+            0b00 => Self::ConformToBusSpec,
+            0b01 => Self::EdgeTriggered,
+            0b11 => Self::LevelTriggered,
+            _ => panic!("Invalid MPS TriggerMode"),
+        }
+    }
+}
+
+#[bitfield(u16)]
 pub struct INTI {
-    #[skip(setters)]
+    #[bits(2)]
     pub polarity: Polarity,
-    #[skip(setters)]
+    #[bits(2)]
     pub trigger_mode: TriggerMode,
-    #[skip]
-    __: B12,
+    #[bits(12)]
+    __: u16,
 }

@@ -93,7 +93,7 @@ impl Scheduler {
             let tss_addr = TSS.get() as u64;
             gdt.task_segment.base_low = tss_addr as u16;
             gdt.task_segment.base_middle = (tss_addr >> 16) as u8;
-            gdt.task_segment.attrs.set_present(true);
+            gdt.task_segment.attrs = gdt.task_segment.attrs.with_present(true);
             gdt.task_segment.base_high = (tss_addr >> 24) as u8;
             gdt.task_segment.base_upper = (tss_addr >> 32) as u32;
 

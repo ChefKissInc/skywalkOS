@@ -1,22 +1,20 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 
-#[bitfield(bits = 8)]
-#[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[bitfield(u8)]
 pub struct InterruptEnable {
     pub data_available: bool,
     pub transmitter_empty: bool,
     pub break_or_error: bool,
     pub status_change: bool,
-    #[skip]
-    __: B4,
+    #[bits(4)]
+    __: u8,
 }
 
-#[derive(Debug, Clone, Copy, BitfieldSpecifier)]
-#[bits = 2]
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+/// 2 bits
 pub enum DataBits {
     FiveBits = 0b00,
     SixBits = 0b01,
@@ -24,15 +22,47 @@ pub enum DataBits {
     EightBits = 0b11,
 }
 
-#[derive(Debug, Clone, Copy, BitfieldSpecifier)]
-#[bits = 1]
+impl DataBits {
+    const fn into_bits(self) -> u8 {
+        self as _
+    }
+
+    const fn from_bits(value: u8) -> Self {
+        match value {
+            0b00 => Self::FiveBits,
+            0b01 => Self::SixBits,
+            0b10 => Self::SevenBits,
+            0b11 => Self::EightBits,
+            _ => panic!("Invalid DataBits"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+/// 1 bit
 pub enum StopBits {
     OneBit = 0b0,
     OnePointFiveDividedBy2 = 0b1,
 }
 
-#[derive(Debug, Clone, Copy, BitfieldSpecifier)]
-#[bits = 3]
+impl StopBits {
+    const fn into_bits(self) -> u8 {
+        self as _
+    }
+
+    const fn from_bits(value: u8) -> Self {
+        match value {
+            0b0 => Self::OneBit,
+            0b1 => Self::OnePointFiveDividedBy2,
+            _ => panic!("Invalid StopBits"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+/// 3 bits
 pub enum Parity {
     None = 0b000,
     Odd = 0b001,
@@ -41,21 +71,37 @@ pub enum Parity {
     Space = 0b111,
 }
 
-#[bitfield(bits = 8)]
-#[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+impl Parity {
+    const fn into_bits(self) -> u8 {
+        self as _
+    }
+
+    const fn from_bits(value: u8) -> Self {
+        match value {
+            0b000 => Self::None,
+            0b001 => Self::Odd,
+            0b011 => Self::Even,
+            0b101 => Self::Mark,
+            0b111 => Self::Space,
+            _ => panic!("Invalid Parity"),
+        }
+    }
+}
+
+#[bitfield(u8)]
 pub struct LineControl {
+    #[bits(2)]
     pub data_bits: DataBits,
+    #[bits(1)]
     pub stop_bits: StopBits,
+    #[bits(3)]
     pub parity: Parity,
     #[skip]
-    __: B1,
+    __: bool,
     pub dlab: bool,
 }
 
-#[bitfield(bits = 8)]
-#[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[bitfield(u8)]
 pub struct LineStatus {
     pub data_ready: bool,
     pub overrun_error: bool,
@@ -67,12 +113,10 @@ pub struct LineStatus {
     pub impending_error: bool,
 }
 
-#[bitfield(bits = 8)]
-#[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[bitfield(u8)]
 pub struct ModemControl {
-    #[skip]
-    __: B2,
+    #[bits(2)]
+    __: u8,
     pub autoflow: bool,
     pub loopback: bool,
     pub aux_out_1: bool,

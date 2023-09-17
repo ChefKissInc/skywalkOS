@@ -11,7 +11,6 @@
     const_mut_refs,
     sync_unsafe_cell
 )]
-#![allow(clippy::multiple_crate_versions)]
 
 use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 
@@ -27,6 +26,8 @@ extern crate alloc;
 extern crate log;
 #[macro_use]
 extern crate itertools;
+#[macro_use]
+extern crate bitfield_struct;
 
 mod acpi;
 mod bitmap;
@@ -68,7 +69,7 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
     unsafe {
         crate::system::gdt::GDTR.load();
         crate::interrupts::idt::IDTR.load();
-        crate::interrupts::init_intr_quirks();
+        crate::interrupts::init_quirks();
         crate::system::exceptions::init();
     }
 

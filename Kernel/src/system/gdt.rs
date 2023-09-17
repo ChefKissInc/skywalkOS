@@ -2,15 +2,27 @@
 
 use core::cell::SyncUnsafeCell;
 
-use modular_bitfield::prelude::*;
-
-#[derive(Default, BitfieldSpecifier, Debug, Clone, Copy)]
-#[bits = 2]
+#[derive(Default, Debug, Clone, Copy)]
 #[repr(u16)]
+/// 2 bits
 pub enum PrivilegeLevel {
     #[default]
     Supervisor = 0,
     User = 3,
+}
+
+impl PrivilegeLevel {
+    pub const fn into_bits(self) -> u16 {
+        self as _
+    }
+
+    pub const fn from_bits(value: u16) -> Self {
+        match value {
+            0 => Self::Supervisor,
+            3 => Self::User,
+            _ => panic!("Unknown PrivilegeLevel"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -31,9 +43,9 @@ impl From<SegmentSelector> for u64 {
     }
 }
 
-#[derive(Default, BitfieldSpecifier, Debug, Clone, Copy)]
-#[bits = 5]
+#[derive(Default, Debug, Clone, Copy)]
 #[repr(u8)]
+/// 5 bits
 pub enum DescriptorType {
     #[default]
     None = 0b0,
@@ -44,15 +56,34 @@ pub enum DescriptorType {
     TaskSegment = 0b01001,
 }
 
-#[bitfield(bits = 16)]
-#[derive(Debug, Clone, Copy)]
-#[repr(u16)]
+impl DescriptorType {
+    const fn into_bits(self) -> u16 {
+        self as _
+    }
+
+    const fn from_bits(value: u16) -> Self {
+        match value {
+            0b00000 => Self::None,
+            0b11010 => Self::CodeSegment,
+            0b11011 => Self::CodeSegmentAccessed,
+            0b10010 => Self::DataSegment,
+            0b10011 => Self::DataSegmentAccessed,
+            0b01001 => Self::TaskSegment,
+            _ => panic!("Unknown DescriptorType"),
+        }
+    }
+}
+
+#[bitfield(u16)]
 pub struct SegmentAttributes {
+    #[bits(5)]
     pub ty: DescriptorType,
+    #[bits(2)]
     pub dpl: PrivilegeLevel,
     pub present: bool,
-    pub limit_high: B4,
-    pub avl: B1,
+    #[bits(4)]
+    pub limit_high: u8,
+    pub avl: bool,
     pub long: bool,
     pub default_op_size: bool,
     pub granularity: bool,
@@ -92,10 +123,11 @@ impl SegmentDescriptor {
             limit_low,
             base_low: 0,
             base_middle: 0,
-            attrs: SegmentAttributes::from_bytes([
-                ty as u8 | ((dpl as u8) << 5) | ((present as u8) << 7),
-                (long as u8) << 5,
-            ]),
+            attrs: SegmentAttributes::new()
+                .with_ty(ty)
+                .with_dpl(dpl)
+                .with_present(present)
+                .with_long(long),
             base_high: 0,
         }
     }
@@ -128,7 +160,9 @@ impl TaskSegmentDescriptor {
             length: 104,
             base_low: 0,
             base_middle: 0,
-            attrs: SegmentAttributes::from_bytes([DescriptorType::TaskSegment as u8, 1 << 5]),
+            attrs: SegmentAttributes::new()
+                .with_ty(DescriptorType::TaskSegment)
+                .with_long(true),
             base_high: 0,
             base_upper: 0,
             __: 0,

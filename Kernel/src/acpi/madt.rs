@@ -20,7 +20,8 @@ pub struct MADTData {
 impl MADTData {
     #[inline]
     pub fn new(madt: &'static super::tables::madt::MultipleAPICDescTable) -> Self {
-        if madt.flags.pcat_compat() {
+        let flags = madt.flags;
+        if flags.pcat_compat() {
             crate::interrupts::pic::ProgrammableIntrController::new().remap_and_disable();
         }
 

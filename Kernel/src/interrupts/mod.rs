@@ -19,6 +19,6 @@ unsafe extern "sysv64" fn irq7_quirk(_state: &mut RegisterState) {
     }
 }
 
-pub fn init_intr_quirks() {
+pub fn init_quirks() {
     idt::set_handler(0x27, 0, PrivilegeLevel::Supervisor, irq7_quirk, false, true);
 }

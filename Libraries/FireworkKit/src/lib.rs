@@ -2,7 +2,7 @@
 
 #![no_std]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
-#![allow(clippy::missing_safety_doc, clippy::multiple_crate_versions)]
+#![allow(clippy::missing_safety_doc)]
 #![cfg_attr(feature = "userspace", feature(alloc_error_handler))]
 
 use alloc::{string::String, vec::Vec};

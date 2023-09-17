@@ -1,29 +1,25 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use modular_bitfield::prelude::*;
+use super::DeliveryMode;
 
-#[bitfield(bits = 32)]
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
+#[bitfield(u32)]
 pub struct LocalVectorTable {
     pub vector: u8,
-    pub delivery_mode: super::DeliveryMode,
-    #[skip]
+    #[bits(3, into = DeliveryMode::into_bits_32, from = DeliveryMode::from_bits_32)]
+    pub delivery_mode: DeliveryMode,
     __: bool,
-    #[skip(setters)]
     pub pending: bool,
     pub active_low: bool,
-    #[skip(setters)]
     pub remote_irr: bool,
     pub level_triggered: bool,
     pub mask: bool,
-    #[skip]
-    __: B15,
+    #[bits(15)]
+    __: u16,
 }
 
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
-#[bits = 32]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub enum TimerDivide {
     #[default]
     By2 = 0b0000,
@@ -36,9 +32,9 @@ pub enum TimerDivide {
     By1 = 0b1011,
 }
 
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
-#[bits = 2]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
+/// 2 bits
 pub enum TimerMode {
     #[default]
     OneShot = 0b00,
@@ -46,19 +42,32 @@ pub enum TimerMode {
     TscDeadline = 0b10,
 }
 
-#[bitfield(bits = 32)]
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
+impl TimerMode {
+    const fn into_bits(self) -> u32 {
+        self as _
+    }
+
+    const fn from_bits(value: u32) -> Self {
+        match value {
+            0b00 => Self::OneShot,
+            0b01 => Self::Periodic,
+            0b10 => Self::TscDeadline,
+            _ => panic!("Invalid value for TimerMode"),
+        }
+    }
+}
+
+#[bitfield(u32)]
 pub struct TimerLVT {
     pub vector: u8,
-    #[skip]
-    __: B4,
-    #[skip(setters)]
+    #[bits(4)]
+    __: u8,
     pub pending: bool,
-    #[skip]
-    __: B3,
+    #[bits(3)]
+    __: u8,
     pub mask: bool,
+    #[bits(2)]
     pub mode: TimerMode,
-    #[skip]
-    __: B13,
+    #[bits(13)]
+    __: u16,
 }

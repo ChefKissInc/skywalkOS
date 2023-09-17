@@ -1,10 +1,8 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use modular_bitfield::prelude::*;
-
-#[derive(BitfieldSpecifier, Debug, Default, Clone, Copy)]
-#[bits = 3]
+#[derive(Debug, Default, Clone, Copy)]
 #[repr(u8)]
+/// 3 bits
 pub enum PATEntry {
     #[default]
     Uncacheable = 0x0,
@@ -15,34 +13,58 @@ pub enum PATEntry {
     Uncached = 0x7,
 }
 
-#[bitfield(bits = 64)]
-#[derive(BitfieldSpecifier, Debug, Default, Clone, Copy)]
-#[repr(u64)]
+impl PATEntry {
+    const fn into_bits(self) -> u64 {
+        self as _
+    }
+
+    const fn from_bits(value: u64) -> Self {
+        match value {
+            0x0 => Self::Uncacheable,
+            0x1 => Self::WriteCombining,
+            0x4 => Self::WriteThrough,
+            0x5 => Self::WriteProtected,
+            0x6 => Self::WriteBack,
+            0x7 => Self::Uncached,
+            _ => panic!("Invalid PAT value"),
+        }
+    }
+}
+
+#[bitfield(u64)]
 pub struct PageAttributeTable {
+    #[bits(3)]
     pub pat0: PATEntry,
-    #[skip]
-    __: B5,
+    #[bits(5)]
+    __: u8,
+    #[bits(3)]
     pub pat1: PATEntry,
-    #[skip]
-    __: B5,
+    #[bits(5)]
+    __: u8,
+    #[bits(3)]
     pub pat2: PATEntry,
-    #[skip]
-    __: B5,
+    #[bits(5)]
+    __: u8,
+    #[bits(3)]
     pub pat3: PATEntry,
-    #[skip]
-    __: B5,
+    #[bits(5)]
+    __: u8,
+    #[bits(3)]
     pub pat4: PATEntry,
-    #[skip]
-    __: B5,
+    #[bits(5)]
+    __: u8,
+    #[bits(3)]
     pub pat5: PATEntry,
-    #[skip]
-    __: B5,
+    #[bits(5)]
+    __: u8,
+    #[bits(3)]
     pub pat6: PATEntry,
-    #[skip]
-    __: B5,
+    #[bits(5)]
+    __: u8,
+    #[bits(3)]
     pub pat7: PATEntry,
-    #[skip]
-    __: B5,
+    #[bits(5)]
+    __: u8,
 }
 
 impl super::ModelSpecificReg for PageAttributeTable {

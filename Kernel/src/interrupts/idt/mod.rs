@@ -2,8 +2,6 @@
 
 use core::cell::SyncUnsafeCell;
 
-use modular_bitfield::prelude::*;
-
 use crate::system::{
     gdt::{PrivilegeLevel, SegmentSelector},
     RegisterState,
@@ -66,24 +64,38 @@ unsafe extern "sysv64" fn default_handler(regs: &mut RegisterState) {
     debug!("No handler for ISR #{n}");
 }
 
-#[derive(Debug, BitfieldSpecifier, Clone, Copy, PartialEq, Eq)]
-#[bits = 4]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
+/// 4 bits
 pub enum EntryType {
     InterruptGate = 0b1110,
     TrapGate = 0b1111,
 }
 
-#[bitfield(bits = 16)]
-#[derive(Debug, BitfieldSpecifier, Clone, Copy, PartialEq, Eq)]
-#[repr(u16)]
+impl EntryType {
+    const fn into_bits(self) -> u16 {
+        self as _
+    }
+
+    const fn from_bits(value: u16) -> Self {
+        match value {
+            0b1110 => Self::InterruptGate,
+            0b1111 => Self::TrapGate,
+            _ => panic!("Unknown IDT EntryType"),
+        }
+    }
+}
+
+#[bitfield(u16)]
 pub struct EntryFlags {
-    pub ist: B3,
-    #[skip]
+    #[bits(3)]
+    pub ist: u8,
+    #[bits(5)]
     __: B5,
+    #[bits(4, default=EntryType::InterruptGate)]
     pub ty: EntryType,
-    #[skip]
-    __: B1,
+    __: bool,
+    #[bits(2)]
     pub dpl: PrivilegeLevel,
     pub present: bool,
 }
@@ -112,10 +124,11 @@ impl Entry {
         Self {
             offset_low: base as u16,
             selector,
-            flags: EntryFlags::from_bytes([
-                ist & 0x7,
-                ty as u8 | ((dpl as u8) << 5) | ((present as u8) << 7),
-            ]),
+            flags: EntryFlags::new()
+                .with_ist(ist)
+                .with_ty(ty)
+                .with_dpl(dpl)
+                .with_present(present),
             offset_middle: (base >> 16) as u16,
             offset_high: (base >> 32) as u32,
             __: 0,
@@ -161,10 +174,8 @@ pub fn set_handler(
         "Tried to register already existing ISR #{isr}",
     );
 
-    unsafe {
-        (*ENTRIES.get())[isr as usize].flags.set_dpl(dpl);
-        (*ENTRIES.get())[isr as usize].flags.set_ist(ist);
-    }
+    let ent = unsafe { &mut (*ENTRIES.get())[isr as usize] };
+    ent.flags = ent.flags.with_dpl(dpl).with_ist(ist);
 
     *handler = InterruptHandler {
         func,

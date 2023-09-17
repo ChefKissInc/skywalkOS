@@ -1,6 +1,5 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 
 #[repr(u64)]
@@ -15,68 +14,48 @@ pub enum HPETReg {
     TimerNFSBInterruptRoute,
 }
 
-#[bitfield(bits = 64)]
-#[derive(Debug, Clone, Copy)]
-#[repr(u64)]
+#[bitfield(u64)]
 pub struct GeneralCapabilities {
-    #[skip(setters)]
     pub rev_id: u8,
-    #[skip(setters)]
-    pub num_timers: B5,
-    #[skip(setters)]
+    #[bits(5)]
+    pub num_timers: u8,
     pub main_cnt_64bit: bool,
-    #[skip]
     __: bool,
-    #[skip(setters)]
     pub legacy_replacement: bool,
-    #[skip(setters)]
     pub vendor_id: u16,
-    #[skip(setters)]
     pub clk_period: u32,
 }
 
-#[bitfield(bits = 64)]
-#[derive(Debug, Clone, Copy)]
-#[repr(u64)]
+#[bitfield(u64)]
 pub struct GeneralConfiguration {
     pub main_cnt_enable: bool,
     pub legacy_replacement: bool,
-    #[skip]
-    __: B62,
+    #[bits(62)]
+    __: u64,
 }
 
-#[bitfield(bits = 64)]
-#[derive(Debug, Clone, Copy)]
-#[repr(u64)]
+#[bitfield(u64)]
 pub struct GeneralInterruptStatus {
     pub tmr_intr_active: bool,
-    #[skip]
-    __: B63,
+    #[bits(63)]
+    __: u64,
 }
 
-#[bitfield(bits = 64)]
-#[derive(Debug, Clone, Copy)]
-#[repr(u64)]
+#[bitfield(u64)]
 pub struct TimerCfgAndCapability {
-    #[skip]
     __: bool,
     pub level_triggered: bool,
     pub intr_enable: bool,
     pub periodic: bool,
-    #[skip(setters)]
     pub periodic_supported: bool,
-    #[skip(setters)]
     pub is_64_bit: bool,
     pub timer_accumulator: bool,
-    #[skip]
     __: bool,
     pub force_32bit: bool,
-    pub ioapic_intr_route: B5,
+    #[bits(5)]
+    pub ioapic_intr_route: u8,
     pub fsb_intr: bool,
-    #[skip(setters)]
     pub fsb_intr_supported: bool,
-    #[skip]
     __: u16,
-    #[skip(setters)]
     pub intr_route: u32,
 }

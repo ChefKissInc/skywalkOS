@@ -2,68 +2,66 @@
 
 #![allow(dead_code)]
 
-use modular_bitfield::prelude::*;
-
 pub mod regs;
 
-#[derive(Debug, BitfieldSpecifier, Clone, Copy)]
-#[bits = 8]
+#[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum AddressSpaceID {
     SystemMemory = 0,
     SystemIo,
 }
 
-#[bitfield(bits = 96)]
 #[derive(Debug, Clone, Copy)]
+#[repr(C, packed)]
 pub struct Address {
-    #[skip(setters)]
     pub addr_space_id: AddressSpaceID,
-    #[skip(setters)]
     pub reg_bit_width: u8,
-    #[skip(setters)]
     pub reg_bit_off: u8,
-    #[skip]
     __: u8,
-    #[skip(setters)]
     pub address: u64,
 }
 
-#[bitfield(bits = 32)]
-#[derive(Debug, Clone, Copy)]
-#[repr(u32)]
+#[bitfield(u32)]
 pub struct EventTimerBlockID {
-    #[skip(setters)]
     pub hw_revision: u8,
-    #[skip(setters)]
-    pub comparator_cnt: B5,
-    #[skip(setters)]
+    #[bits(5)]
+    pub comparator_cnt: u8,
     pub counter_size: bool,
-    #[skip]
     __: bool,
-    #[skip(setters)]
     pub legacy_replacement: bool,
-    #[skip(setters)]
     pub pci_vendor_id: u16,
 }
 
-#[derive(Debug, BitfieldSpecifier, Clone, Copy)]
-#[bits = 4]
+#[derive(Debug, Clone, Copy)]
 #[repr(u8)]
+/// 4 bits
 pub enum PageProtection {
     NoGuarantee = 0,
     Protected4Kb,
     Protected64Kb,
 }
 
-#[bitfield(bits = 8)]
-#[derive(Debug, Clone, Copy)]
-#[repr(u8)]
+impl PageProtection {
+    const fn into_bits(self) -> u8 {
+        self as _
+    }
+
+    const fn from_bits(value: u8) -> Self {
+        match value {
+            0 => Self::NoGuarantee,
+            1 => Self::Protected4Kb,
+            2 => Self::Protected64Kb,
+            _ => panic!("Invalid value for PageProtection"),
+        }
+    }
+}
+
+#[bitfield(u8)]
 pub struct PageProtectionAttributes {
-    #[skip(setters)]
+    #[bits(4)]
     pub page_protection: PageProtection,
-    #[skip]
-    __: B4,
+    #[bits(4)]
+    __: u8,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -80,14 +78,14 @@ pub struct Hpet {
 impl Hpet {
     pub fn read_reg<T: Into<u64>>(&self, reg: T) -> u64 {
         unsafe {
-            ((self.address.address() + amd64::paging::PHYS_VIRT_OFFSET + reg.into()) as *const u64)
+            ((self.address.address + amd64::paging::PHYS_VIRT_OFFSET + reg.into()) as *const u64)
                 .read_volatile()
         }
     }
 
     pub fn write_reg<T: Into<u64>>(&self, reg: T, value: u64) {
         unsafe {
-            ((self.address.address() + amd64::paging::PHYS_VIRT_OFFSET + reg.into()) as *mut u64)
+            ((self.address.address + amd64::paging::PHYS_VIRT_OFFSET + reg.into()) as *mut u64)
                 .write_volatile(value);
         }
     }

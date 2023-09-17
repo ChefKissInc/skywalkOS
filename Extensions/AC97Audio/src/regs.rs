@@ -1,62 +1,57 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 
-#[bitfield(bits = 16)]
-#[derive(Default, Debug, Clone, Copy)]
-#[repr(u16)]
+#[bitfield(u16)]
 pub struct MasterOutputVolume {
-    pub right: B6,
-    #[skip]
-    __: B2,
-    pub left: B6,
-    #[skip]
-    __: B1,
+    #[bits(6)]
+    pub right: usize,
+    #[bits(2)]
+    __: u8,
+    #[bits(6)]
+    pub left: usize,
+    #[bits(1)]
+    __: u8,
     pub mute: bool,
 }
 
-#[bitfield(bits = 16)]
-#[derive(Default, Debug, Clone, Copy)]
-#[repr(u16)]
+#[bitfield(u16)]
 pub struct PcmOutputVolume {
-    pub right: B5,
-    #[skip]
-    __: B3,
-    pub left: B5,
-    #[skip]
-    __: B2,
+    #[bits(5)]
+    pub right: usize,
+    #[bits(3)]
+    __: u8,
+    #[bits(5)]
+    pub left: usize,
+    #[bits(2)]
+    __: u8,
     pub mute: bool,
 }
 
-#[bitfield(bits = 8)]
-#[derive(Default, Debug, Clone, Copy)]
-#[repr(u8)]
+#[bitfield(u8)]
 pub struct RegBoxTransfer {
     pub transfer_data: bool,
     pub reset: bool,
     pub last_ent_fire_intr: bool,
     pub ioc_intr: bool,
     pub fifo_err_intr: bool,
-    #[skip]
-    __: B3,
+    #[bits(3)]
+    __: u8,
 }
 
-#[bitfield(bits = 16)]
-#[derive(Default, Debug, Clone, Copy)]
-#[repr(u16)]
+#[bitfield(u16)]
 pub struct RegBoxStatus {
     pub transfer_data: bool,
     pub end_of_transfer: bool,
     pub last_ent_fire_intr: bool,
     pub ioc_intr: bool,
     pub fifo_err_intr: bool,
-    #[skip]
-    __: B11,
+    #[bits(11)]
+    __: u16,
 }
 
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy)]
-#[bits = 2]
+#[derive(Debug, Default, Clone, Copy)]
+#[repr(u32)]
 pub enum PcmChannels {
     #[default]
     Two = 0,
@@ -64,49 +59,72 @@ pub enum PcmChannels {
     Six,
 }
 
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy)]
-#[bits = 2]
+impl PcmChannels {
+    const fn into_bits(self) -> u32 {
+        self as _
+    }
+
+    const fn from_bits(value: u32) -> Self {
+        match value {
+            0 => Self::Two,
+            1 => Self::Four,
+            2 => Self::Six,
+            _ => panic!("Invalid value for PcmChannels"),
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone, Copy)]
+#[repr(u32)]
 pub enum PcmOutMode {
     #[default]
     SixteenSamples = 0,
     TwentySamples,
 }
 
-#[bitfield(bits = 32)]
-#[derive(Default, Debug, Clone, Copy)]
-#[repr(u32)]
+impl PcmOutMode {
+    const fn into_bits(self) -> u32 {
+        self as _
+    }
+
+    const fn from_bits(value: u32) -> Self {
+        match value {
+            0 => Self::SixteenSamples,
+            1 => Self::TwentySamples,
+            _ => panic!("Invalid value for PcmOutMode"),
+        }
+    }
+}
+
+#[bitfield(u32)]
 pub struct GlobalControl {
     pub interrupts: bool,
     pub cold_reset: bool,
     pub warm_reset: bool,
     pub shut_down: bool,
-    #[skip]
     __: u16,
+    #[bits(2)]
     pub channels: PcmChannels,
+    #[bits(2)]
     pub pcm_out_mode: PcmOutMode,
-    #[skip]
     __: u8,
 }
 
-#[bitfield(bits = 32)]
-#[derive(Default, Debug, Clone, Copy)]
-#[repr(u32)]
+#[bitfield(u32)]
 pub struct GlobalStatus {
-    #[skip]
-    __: B20,
-    #[skip(setters)]
+    #[bits(20)]
+    __: u32,
+    #[bits(2)]
     pub channel_caps: PcmChannels,
+    #[bits(2)]
     pub sample_caps: PcmOutMode,
-    #[skip]
     __: u8,
 }
 
-#[bitfield(bits = 16)]
-#[derive(Default, Debug, Clone, Copy)]
-#[repr(u16)]
+#[bitfield(u16)]
 pub struct BufferDescCtl {
-    #[skip]
-    __: B14,
+    #[bits(14)]
+    __: u16,
     pub last: bool,
     pub fire_interrupt: bool,
 }

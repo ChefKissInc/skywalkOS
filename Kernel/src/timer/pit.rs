@@ -1,11 +1,10 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
 use amd64::io::port::Port;
-use modular_bitfield::prelude::*;
 
-#[derive(BitfieldSpecifier, Clone, Copy)]
-#[bits = 3]
+#[derive(Debug, Clone, Copy)]
 #[repr(u8)]
+/// 3 bits
 pub enum Mode {
     IntrOnTerminalCount = 0b000,
     OneShot = 0b001,
@@ -15,9 +14,27 @@ pub enum Mode {
     HwTriggeredStrobe = 0b101,
 }
 
-#[derive(BitfieldSpecifier, Clone, Copy)]
-#[bits = 2]
+impl Mode {
+    const fn into_bits(self) -> u8 {
+        self as _
+    }
+
+    const fn from_bits(value: u8) -> Self {
+        match value {
+            0b000 => Self::IntrOnTerminalCount,
+            0b001 => Self::OneShot,
+            0b010 => Self::RateGenerator,
+            0b011 => Self::SquareWaveGenerator,
+            0b100 => Self::SwTriggeredStrobe,
+            0b101 => Self::HwTriggeredStrobe,
+            _ => panic!("Invalid PIT Mode"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 #[repr(u8)]
+/// 2 bits
 pub enum AccessMode {
     LatchCount = 0b00,
     LoByteOnly = 0b01,
@@ -25,21 +42,52 @@ pub enum AccessMode {
     LoByteOrHiByte = 0b11,
 }
 
-#[derive(BitfieldSpecifier, Clone, Copy)]
-#[bits = 2]
+impl AccessMode {
+    const fn into_bits(self) -> u8 {
+        self as _
+    }
+
+    const fn from_bits(value: u8) -> Self {
+        match value {
+            0b00 => Self::LatchCount,
+            0b01 => Self::LoByteOnly,
+            0b10 => Self::HiByteOnly,
+            0b11 => Self::LoByteOrHiByte,
+            _ => panic!("Invalid PIT AccessMode"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 #[repr(u8)]
+/// 2 bits
 pub enum Channel {
     Zero = 0b00,
     ReadBackCommand = 0b11,
 }
 
-#[bitfield(bits = 8)]
-#[derive(Clone, Copy)]
-#[repr(u8)]
+impl Channel {
+    const fn into_bits(self) -> u8 {
+        self as _
+    }
+
+    const fn from_bits(value: u8) -> Self {
+        match value {
+            0b00 => Self::Zero,
+            0b11 => Self::ReadBackCommand,
+            _ => panic!("Invalid PIT Channel"),
+        }
+    }
+}
+
+#[bitfield(u8)]
 pub struct ModeCommand {
     pub bcd: bool,
+    #[bits(3)]
     pub mode: Mode,
+    #[bits(2)]
     pub access_mode: AccessMode,
+    #[bits(2)]
     pub channel: Channel,
 }
 

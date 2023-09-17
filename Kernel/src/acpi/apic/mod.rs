@@ -4,7 +4,6 @@ use amd64::{
     msr::{apic::APICBase, ModelSpecificReg},
     paging::PageTableFlags,
 };
-use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 
 use crate::system::{gdt::PrivilegeLevel, RegisterState};
@@ -46,9 +45,9 @@ pub enum LocalAPICReg {
     TimerDivideConfiguration = 0x3E0,
 }
 
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
-#[bits = 3]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
+/// 3 bits
 pub enum DeliveryMode {
     #[default]
     Fixed = 0b000,
@@ -60,9 +59,38 @@ pub enum DeliveryMode {
     ExtInt = 0b111,
 }
 
-#[bitfield(bits = 32)]
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
+impl DeliveryMode {
+    #[inline]
+    const fn into_bits(self) -> u64 {
+        self as _
+    }
+
+    #[inline]
+    const fn from_bits(value: u64) -> Self {
+        match value {
+            0b000 => Self::Fixed,
+            0b001 => Self::LowestPriority,
+            0b010 => Self::Smi,
+            0b100 => Self::Nmi,
+            0b101 => Self::Init,
+            0b110 => Self::StartUp,
+            0b111 => Self::ExtInt,
+            _ => panic!("Invalid value for DeliveryMode"),
+        }
+    }
+
+    #[inline]
+    const fn into_bits_32(self) -> u32 {
+        self as _
+    }
+
+    #[inline]
+    const fn from_bits_32(value: u32) -> Self {
+        Self::from_bits(value as _)
+    }
+}
+
+#[bitfield(u32)]
 pub struct ErrorStatus {
     pub send_checksum_err: bool,
     pub recv_checksum_err: bool,
@@ -72,13 +100,13 @@ pub struct ErrorStatus {
     pub send_illegal_vec: bool,
     pub recv_illegal_vec: bool,
     pub illegal_reg_addr: bool,
-    #[skip]
-    __: B24,
+    #[bits(24)]
+    __: u32,
 }
 
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
-#[bits = 2]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
+/// 2 bits
 pub enum IntCmdDestShorthand {
     #[default]
     None = 0b00,
@@ -87,54 +115,61 @@ pub enum IntCmdDestShorthand {
     ToAllExclSelf,
 }
 
-#[bitfield(bits = 32)]
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
+impl IntCmdDestShorthand {
+    const fn into_bits(self) -> u64 {
+        self as _
+    }
+
+    const fn from_bits(value: u64) -> Self {
+        match value {
+            0b00 => Self::None,
+            0b01 => Self::ToSelf,
+            0b10 => Self::ToAllInclSelf,
+            0b11 => Self::ToAllExclSelf,
+            _ => panic!("Invalid value for IntCmdDestShorthand"),
+        }
+    }
+}
+
+#[bitfield(u32)]
 pub struct SpuriousIntrVector {
     pub vector: u8,
     pub apic_soft_enable: bool,
     pub focus_proc_check: bool,
-    #[skip]
-    __: B2,
+    #[bits(2)]
+    __: u8,
     pub eoi_broadcast_suppress: bool,
-    #[skip]
-    __: B19,
+    #[bits(19)]
+    __: u32,
 }
 
-#[bitfield(bits = 64)]
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
-#[repr(u64)]
+#[bitfield(u64)]
 pub struct InterruptCommand {
     pub vector: u8,
+    #[bits(3)]
     pub delivery_mode: DeliveryMode,
     pub logical_dest: bool,
     pub delivery_pending: bool,
-    #[skip]
     __: bool,
     pub assert: bool,
     pub level_trigger: bool,
-    #[skip]
-    __: B2,
+    #[bits(2)]
+    __: u8,
+    #[bits(2)]
     pub dest_shorthand: IntCmdDestShorthand,
-    #[skip]
-    __: B36,
+    #[bits(36)]
+    __: u64,
     pub dest: u8,
 }
 
-#[bitfield(bits = 32)]
-#[derive(Debug, BitfieldSpecifier, Default, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
+#[bitfield(u32)]
 pub struct LocalAPICVer {
-    #[skip(setters)]
     pub ver: u8,
-    #[skip]
     __: u8,
-    #[skip(setters)]
     pub max_lvt_entry: u8,
-    #[skip(setters)]
     pub support_eoi_suppression: bool,
-    #[skip]
-    __: B7,
+    #[bits(7)]
+    __: u8,
 }
 
 impl LocalAPIC {

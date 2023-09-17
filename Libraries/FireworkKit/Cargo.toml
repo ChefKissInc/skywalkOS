@@ -11,7 +11,7 @@ strip = true
 hashbrown = { version = "0.14.0", features = ["nightly", "serde"] }
 log = { version = "0.4.20", optional = true }
 num_enum = { version = "0.7.0", default-features = false }
-postcard = { version = "1.0.6", default-features = false, features = ["alloc"] }
+postcard = { version = "1.0.7", default-features = false, features = ["alloc"] }
 serde = { version = "1.0.188", default-features = false, features = ["derive"] }
 
 [features]

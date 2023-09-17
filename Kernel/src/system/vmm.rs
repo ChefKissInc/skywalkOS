@@ -28,7 +28,6 @@ impl PageTableLvl4 {
         self.0.set_cr3();
     }
 
-    #[allow(dead_code)]
     pub unsafe fn map(&mut self, virt: u64, phys: u64, count: u64, flags: PageTableFlags) {
         self.0.map(&Self::alloc_entry, virt, phys, count, flags);
     }

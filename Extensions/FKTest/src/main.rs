@@ -3,12 +3,13 @@
 #![no_std]
 #![no_main]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
-#![allow(clippy::multiple_crate_versions)]
 
 // #[macro_use]
 // extern crate log;
 #[macro_use]
 extern crate alloc;
+#[macro_use]
+extern crate bitfield_struct;
 
 use alloc::string::String;
 use core::fmt::Write;
@@ -20,7 +21,6 @@ use fireworkkit::{
     syscall::SystemCall,
     userspace::{logger::KWriter, port::Port},
 };
-use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 
@@ -31,19 +31,15 @@ enum PS2CtlCmd {
     WriteControllerCfg = 0x60,
 }
 
-#[bitfield(bits = 8)]
-#[derive(Default, Debug, Clone, Copy)]
-#[repr(u8)]
+#[bitfield(u8)]
 pub struct Ps2Cfg {
     pub port1_intr: bool,
     pub port2_intr: bool,
     pub post_pass: bool,
-    #[skip]
     __: bool,
     pub port1_clock: bool,
     pub port2_clock: bool,
     pub port1_translation: bool,
-    #[skip]
     __: bool,
 }
 

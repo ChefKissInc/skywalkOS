@@ -2,8 +2,6 @@
 
 use core::mem::size_of;
 
-use modular_bitfield::prelude::*;
-
 use self::ic::{
     ioapic::{InputOutputAPIC, IntrSourceOverride, NMISource},
     proc_lapic::{LocalAPICAddrOverride, LocalAPICNMI, ProcessorLocalAPIC},
@@ -12,18 +10,15 @@ use self::ic::{
 
 pub mod ic;
 
-#[bitfield(bits = 32)]
-#[repr(u32)]
-#[derive(Debug, Copy, Clone)]
+#[bitfield(u32)]
 pub struct MADTFlags {
-    #[skip(setters)]
     pub pcat_compat: bool,
-    #[skip]
-    __: B31,
+    #[bits(31)]
+    __: u32,
 }
 
-#[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
+#[repr(C, packed)]
 pub struct MultipleAPICDescTable {
     header: super::SDTHeader,
     local_ic_addr: u32,

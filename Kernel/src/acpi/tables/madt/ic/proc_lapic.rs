@@ -1,17 +1,11 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use modular_bitfield::prelude::*;
-
-#[bitfield(bits = 32)]
-#[derive(Debug, Clone, Copy)]
-#[repr(u32)]
+#[bitfield(u32)]
 pub struct ProcessorLAPICFlags {
-    #[skip(setters)]
     pub enabled: bool,
-    #[skip(setters)]
     pub online_capable: bool,
-    #[skip]
-    __: B30,
+    #[bits(30)]
+    __: u32,
 }
 
 #[derive(Debug, Clone, Copy)]

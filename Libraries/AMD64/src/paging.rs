@@ -1,7 +1,5 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use modular_bitfield::prelude::*;
-
 pub const PAGE_SIZE: u64 = 0x1000;
 pub const PAGE_MASK: u64 = 0xFFF;
 
@@ -29,27 +27,25 @@ impl PageTableIndices {
     }
 }
 
-#[bitfield(bits = 64)]
-#[repr(u64)]
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[bitfield(u64)]
+#[derive(PartialEq, Eq)]
 pub struct PageTableEntry {
     pub present: bool,
     pub writable: bool,
     pub user: bool,
     pub pwt: bool,
     pub pcd: bool,
-    #[skip(setters)]
     pub accessed: bool,
-    #[skip(setters)]
     pub dirty: bool,
     pub huge_or_pat: bool,
     pub global: bool,
-    #[skip]
-    __: B2,
+    #[bits(2)]
+    __: u8,
     pub pat: bool,
-    pub address: B40,
-    #[skip]
-    __: B11,
+    #[bits(40)]
+    pub address: u64,
+    #[bits(11)]
+    __: u16,
     pub no_execute: bool,
 }
 

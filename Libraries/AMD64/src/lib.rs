@@ -2,10 +2,13 @@
 
 #![no_std]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
-#![allow(clippy::missing_safety_doc, clippy::multiple_crate_versions)]
+#![allow(clippy::missing_safety_doc)]
 
 pub mod cpuid;
 pub mod io;
 pub mod msr;
 pub mod paging;
 pub mod spec;
+
+#[macro_use]
+extern crate bitfield_struct;

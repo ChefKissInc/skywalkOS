@@ -2,13 +2,15 @@
 
 #![no_std]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
-#![allow(clippy::multiple_crate_versions, clippy::missing_safety_doc)]
+#![allow(clippy::missing_safety_doc)]
 
 #[cfg(feature = "ext")]
 use fireworkkit::msg::Message;
-use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
+
+#[macro_use]
+extern crate bitfield_struct;
 
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 pub struct PCIAddress {
@@ -31,9 +33,7 @@ impl PCIAddress {
     }
 }
 
-#[bitfield(bits = 16)]
-#[derive(Debug)]
-#[repr(u16)]
+#[bitfield(u16)]
 pub struct PCICommand {
     pub pio: bool,
     pub mmio: bool,
@@ -46,8 +46,8 @@ pub struct PCICommand {
     pub serr: bool,
     pub fast_back_to_back: bool,
     pub disable_intrs: bool,
-    #[skip]
-    __: B5,
+    #[bits(5)]
+    __: u8,
 }
 
 #[derive(IntoPrimitive)]

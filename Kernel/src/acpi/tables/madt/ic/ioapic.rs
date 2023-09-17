@@ -1,6 +1,5 @@
 // Copyright (c) ChefKiss Inc 2021-2023. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use modular_bitfield::prelude::*;
 use num_enum::IntoPrimitive;
 
 #[derive(Debug, Clone, Copy)]
@@ -30,9 +29,9 @@ pub enum IOAPICReg {
     IORedirTable = 0x10,
 }
 
-#[derive(Debug, BitfieldSpecifier)]
-#[bits = 3]
+#[derive(Debug)]
 #[repr(u8)]
+/// 3 bits
 pub enum DeliveryMode {
     Fixed,
     LowestPriority,
@@ -42,11 +41,28 @@ pub enum DeliveryMode {
     ExtINT = 7,
 }
 
-#[bitfield(bits = 64)]
-#[derive(Debug)]
-#[repr(u64)]
+impl DeliveryMode {
+    const fn into_bits(self) -> u64 {
+        self as _
+    }
+
+    const fn from_bits(value: u64) -> Self {
+        match value {
+            0 => Self::Fixed,
+            1 => Self::LowestPriority,
+            2 => Self::Smi,
+            4 => Self::Nmi,
+            5 => Self::Init,
+            7 => Self::ExtINT,
+            _ => panic!("Invalid value for DeliveryMode"),
+        }
+    }
+}
+
+#[bitfield(u64)]
 pub struct IOAPICRedir {
     pub vector: u8,
+    #[bits(3)]
     pub delivery_mode: DeliveryMode,
     pub logical_dest: bool,
     pub pending: bool,
@@ -54,22 +70,16 @@ pub struct IOAPICRedir {
     pub remote_irr: bool,
     pub trigger_at_level: bool,
     pub masked: bool,
-    #[skip]
-    __: B39,
+    #[bits(39)]
+    __: u64,
     pub dest: u8,
 }
 
-#[bitfield(bits = 32)]
-#[derive(Debug)]
-#[repr(u32)]
+#[bitfield(u32)]
 pub struct IOAPICVer {
-    #[skip(setters)]
     pub ver: u8,
-    #[skip]
     __: u8,
-    #[skip(setters)]
     pub max_redir: u8,
-    #[skip]
     __: u8,
 }
 

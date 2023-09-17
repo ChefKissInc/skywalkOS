@@ -52,8 +52,8 @@ pub fn get_hpet(state: &crate::system::state::SystemState) -> super::timer::hpet
     acpi.find("HPET")
         .map(|v: &Hpet| unsafe {
             pml4.lock().map_mmio(
-                v.address.address() + amd64::paging::PHYS_VIRT_OFFSET,
-                v.address.address(),
+                v.address.address + amd64::paging::PHYS_VIRT_OFFSET,
+                v.address.address,
                 1,
                 PageTableFlags::new_present().with_writable(true),
             );

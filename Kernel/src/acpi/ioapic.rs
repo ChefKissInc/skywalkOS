@@ -26,12 +26,13 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
                 "Routing legacy irq {irq} to I/O APIC {} at gsi {gsi}",
                 ioapic.id
             );
+            let flags = v.flags;
             ioapic.write_redir(
                 v.gsi - ioapic.gsi_base,
                 IOAPICRedir::new()
                     .with_vector(irq + 0x20)
-                    .with_active_high(v.flags.polarity() == Polarity::ActiveHigh)
-                    .with_trigger_at_level(v.flags.trigger_mode() == TriggerMode::LevelTriggered)
+                    .with_active_high(flags.polarity() == Polarity::ActiveHigh)
+                    .with_trigger_at_level(flags.trigger_mode() == TriggerMode::LevelTriggered)
                     .with_masked(masked),
             );
         },
