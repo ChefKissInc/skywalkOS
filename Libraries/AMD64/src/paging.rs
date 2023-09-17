@@ -114,7 +114,7 @@ impl PageTableFlags {
 
     #[inline]
     #[must_use]
-    pub fn as_entry(self, pte: bool) -> PageTableEntry {
+    pub const fn as_entry(self, pte: bool) -> PageTableEntry {
         let pat = (self.pat_index & 0b100) != 0;
         PageTableEntry::new()
             .with_present(self.present)
@@ -140,7 +140,7 @@ impl PageTableFlags {
 
     #[inline]
     #[must_use]
-    pub fn from_entry(entry: &PageTableEntry, pte: bool) -> Self {
+    pub const fn from_entry(entry: &PageTableEntry, pte: bool) -> Self {
         Self::new()
             .with_present(entry.present())
             .with_writable(entry.writable())
