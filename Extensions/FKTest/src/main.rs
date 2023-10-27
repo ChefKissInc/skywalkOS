@@ -145,7 +145,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
     let this = PS2Ctl::new();
     this.init();
     let mut s = String::new();
-    write!(KWriter, "# ").unwrap();
+    write!(KWriter, "> ").unwrap();
     loop {
         let msg = unsafe { Message::recv() };
         if msg.pid != 0 {
@@ -216,7 +216,7 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                 }
                 _ => writeln!(KWriter, "{s}").unwrap(),
             }
-            write!(KWriter, "# ").unwrap();
+            write!(KWriter, "> ").unwrap();
             s.clear();
         }
     }
