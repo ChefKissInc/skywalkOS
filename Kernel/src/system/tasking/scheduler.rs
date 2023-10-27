@@ -136,7 +136,7 @@ impl Scheduler {
         let state = unsafe { &*crate::system::state::SYS_STATE.get() };
         let lapic = state.lapic.as_ref().unwrap();
         lapic.write_timer(lapic.read_timer().with_mask(false));
-        unsafe { core::arch::asm!("int 128", options(nomem, nostack, preserves_flags)) }
+        unsafe { core::arch::asm!("int 128", options(nostack, preserves_flags)) }
     }
 
     pub fn spawn_proc(&mut self, path: String, exec_data: &[u8]) -> &mut super::Thread {

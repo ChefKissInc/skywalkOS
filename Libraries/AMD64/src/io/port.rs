@@ -8,36 +8,36 @@ pub trait PortIO: Sized {
 impl PortIO for u8 {
     unsafe fn read(port: u16) -> Self {
         let ret: Self;
-        core::arch::asm!("in al, dx", out("al") ret, in("dx") port, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("in al, dx", out("al") ret, in("dx") port, options(nostack, preserves_flags));
         ret
     }
 
     unsafe fn write(port: u16, value: Self) {
-        core::arch::asm!("out dx, al", in("dx") port, in("al") value, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("out dx, al", in("dx") port, in("al") value, options(nostack, preserves_flags));
     }
 }
 
 impl PortIO for u16 {
     unsafe fn read(port: u16) -> Self {
         let ret: Self;
-        core::arch::asm!("in ax, dx", out("ax") ret, in("dx") port, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("in ax, dx", out("ax") ret, in("dx") port, options(nostack, preserves_flags));
         ret
     }
 
     unsafe fn write(port: u16, value: Self) {
-        core::arch::asm!("out dx, ax", in("dx") port, in("ax") value, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("out dx, ax", in("dx") port, in("ax") value, options(nostack, preserves_flags));
     }
 }
 
 impl PortIO for u32 {
     unsafe fn read(port: u16) -> Self {
         let ret: Self;
-        core::arch::asm!("in eax, dx", out("eax") ret, in("dx") port, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("in eax, dx", out("eax") ret, in("dx") port, options(nostack, preserves_flags));
         ret
     }
 
     unsafe fn write(port: u16, value: Self) {
-        core::arch::asm!("out dx, eax", in("dx") port, in("eax") value, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("out dx, eax", in("dx") port, in("eax") value, options(nostack, preserves_flags));
     }
 }
 

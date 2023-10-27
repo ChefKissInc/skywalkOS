@@ -15,7 +15,7 @@ unsafe impl core::alloc::GlobalAlloc for Allocator {
             in("rdi") SystemCall::Allocate as u64,
             in("rsi") layout.pad_to_align().size() as u64,
             out("rax") ptr,
-            options(nomem, nostack),
+            options(nostack),
         );
         ptr as *mut u8
     }
@@ -29,7 +29,7 @@ unsafe impl core::alloc::GlobalAlloc for Allocator {
             "int 249",
             in("rdi") SystemCall::Free as u64,
             in("rsi") ptr as u64,
-            options(nomem, nostack),
+            options(nostack),
         );
     }
 }

@@ -32,11 +32,11 @@ pub enum SystemCall {
 #[cfg(feature = "userspace")]
 impl SystemCall {
     pub unsafe fn quit() -> ! {
-        core::arch::asm!("int 249", in("rdi") Self::Quit as u64, options(nomem, nostack, noreturn));
+        core::arch::asm!("int 249", in("rdi") Self::Quit as u64, options(nostack, noreturn));
     }
 
     pub unsafe fn r#yield() {
-        core::arch::asm!("int 249", in("rdi") Self::Yield as u64, options(nomem, nostack));
+        core::arch::asm!("int 249", in("rdi") Self::Yield as u64, options(nostack));
     }
 
     pub unsafe fn register_irq_handler(irq: u8) {
@@ -44,7 +44,7 @@ impl SystemCall {
             "int 249",
             in("rdi") Self::RegisterIRQ as u64,
             in("sil") irq,
-            options(nomem, nostack),
+            options(nostack),
         );
     }
 }

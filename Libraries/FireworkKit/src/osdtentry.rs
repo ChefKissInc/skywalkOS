@@ -48,7 +48,7 @@ impl OSDTEntry {
                 in("r8") k.map_or(0, |s| s.len() as u64),
                 out("rax") ptr,
                 lateout("rdi") len,
-                options(nomem, nostack),
+                options(nostack),
             );
             Vec::from_raw_parts(ptr as *mut u8, len as _, len as _)
         }
@@ -63,7 +63,7 @@ impl OSDTEntry {
                 in("rdi") SystemCall::NewOSDTEntry as u64,
                 in("rsi") self.0,
                 out("rax") id,
-                options(nomem, nostack),
+                options(nostack),
             );
         }
         let ret: Self = id.into();
@@ -102,7 +102,7 @@ impl OSDTEntry {
                 in("rsi") self.0,
                 in("rdx") req.as_ptr() as u64,
                 in("rcx") req.len() as u64,
-                options(nomem, nostack),
+                options(nostack),
             );
         }
     }
