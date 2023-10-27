@@ -13,7 +13,7 @@ extern crate log;
 
 use alloc::{boxed::Box, vec::Vec};
 
-use uefi::prelude::*;
+use uefi::{prelude::*, table::boot::MemoryType};
 
 mod helpers;
 
@@ -30,7 +30,8 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
     let (verbose, serial_enabled) = helpers::setup::check_boot_flags();
 
     let (kernel_buf, fkcache_buf) = {
-        let mut esp = st.boot_services().get_image_file_system(image).unwrap();
+        let mut esp =
+            uefi::fs::FileSystem::new(st.boot_services().get_image_file_system(image).unwrap());
         (
             esp.read(cstr16!("\\System\\Kernel.exec")).unwrap().leak(),
             esp.read(cstr16!("\\System\\Extensions.fkcache"))
@@ -61,11 +62,11 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
     let sizes = st.boot_services().memory_map_size();
     let mut memory_map_entries = Vec::with_capacity(sizes.map_size / sizes.entry_size + 8);
 
-    st.exit_boot_services().1.entries().for_each(|v| {
+    for v in st.exit_boot_services(MemoryType::LOADER_DATA).1.entries() {
         if let Some(v) = mem_mgr.mem_type_from_desc(v) {
             memory_map_entries.push(v);
         }
-    });
+    }
     boot_info.memory_map = helpers::phys_to_kern_slice_ref(memory_map_entries.leak());
 
     unsafe {
@@ -78,7 +79,7 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
             in(reg) stack_ptr,
             in(reg) kernel_main,
             in("rdi") helpers::phys_to_kern_ref(boot_info),
-            options(nomem, nostack, noreturn),
+            options(nostack, noreturn),
         );
     }
 }

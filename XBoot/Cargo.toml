@@ -15,17 +15,17 @@ strip = true
 
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
-elf = { version = "0.7.2", default-features = false, features = ["nightly"] }
+elf = { version = "0.7.3", default-features = false, features = ["nightly"] }
 log = { version = "0.4.20", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
 paper-fb = { path = "../Libraries/PaperFrameBuffer" }
 sulphur-dioxide = { path = "../Libraries/SulphurDioxide" }
-uefi = { version = "0.24.0", default-features = false, features = [
+uefi = { version = "0.25.0", default-features = false, features = [
     "alloc",
     "global_allocator",
     "logger",
     "unstable",
 ] }
-uefi-services = "0.21.0"
+uefi-services = "0.22.0"

@@ -17,7 +17,7 @@ pub fn setup() {
             "and rax, {wp_bit}",
             "mov cr0, rax",
             wp_bit = const !(1u64 << 16),
-            options(nomem, nostack, preserves_flags),
+            options(nostack, preserves_flags),
         );
     }
 
@@ -52,7 +52,7 @@ pub fn check_boot_flags() -> (bool, bool) {
     let mut events = unsafe {
         [
             timer.unsafe_clone(),
-            st.stdin().wait_for_key_event().unsafe_clone(),
+            st.stdin().wait_for_key_event().unwrap(),
         ]
     };
     let i = match st.boot_services().wait_for_event(&mut events) {
