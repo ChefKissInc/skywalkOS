@@ -42,7 +42,8 @@ pub fn parse(
         .unwrap_or_default();
 
     trace!("Parsing program headers: ");
-    let bs = unsafe { uefi_services::system_table().as_mut().boot_services() };
+    let st = uefi_services::system_table();
+    let bs = st.boot_services();
     for phdr in elf
         .segments()
         .unwrap()

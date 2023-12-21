@@ -14,13 +14,13 @@ name = "fktest"
 strip = true
 
 [dependencies]
-hashbrown = { version = "0.14.2", features = ["nightly"] }
+hashbrown = { version = "0.14.3", features = ["nightly"] }
 log = { version = "0.4.20", features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
-bitfield-struct = "0.5.4"
-num_enum = { version = "0.7.0", default-features = false }
+bitfield-struct = "0.5.6"
+num_enum = { version = "0.7.1", default-features = false }
 postcard = { version = "1.0.8", default-features = false, features = ["alloc"] }
-serde = { version = "1.0.190", default-features = false, features = ["derive"] }
+serde = { version = "1.0.193", default-features = false, features = ["derive"] }
 fireworkkit = { path = "../../Libraries/FireworkKit", features = ["userspace"] }

@@ -30,7 +30,7 @@ pub fn setup() {
 }
 
 pub fn check_boot_flags() -> (bool, bool) {
-    let st = unsafe { uefi_services::system_table().as_mut() };
+    let mut st = uefi_services::system_table();
     let timer = match unsafe {
         st.boot_services()
             .create_event(EventType::TIMER, Tpl::CALLBACK, None, None)
@@ -88,7 +88,8 @@ pub fn check_boot_flags() -> (bool, bool) {
 }
 
 pub fn get_rsdp() -> *const u8 {
-    let mut iter = unsafe { uefi_services::system_table().as_mut().config_table().iter() };
+    let st = uefi_services::system_table();
+    let mut iter = st.config_table().iter();
     let rsdp: *const u8 = iter
         .find(|ent| ent.guid == uefi::table::cfg::ACPI2_GUID)
         .unwrap_or_else(|| {

@@ -42,7 +42,8 @@ fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Option<Box<FrameB
 }
 
 pub fn init() -> Option<Box<FrameBufferInfo>> {
-    let bs = unsafe { uefi_services::system_table().as_mut().boot_services() };
+    let st = uefi_services::system_table();
+    let bs = st.boot_services();
     let handle = match bs.get_handle_for_protocol::<GraphicsOutput>() {
         Ok(v) => v,
         Err(e) => {
@@ -62,7 +63,7 @@ pub fn init() -> Option<Box<FrameBufferInfo>> {
         .unwrap()
     };
     let mode = gop
-        .modes()
+        .modes(bs)
         .filter(|v| v.info().pixel_format() != PixelFormat::BltOnly)
         .max_by_key(|v| v.info().resolution().0)?;
     if let Err(e) = gop.set_mode(&mode) {
