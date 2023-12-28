@@ -8,6 +8,10 @@ pub struct KWriter;
 
 impl Write for KWriter {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        if s.is_empty() {
+            return Ok(());
+        }
+
         unsafe {
             core::arch::asm!(
                 "int 249",
