@@ -175,7 +175,9 @@ impl Scheduler {
                 let ptr = unsafe { &mut *data.as_mut_ptr().add(reloc.r_offset as _).cast::<u64>() };
                 match reloc.r_type {
                     elf::abi::R_X86_64_NONE => {}
-                    elf::abi::R_X86_64_RELATIVE => *ptr = virt_addr + reloc.r_addend as u64,
+                    elf::abi::R_X86_64_RELATIVE => {
+                        *ptr = virt_addr.checked_add_signed(reloc.r_addend).unwrap()
+                    }
                     v => unimplemented!("{v:#X?}"),
                 }
             }
