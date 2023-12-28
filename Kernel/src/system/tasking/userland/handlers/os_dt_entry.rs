@@ -3,7 +3,7 @@
 use core::ops::ControlFlow;
 
 use fireworkkit::{
-    osdtentry::{GetOSDTEntryReqType, SetOSDTEntryPropReq},
+    osdtentry::{OSDTEntryInfo, OSDTEntryProp},
     TerminationReason,
 };
 
@@ -36,7 +36,7 @@ pub fn get_info(
     state: &mut RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
     let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    let Ok(info_type) = GetOSDTEntryReqType::try_from(state.rdx) else {
+    let Ok(info_type) = OSDTEntryInfo::try_from(state.rdx) else {
         return ControlFlow::Break(Some(TerminationReason::MalformedArgument));
     };
     let dt_index = sys_state.dt_index.as_ref().unwrap().read();
@@ -44,10 +44,10 @@ pub fn get_info(
         return ControlFlow::Break(Some(TerminationReason::NotFound));
     };
     let data = match info_type {
-        GetOSDTEntryReqType::Parent => postcard::to_allocvec(&ent.lock().parent),
-        GetOSDTEntryReqType::Children => postcard::to_allocvec(&ent.lock().children),
-        GetOSDTEntryReqType::Properties => postcard::to_allocvec(&ent.lock().properties),
-        GetOSDTEntryReqType::Property => {
+        OSDTEntryInfo::Parent => postcard::to_allocvec(&ent.lock().parent),
+        OSDTEntryInfo::Children => postcard::to_allocvec(&ent.lock().children),
+        OSDTEntryInfo::Properties => postcard::to_allocvec(&ent.lock().properties),
+        OSDTEntryInfo::Property => {
             let Ok(k) = core::str::from_utf8(unsafe {
                 core::slice::from_raw_parts(state.rcx as *const _, state.r8 as _)
             }) else {
@@ -72,13 +72,24 @@ pub fn set_prop(
     scheduler: &mut Scheduler,
     state: &RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
+    let addr = state.rdx;
+    let size = state.rcx;
+
+    if !scheduler
+        .current_process()
+        .unwrap()
+        .region_valid(addr, size)
+    {
+        return ControlFlow::Break(Some(TerminationReason::MalformedAddress));
+    }
+
     let sys_state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     let dt_index = sys_state.dt_index.as_ref().unwrap().read();
     let Some(ent) = dt_index.get(&state.rsi) else {
         return ControlFlow::Break(Some(TerminationReason::NotFound));
     };
-    let data = unsafe { core::slice::from_raw_parts(state.rdx as *const _, state.rcx as _) };
-    let Ok(v): Result<SetOSDTEntryPropReq, _> = postcard::from_bytes(data) else {
+    let data = unsafe { core::slice::from_raw_parts(addr as *const _, size as _) };
+    let Ok(v) = postcard::from_bytes::<OSDTEntryProp>(data) else {
         return ControlFlow::Break(Some(TerminationReason::MalformedAddress));
     };
     ent.lock().properties.insert(v.0, v.1);

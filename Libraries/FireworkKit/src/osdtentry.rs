@@ -24,7 +24,7 @@ pub struct OSDTEntry(u64);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u64)]
-pub enum GetOSDTEntryReqType {
+pub enum OSDTEntryInfo {
     Parent,
     Children,
     Properties,
@@ -32,11 +32,11 @@ pub enum GetOSDTEntryReqType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SetOSDTEntryPropReq(pub String, pub OSValue);
+pub struct OSDTEntryProp(pub String, pub OSValue);
 
 #[cfg(feature = "userspace")]
 impl OSDTEntry {
-    fn get_info(&self, ty: GetOSDTEntryReqType, k: Option<&str>) -> Vec<u8> {
+    fn get_info(&self, ty: OSDTEntryInfo, k: Option<&str>) -> Vec<u8> {
         let (mut ptr, mut len): (u64, u64);
         unsafe {
             core::arch::asm!(
@@ -75,26 +75,26 @@ impl OSDTEntry {
 
     #[must_use]
     pub fn parent(&self) -> Option<Self> {
-        postcard::from_bytes(&self.get_info(GetOSDTEntryReqType::Parent, None)).unwrap()
+        postcard::from_bytes(&self.get_info(OSDTEntryInfo::Parent, None)).unwrap()
     }
 
     #[must_use]
     pub fn children(&self) -> Vec<Self> {
-        postcard::from_bytes(&self.get_info(GetOSDTEntryReqType::Children, None)).unwrap()
+        postcard::from_bytes(&self.get_info(OSDTEntryInfo::Children, None)).unwrap()
     }
 
     #[must_use]
     pub fn properties(&self) -> HashMap<String, OSValue> {
-        postcard::from_bytes(&self.get_info(GetOSDTEntryReqType::Properties, None)).unwrap()
+        postcard::from_bytes(&self.get_info(OSDTEntryInfo::Properties, None)).unwrap()
     }
 
     #[must_use]
     pub fn get_property(&self, k: &str) -> Option<OSValue> {
-        postcard::from_bytes(&self.get_info(GetOSDTEntryReqType::Property, Some(k))).unwrap()
+        postcard::from_bytes(&self.get_info(OSDTEntryInfo::Property, Some(k))).unwrap()
     }
 
     pub fn set_property(&self, k: &str, v: OSValue) {
-        let req = postcard::to_allocvec(&SetOSDTEntryPropReq(k.to_owned(), v)).unwrap();
+        let req = postcard::to_allocvec(&OSDTEntryProp(k.to_owned(), v)).unwrap();
         unsafe {
             core::arch::asm!(
                 "int 249",

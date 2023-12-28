@@ -24,11 +24,12 @@ unsafe impl core::alloc::GlobalAlloc for Allocator {
         self.alloc(layout) // Memory is already zeroed by the allocator
     }
 
-    unsafe fn dealloc(&self, ptr: *mut u8, _layout: core::alloc::Layout) {
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
         core::arch::asm!(
             "int 249",
             in("rdi") SystemCall::Free as u64,
             in("rsi") ptr as u64,
+            in("rdx") layout.pad_to_align().size() as u64,
             options(nostack),
         );
     }

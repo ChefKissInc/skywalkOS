@@ -31,20 +31,24 @@ impl UserPML4 {
         phys
     }
 
+    #[inline]
     pub unsafe fn set_cr3(&mut self) {
         self.0.set_cr3();
     }
 
+    #[inline]
     pub unsafe fn map(&mut self, virt: u64, phys: u64, count: u64, flags: PageTableFlags) {
         let pid = self.1;
         self.0
             .map(&move || Self::alloc_entry(pid), virt, phys, count, flags);
     }
 
+    #[inline]
     pub unsafe fn unmap(&mut self, virt: u64, count: u64) {
         self.0.unmap(virt, count);
     }
 
+    #[inline]
     pub unsafe fn map_higher_half(&mut self) {
         let pid = self.1;
         self.0.map_higher_half(&move || Self::alloc_entry(pid));

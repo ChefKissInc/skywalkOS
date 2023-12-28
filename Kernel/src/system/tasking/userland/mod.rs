@@ -19,7 +19,7 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
         };
 
         match v {
-            SystemCall::KPrint => handlers::kprint(state),
+            SystemCall::KPrint => handlers::kprint(&scheduler, state),
             SystemCall::MsgRecv => handlers::msg::recv(&mut scheduler, state),
             SystemCall::MsgSend => handlers::msg::send(&mut scheduler, state),
             SystemCall::Quit => scheduler.thread_teardown(),
@@ -30,9 +30,9 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             SystemCall::Allocate => handlers::alloc::alloc(&mut scheduler, state),
             SystemCall::Free => handlers::alloc::free(&mut scheduler, state),
             SystemCall::MsgAck => handlers::msg::ack(&mut scheduler, state),
-            SystemCall::NewOSDTEntry => handlers::osdtentry::new_entry(state),
-            SystemCall::GetOSDTEntryInfo => handlers::osdtentry::get_info(&mut scheduler, state),
-            SystemCall::SetOSDTEntryProp => handlers::osdtentry::set_prop(&mut scheduler, state),
+            SystemCall::NewOSDTEntry => handlers::os_dt_entry::new_entry(state),
+            SystemCall::GetOSDTEntryInfo => handlers::os_dt_entry::get_info(&mut scheduler, state),
+            SystemCall::SetOSDTEntryProp => handlers::os_dt_entry::set_prop(&mut scheduler, state),
         }
     };
 

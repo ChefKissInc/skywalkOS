@@ -4,15 +4,29 @@ use core::{fmt::Write, ops::ControlFlow};
 
 use fireworkkit::TerminationReason;
 
-use crate::system::RegisterState;
+use crate::system::{tasking::scheduler::Scheduler, RegisterState};
 
 pub mod alloc;
 pub mod msg;
-pub mod osdtentry;
+pub mod os_dt_entry;
 pub mod port;
 
-pub fn kprint(state: &RegisterState) -> ControlFlow<Option<TerminationReason>> {
-    let s = unsafe { core::slice::from_raw_parts(state.rsi as *const _, state.rdx as _) };
+pub fn kprint(
+    scheduler: &Scheduler,
+    state: &RegisterState,
+) -> ControlFlow<Option<TerminationReason>> {
+    let addr = state.rsi;
+    let size = state.rdx;
+
+    if !scheduler
+        .current_process()
+        .unwrap()
+        .region_valid(addr, size)
+    {
+        return ControlFlow::Break(Some(TerminationReason::MalformedAddress));
+    }
+
+    let s = unsafe { core::slice::from_raw_parts(addr as *const _, size as _) };
     let Ok(s) = core::str::from_utf8(s) else {
         return ControlFlow::Break(Some(TerminationReason::MalformedBody));
     };

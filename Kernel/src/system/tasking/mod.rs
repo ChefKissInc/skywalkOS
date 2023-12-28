@@ -167,6 +167,19 @@ impl Process {
         addr
     }
 
+    pub fn region_valid(&self, addr: u64, size: u64) -> bool {
+        self.allocations
+            .iter()
+            .any(|(k, (v, _))| k <= &addr && addr + size <= k + v)
+    }
+
+    pub fn region_exists_exact(&self, addr: u64, size: u64) -> bool {
+        self.allocations
+            .get(&addr)
+            .map(|(v, _)| v == &size)
+            .unwrap_or_default()
+    }
+
     pub fn free_alloc(&mut self, addr: u64) {
         let _lock = self.alloc_lock.lock();
 

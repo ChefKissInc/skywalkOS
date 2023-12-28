@@ -200,6 +200,15 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                         Message::new(pid, vec![1, 2, 3, 4].leak()).send();
                     }
                 }
+                "accessinvalid" => unsafe {
+                    core::arch::asm!(
+                        "int 249",
+                        in("rdi") SystemCall::KPrint as u64,
+                        in("rsi") 0u64,
+                        in("rdx") 0u64,
+                        options(nostack),
+                    );
+                },
                 v if v.split_whitespace().next() == Some("msg") => 'a: {
                     let mut v = v.split_whitespace().skip(1);
                     let Some(pid) = v.next().and_then(|v| v.parse().ok()) else {

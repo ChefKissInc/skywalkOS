@@ -69,7 +69,7 @@ pub fn send(
         process.cr3.lock().map(
             addr,
             addr - fireworkkit::USER_VIRT_OFFSET,
-            (size + 0xFFF) / PAGE_SIZE,
+            (size + (PAGE_SIZE - 1)) / PAGE_SIZE,
             PageTableFlags::new_present().with_user(true),
         );
     }

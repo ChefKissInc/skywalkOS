@@ -25,10 +25,18 @@ pub fn free(
     scheduler: &mut Scheduler,
     state: &RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
+    let addr = state.rsi;
+
     let process = scheduler.current_process_mut().unwrap();
-    if process.is_msg(state.rsi) {
+    if process.is_msg(addr) {
         return ControlFlow::Break(Some(TerminationReason::MalformedAddress));
     }
-    process.free_alloc(state.rsi);
-    ControlFlow::Continue(())
+
+    let size = state.rdx;
+    if process.region_exists_exact(addr, size) {
+        process.free_alloc(state.rsi);
+        ControlFlow::Continue(())
+    } else {
+        ControlFlow::Break(Some(TerminationReason::MalformedArgument))
+    }
 }
