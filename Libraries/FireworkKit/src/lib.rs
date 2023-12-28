@@ -15,10 +15,8 @@ extern crate alloc;
 extern crate log;
 
 pub mod msg;
-#[cfg(target_arch = "x86_64")]
 pub mod osdtentry;
 pub mod osvalue;
-#[cfg(target_arch = "x86_64")]
 pub mod syscall;
 #[cfg(feature = "userspace")]
 pub mod userspace;
