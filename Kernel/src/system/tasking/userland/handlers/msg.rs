@@ -45,23 +45,32 @@ pub fn send(
     scheduler: &mut Scheduler,
     state: &RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
-    let target = state.rsi;
     let src = scheduler.current_pid.unwrap();
+    let target = state.rsi;
     if src == target {
         return ControlFlow::Break(Some(TerminationReason::MalformedArgument));
+    }
+
+    let (addr, size) = (state.rdx, state.rcx);
+    if !scheduler
+        .current_process()
+        .unwrap()
+        .region_is_within_bounds(addr, size)
+    {
+        return ControlFlow::Break(Some(TerminationReason::MalformedAddress));
     }
 
     if !scheduler.processes.contains_key(&target) {
         return ControlFlow::Break(Some(TerminationReason::NotFound));
     }
 
-    let (addr, size) = (state.rdx, state.rcx);
     let msg = Message::new(scheduler.msg_id_gen.next(), src, unsafe {
         core::slice::from_raw_parts(addr as *const _, size as _)
     });
     scheduler.message_sources.insert(msg.id, src);
 
     let cur = scheduler.current_process_mut().unwrap();
+
     cur.track_msg(msg.id, addr);
 
     let process = scheduler.processes.get(&target).unwrap();

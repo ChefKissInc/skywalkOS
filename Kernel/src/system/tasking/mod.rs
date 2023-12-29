@@ -167,13 +167,20 @@ impl Process {
         addr
     }
 
-    pub fn region_valid(&self, addr: u64, size: u64) -> bool {
+    pub fn region_is_valid(&self, addr: u64, size: u64) -> bool {
         self.allocations
             .iter()
             .any(|(k, (v, _))| k <= &addr && addr + size <= k + v)
     }
 
-    pub fn region_exists_exact(&self, addr: u64, size: u64) -> bool {
+    pub fn region_is_within_bounds(&self, addr: u64, size: u64) -> bool {
+        self.allocations
+            .get(&addr)
+            .map(|(v, _)| v >= &size)
+            .unwrap_or_default()
+    }
+
+    pub fn region_is_mapped(&self, addr: u64, size: u64) -> bool {
         self.allocations
             .get(&addr)
             .map(|(v, _)| v == &size)

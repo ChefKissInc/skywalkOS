@@ -78,7 +78,7 @@ pub fn set_prop(
     if !scheduler
         .current_process()
         .unwrap()
-        .region_valid(addr, size)
+        .region_is_valid(addr, size)
     {
         return ControlFlow::Break(Some(TerminationReason::MalformedAddress));
     }

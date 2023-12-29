@@ -33,7 +33,7 @@ pub fn free(
     }
 
     let size = state.rdx;
-    if process.region_exists_exact(addr, size) {
+    if process.region_is_mapped(addr, size) {
         process.free_alloc(state.rsi);
         ControlFlow::Continue(())
     } else {
