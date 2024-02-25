@@ -17,20 +17,20 @@ strip = true
 amd64 = { path = "../Libraries/AMD64" }
 elf = { version = "0.7.4", default-features = false, features = ["nightly"] }
 hashbrown = { version = "0.14.3", features = ["nightly", "serde"] }
-itertools = { version = "0.12.0", default-features = false, features = [
+itertools = { version = "0.12.1", default-features = false, features = [
     "use_alloc",
 ] }
 log = { version = "0.4.20", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
-bitfield-struct = "0.5.6"
-num_enum = { version = "0.7.1", default-features = false }
+bitfield-struct = "0.6.0"
+num_enum = { version = "0.7.2", default-features = false }
 paper-fb = { path = "../Libraries/PaperFrameBuffer" }
 postcard = { version = "1.0.8", default-features = false, features = ["alloc"] }
 rustc-demangle = "0.1.23"
 seq-macro = "0.3.5"
-serde = { version = "1.0.193", default-features = false, features = ["derive"] }
+serde = { version = "1.0.197", default-features = false, features = ["derive"] }
 spin = { version = "0.9.8", default-features = false, features = [
     "barrier",
     "lock_api",

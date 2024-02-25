@@ -9,5 +9,5 @@ strip = true
 
 [dependencies]
 arrayvec = { version = "0.7.4", default-features = false }
-bitfield-struct = "0.5.6"
-num_enum = { version = "0.7.1", default-features = false }
+bitfield-struct = "0.6.0"
+num_enum = { version = "0.7.2", default-features = false }

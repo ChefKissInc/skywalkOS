@@ -38,41 +38,35 @@ impl Iterator for MADTIter {
         if self.curr == self.total {
             None
         } else {
-            let next = unsafe { &*self.ptr.add(self.curr).cast::<ICHeader>() };
-            self.curr += next.length();
+            let next = unsafe { self.ptr.add(self.curr).cast::<ICHeader>() };
+            self.curr += unsafe { (*next).length() };
             unsafe {
-                Some(match next.type_ {
-                    0 => InterruptController::ProcessorLocalAPIC(
-                        &*(next as *const ICHeader).cast::<ProcessorLocalAPIC>(),
-                    ),
-                    1 => InterruptController::InputOutputAPIC(
-                        &*(next as *const ICHeader).cast::<InputOutputAPIC>(),
-                    ),
-                    2 => InterruptController::IntrSourceOverride(
-                        &*(next as *const ICHeader).cast::<IntrSourceOverride>(),
-                    ),
-                    3 => InterruptController::NMISource(
-                        &*(next as *const ICHeader).cast::<NMISource>(),
-                    ),
-                    4 => InterruptController::LocalAPICNMI(
-                        &*(next as *const ICHeader).cast::<LocalAPICNMI>(),
-                    ),
+                Some(match (*next).type_ {
+                    0 => {
+                        InterruptController::ProcessorLocalAPIC(&*next.cast::<ProcessorLocalAPIC>())
+                    }
+                    1 => InterruptController::InputOutputAPIC(&*next.cast::<InputOutputAPIC>()),
+                    2 => {
+                        InterruptController::IntrSourceOverride(&*next.cast::<IntrSourceOverride>())
+                    }
+                    3 => InterruptController::NMISource(&*next.cast::<NMISource>()),
+                    4 => InterruptController::LocalAPICNMI(&*next.cast::<LocalAPICNMI>()),
                     5 => InterruptController::LocalAPICAddrOverride(
-                        &*(next as *const ICHeader).cast::<LocalAPICAddrOverride>(),
+                        &*next.cast::<LocalAPICAddrOverride>(),
                     ),
-                    6 => InterruptController::InputOutputSAPIC(next),
-                    7 => InterruptController::LocalSAPIC(next),
-                    8 => InterruptController::PlatformInterruptSrcs(next),
-                    9 => InterruptController::ProcessorLocalx2APIC(next),
-                    0xA => InterruptController::Localx2APICNmi(next),
-                    0xB => InterruptController::GicCpu(next),
-                    0xC => InterruptController::GicDist(next),
-                    0xD => InterruptController::GicMsiFrame(next),
-                    0xE => InterruptController::GicRedist(next),
-                    0xF => InterruptController::GicIts(next),
-                    0x10 => InterruptController::MpWakeup(next),
-                    0x11..=0x7F => InterruptController::Reserved(next),
-                    0x80..=0xFF => InterruptController::OemReserved(next),
+                    6 => InterruptController::InputOutputSAPIC(&*next),
+                    7 => InterruptController::LocalSAPIC(&*next),
+                    8 => InterruptController::PlatformInterruptSrcs(&*next),
+                    9 => InterruptController::ProcessorLocalx2APIC(&*next),
+                    0xA => InterruptController::Localx2APICNmi(&*next),
+                    0xB => InterruptController::GicCpu(&*next),
+                    0xC => InterruptController::GicDist(&*next),
+                    0xD => InterruptController::GicMsiFrame(&*next),
+                    0xE => InterruptController::GicRedist(&*next),
+                    0xF => InterruptController::GicIts(&*next),
+                    0x10 => InterruptController::MpWakeup(&*next),
+                    0x11..=0x7F => InterruptController::Reserved(&*next),
+                    0x80..=0xFF => InterruptController::OemReserved(&*next),
                 })
             }
         }
