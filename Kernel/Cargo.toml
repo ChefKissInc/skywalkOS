@@ -49,3 +49,6 @@ unwinding = { version = "0.2.1", default-features = false, features = [
     "personality",
     "unwinder",
 ] }
+
+[patch.crates-io]
+unwinding = { git = "https://github.com/nbdd0121/unwinding" }
