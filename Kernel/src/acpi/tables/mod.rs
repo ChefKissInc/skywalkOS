@@ -6,8 +6,8 @@ pub mod rsdp;
 pub mod rsdt;
 pub mod xsdt;
 
-#[repr(C, packed)]
 #[derive(Clone, Copy)]
+#[repr(C, packed)]
 pub struct SDTHeader {
     signature: [u8; 4],
     length: u32,
