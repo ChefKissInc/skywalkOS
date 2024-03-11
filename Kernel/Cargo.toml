@@ -20,7 +20,7 @@ hashbrown = { version = "0.14.3", features = ["nightly", "serde"] }
 itertools = { version = "0.12.1", default-features = false, features = [
     "use_alloc",
 ] }
-log = { version = "0.4.20", default-features = false, features = [
+log = { version = "0.4.21", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
