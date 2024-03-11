@@ -153,6 +153,12 @@ impl PageTableFlags {
     }
 }
 
+impl Default for PageTableFlags {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
     #[inline]
     #[must_use]
@@ -275,5 +281,11 @@ impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
             0x7FFFF,
             PageTableFlags::new_present().with_writable(true),
         );
+    }
+}
+
+impl<const VIRT_OFF: u64> Default for PageTable<VIRT_OFF> {
+    fn default() -> Self {
+        Self::new()
     }
 }
