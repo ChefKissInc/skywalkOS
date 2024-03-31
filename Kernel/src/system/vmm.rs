@@ -13,6 +13,12 @@ use amd64::{
 #[repr(transparent)]
 pub struct PageTableLvl4(PageTable<{ amd64::paging::PHYS_VIRT_OFFSET }>);
 
+impl Default for PageTableLvl4 {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PageTableLvl4 {
     #[inline]
     pub const fn new() -> Self {

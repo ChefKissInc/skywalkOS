@@ -41,6 +41,12 @@ pub struct SystemState {
     pub fkcache: Option<spin::Mutex<fireworkkit::FKCache>>,
 }
 
+impl Default for SystemState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SystemState {
     #[inline]
     pub const fn new() -> Self {

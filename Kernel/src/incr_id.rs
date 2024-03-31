@@ -7,6 +7,12 @@ pub struct IncrementalIDGen {
     freed: Vec<u64>,
 }
 
+impl Default for IncrementalIDGen {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IncrementalIDGen {
     #[inline]
     pub const fn new() -> Self {
