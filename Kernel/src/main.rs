@@ -95,15 +95,10 @@ pub fn init_core(boot_info: &sulphur_dioxide::BootInfo) {
         ]),
         ..Default::default()
     };
-    let mut dt_id_gen = IncrementalIDGen::new();
+    let mut dt_id_gen = IncrementalIDGen::default();
     let product = OSDTEntry {
         id: dt_id_gen.next(),
         parent: Some(root.id.into()),
-        properties: HashMap::from([
-            (OSDTENTRY_NAME_KEY.into(), "Product".into()),
-            ("CPUType".into(), "x86_64".into()),
-            ("Vendor".into(), "Generic".into()),
-        ]),
         ..Default::default()
     };
     root.children.push(product.id.into());
