@@ -1,0 +1,19 @@
+cargo-features = ["different-binary-name"]
+
+[package]
+edition = "2021"
+name = "skcachebuilder"
+publish = false
+version = "0.1.0"
+
+[[bin]]
+filename = "SKCacheBuilder"
+name = "skcachebuilder"
+
+[profile.release]
+strip = true
+
+[dependencies]
+postcard = { version = "1.0.8", default-features = false, features = ["alloc"] }
+ron = { version = "0.8.1" }
+skykit = { path = "../../Libraries/SkyKit" }

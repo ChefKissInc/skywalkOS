@@ -1,8 +1,0 @@
-FKInfo (
-    identifier: "com.ChefKiss.FKTest",
-    personalities: {
-        "Master": {
-            "_Name": String("Root"),
-        },
-    },
-)

@@ -1,0 +1,8 @@
+SKExtension (
+    identifier: "com.ChefKiss.SKTest",
+    personalities: {
+        "Master": {
+            "_Name": String("Root"),
+        },
+    },
+)

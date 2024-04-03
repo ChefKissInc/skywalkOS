@@ -1,0 +1,11 @@
+[package]
+edition = "2021"
+name = "skyliftkit"
+publish = false
+version = "0.1.0"
+
+[profile.release]
+strip = true
+
+[dependencies]
+skybuffer = { path = "../SkyBuffer" }

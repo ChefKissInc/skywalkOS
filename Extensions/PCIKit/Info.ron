@@ -1,4 +1,4 @@
-FKInfo (
+SKExtension (
     identifier: "com.ChefKiss.PCIKit",
     personalities: {
         "Master": {

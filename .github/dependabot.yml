@@ -14,51 +14,44 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/XBoot"
+    directory: "/SkyLift"
     labels:
       - "Enhancement"
-      - "Project:XBoot"
+      - "Project:SkyLift"
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Kernel"
+    directory: "/Sky"
     labels:
       - "Enhancement"
-      - "Project:Kernel"
+      - "Project:Sky"
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Libraries/PaperFrameBuffer"
+    directory: "/Libraries/SkyBuffer"
     labels:
       - "Enhancement"
-      - "Project:PaperFrameBuffer"
+      - "Project:SkyBuffer"
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Libraries/SulphurDioxide"
+    directory: "/Libraries/SkyLiftKit"
     labels:
       - "Enhancement"
-      - "Project:SulphurDioxide"
+      - "Project:SkyLiftKit"
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Extensions/FKTest"
+    directory: "/Extensions/SKTest"
     labels:
       - "Enhancement"
-      - "Project:FKTest"
+      - "Project:SKTest"
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo"
-    directory: "/Extensions/FKPCI"
+    directory: "/Extensions/PCIKit"
     labels:
       - "Enhancement"
-      - "Project:FKPCI"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "cargo"
-    directory: "/Extensions/AC97Audio"
-    labels:
-      - "Enhancement"
-      - "Project:AC97Audio"
+      - "Project:PCIKit"
     schedule:
       interval: "daily"

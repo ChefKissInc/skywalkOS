@@ -1,5 +1,5 @@
-# Firework ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Firework-OS/Firework/main.yml?branch=master&logo=github&style=for-the-badge)
+# skywalkOS ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ChefKissInc/skywalkOS/main.yml?branch=master&logo=github&style=for-the-badge)
 
-The Firework Operating System.
+An Operating System written in Rust. skywalkOS is not <insert other operating system name here>.
 
-The Firework project is licensed under the `Thou Shalt Not Profit License version 1.5`. See `LICENSE`
+The skywalkOS project is licensed under the `Thou Shalt Not Profit License version 1.5`. See `LICENSE`

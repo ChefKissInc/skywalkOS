@@ -4,8 +4,8 @@ CARGO_BUILD_PROFILE = "dev"
 [env.production]
 CARGO_BUILD_PROFILE = "release"
 
-[tasks.build-xboot]
-cwd = "XBoot"
+[tasks.build-skylift]
+cwd = "SkyLift"
 command = "cargo"
 args = [
     "build",
@@ -15,8 +15,8 @@ args = [
     "${CARGO_BUILD_PROFILE}",
 ]
 
-[tasks.build-kernel]
-cwd = "Kernel"
+[tasks.build-sky]
+cwd = "Sky"
 command = "cargo"
 args = [
     "build",
@@ -26,9 +26,9 @@ args = [
     "${CARGO_BUILD_PROFILE}",
 ]
 
-[tasks.make-fkcache]
+[tasks.make-skcache]
 dependencies = ["make-boot-exts"]
-cwd = "Utilities/FKCacheBuilder"
+cwd = "Utilities/SKCacheBuilder"
 command = "cargo"
 args = ["run", "--release"]
 
@@ -38,7 +38,7 @@ command = "cargo"
 args = ["make", "--profile", "${CARGO_MAKE_PROFILE}", "make"]
 
 [tasks.make]
-dependencies = ["build-xboot", "build-kernel", "make-fkcache"]
+dependencies = ["build-skylift", "build-sky", "make-skcache"]
 
 [tasks.run]
 command = "qemu-system-x86_64"
