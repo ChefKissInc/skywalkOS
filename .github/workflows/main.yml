@@ -32,4 +32,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rust-src
-      - run: for f in $(find . -name "*Cargo.toml" | egrep -v "^(./Kernel/|./XBoot/|./Extensions/PCIKit/|./Extensions/FKTest/|./Extensions/AC97Audio/)"); do cargo -Zunstable-options -C ${f%Cargo.toml} test || exit 1; done
+      - run: for f in $(find . -name "*Cargo.toml" | egrep -v "^(./Sky/|./SkyLift/|./Extensions/PCIKit/|./Extensions/SKTest/)"); do cargo -Zunstable-options -C ${f%Cargo.toml} test || exit 1; done
