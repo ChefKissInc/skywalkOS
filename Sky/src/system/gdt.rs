@@ -228,10 +228,10 @@ impl GDTReg {
         core::arch::asm!(
             "lgdt [{}]",
             "push {}",
-            "lea {2}, [1f + rip]",
+            "lea {2}, [2f + rip]",
             "push {2}",
             "retfq",
-            "1:",
+            "2:",
             "mov ds, {3}",
             "mov es, {3}",
             "mov ss, {3}",

@@ -42,7 +42,7 @@ fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Option<Box<FrameB
 }
 
 pub fn init() -> Option<Box<FrameBufferInfo>> {
-    let st = uefi_services::system_table();
+    let st = uefi::table::system_table_boot().unwrap();
     let bs = st.boot_services();
     let handle = match bs.get_handle_for_protocol::<GraphicsOutput>() {
         Ok(v) => v,

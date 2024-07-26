@@ -39,7 +39,7 @@ pub fn parse(
         .unwrap_or_default();
 
     trace!("Parsing program headers: ");
-    let st = uefi_services::system_table();
+    let st = uefi::table::system_table_boot().unwrap();
     let bs = st.boot_services();
     let segments = elf.segments().unwrap();
     let lowest_addr = segments
@@ -102,7 +102,9 @@ pub fn parse(
     }
 
     (
-        unsafe { core::mem::transmute(elf.ehdr.e_entry as *const ()) },
+        unsafe {
+            core::mem::transmute::<*const (), skyliftkit::EntryPoint>(elf.ehdr.e_entry as *const ())
+        },
         symbols,
     )
 }

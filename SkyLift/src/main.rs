@@ -19,11 +19,14 @@ mod helpers;
 
 #[export_name = "efi_main"]
 extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
-    unsafe { st.boot_services().set_image_handle(image) }
+    unsafe {
+        st.boot_services().set_image_handle(image);
+        uefi::table::set_system_table(st.as_ptr().cast());
+    }
+    uefi::helpers::init(&mut st).unwrap();
     if let Err(e) = st.boot_services().set_watchdog_timer(0, 0x10000, None) {
         warn!("Failed to disarm watchdog timer: {e}.");
     }
-    uefi_services::init(&mut st).unwrap();
     let fb_info = helpers::fb::init();
     helpers::setup::setup();
 
@@ -59,10 +62,16 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
     )));
 
     trace!("Exiting boot services and jumping to kernel...");
-    let sizes = st.boot_services().memory_map_size();
-    let mut memory_map_entries = Vec::with_capacity(sizes.map_size / sizes.entry_size + 8);
+    let memory_map_entry_count = st
+        .boot_services()
+        .memory_map(MemoryType::LOADER_DATA)
+        .unwrap()
+        .entries()
+        .len()
+        + 8;
+    let mut memory_map_entries = Vec::with_capacity(memory_map_entry_count);
 
-    for v in st.exit_boot_services(MemoryType::LOADER_DATA).1.entries() {
+    for v in unsafe { st.exit_boot_services(MemoryType::LOADER_DATA).1.entries() } {
         if let Some(v) = mem_mgr.mem_type_from_desc(v) {
             memory_map_entries.push(v);
         }

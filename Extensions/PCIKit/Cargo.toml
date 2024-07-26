@@ -14,18 +14,18 @@ name = "pcikit"
 strip = true
 
 [dependencies]
-hashbrown = { version = "0.14.3", features = ["nightly"] }
-itertools = { version = "0.12.1", default-features = false, features = [
+hashbrown = { version = "0.14.5", features = ["nightly"] }
+itertools = { version = "0.13.0", default-features = false, features = [
     "use_alloc",
 ] }
-log = { version = "0.4.21", features = [
+log = { version = "0.4.22", features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
-bitfield-struct = "0.6.0"
+bitfield-struct = "0.8.0"
 num_enum = { version = "0.7.2", default-features = false }
 postcard = { version = "1.0.8", default-features = false, features = ["alloc"] }
-serde = { version = "1.0.197", default-features = false, features = ["derive"] }
+serde = { version = "1.0.204", default-features = false, features = ["derive"] }
 skykit = { path = "../../Libraries/SkyKit", features = ["userspace"] }
 
 [features]
