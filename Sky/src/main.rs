@@ -4,11 +4,9 @@
 #![no_main]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 #![feature(
-    asm_const,
     alloc_error_handler,
     const_size_of_val,
     naked_functions,
-    const_mut_refs,
     sync_unsafe_cell
 )]
 

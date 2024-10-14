@@ -5,8 +5,9 @@ use alloc::boxed::Box;
 use skybuffer::pixel::PixelBitMask;
 use skyliftkit::{FrameBufferInfo, ScreenRes};
 use uefi::{
+    boot::ScopedProtocol,
     proto::console::gop::{GraphicsOutput, PixelFormat},
-    table::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol},
+    table::boot::{OpenProtocolAttributes, OpenProtocolParams},
 };
 
 fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Option<Box<FrameBufferInfo>> {
@@ -42,9 +43,7 @@ fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Option<Box<FrameB
 }
 
 pub fn init() -> Option<Box<FrameBufferInfo>> {
-    let st = uefi::table::system_table_boot().unwrap();
-    let bs = st.boot_services();
-    let handle = match bs.get_handle_for_protocol::<GraphicsOutput>() {
+    let handle = match uefi::boot::get_handle_for_protocol::<GraphicsOutput>() {
         Ok(v) => v,
         Err(e) => {
             warn!("Failed to get handle for GOP: {e}.");
@@ -52,10 +51,10 @@ pub fn init() -> Option<Box<FrameBufferInfo>> {
         }
     };
     let mut gop: ScopedProtocol<GraphicsOutput> = unsafe {
-        bs.open_protocol(
+        uefi::boot::open_protocol(
             OpenProtocolParams {
                 handle,
-                agent: bs.image_handle(),
+                agent: uefi::boot::image_handle(),
                 controller: None,
             },
             OpenProtocolAttributes::GetProtocol,
@@ -63,7 +62,7 @@ pub fn init() -> Option<Box<FrameBufferInfo>> {
         .unwrap()
     };
     let mode = gop
-        .modes(bs)
+        .modes()
         .filter(|v| v.info().pixel_format() != PixelFormat::BltOnly)
         .max_by_key(|v| v.info().resolution().0)?;
     if let Err(e) = gop.set_mode(&mode) {

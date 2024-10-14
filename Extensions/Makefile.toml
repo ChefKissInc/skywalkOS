@@ -1,18 +1,14 @@
 [env]
-CARGO_BUILD_PROFILE = "dev"
 CARGO_MAKE_WORKSPACE_EMULATION = true
 CARGO_MAKE_CRATE_WORKSPACE_MEMBERS = ["PCIKit", "SKTest"]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
-
-[env.production]
-CARGO_BUILD_PROFILE = "release"
 
 [tasks.make]
 command = "cargo"
 args = [
     "build",
-    "--out-dir",
+    "--artifact-dir",
     "../../target/Extensions",
     "--profile",
-    "${CARGO_BUILD_PROFILE}",
+    "${CARGO_MAKE_CARGO_PROFILE}",
 ]

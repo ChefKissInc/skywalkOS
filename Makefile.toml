@@ -1,18 +1,12 @@
-[env]
-CARGO_BUILD_PROFILE = "dev"
-
-[env.production]
-CARGO_BUILD_PROFILE = "release"
-
 [tasks.build-skylift]
 cwd = "SkyLift"
 command = "cargo"
 args = [
     "build",
-    "--out-dir",
+    "--artifact-dir",
     "../Drive/EFI/BOOT",
     "--profile",
-    "${CARGO_BUILD_PROFILE}",
+    "${CARGO_MAKE_CARGO_PROFILE}",
 ]
 
 [tasks.build-sky]
@@ -20,10 +14,10 @@ cwd = "Sky"
 command = "cargo"
 args = [
     "build",
-    "--out-dir",
+    "--artifact-dir",
     "../Drive/System",
     "--profile",
-    "${CARGO_BUILD_PROFILE}",
+    "${CARGO_MAKE_CARGO_PROFILE}",
 ]
 
 [tasks.make-skcache]
@@ -35,7 +29,7 @@ args = ["run", "--release"]
 [tasks.make-boot-exts]
 cwd = "Extensions"
 command = "cargo"
-args = ["make", "--profile", "${CARGO_MAKE_PROFILE}", "make"]
+args = ["make", "-p", "${CARGO_MAKE_PROFILE}", "make"]
 
 [tasks.make]
 dependencies = ["build-skylift", "build-sky", "make-skcache"]

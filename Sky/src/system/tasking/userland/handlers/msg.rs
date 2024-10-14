@@ -78,7 +78,7 @@ pub fn send(
         process.cr3.lock().map(
             addr,
             addr - skykit::USER_VIRT_OFFSET,
-            (size + (PAGE_SIZE - 1)) / PAGE_SIZE,
+            size.div_ceil(PAGE_SIZE),
             PageTableFlags::new_present().with_user(true),
         );
     }

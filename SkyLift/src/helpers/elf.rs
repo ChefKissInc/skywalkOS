@@ -39,8 +39,6 @@ pub fn parse(
         .unwrap_or_default();
 
     trace!("Parsing program headers: ");
-    let st = uefi::table::system_table_boot().unwrap();
-    let bs = st.boot_services();
     let segments = elf.segments().unwrap();
     let lowest_addr = segments
         .iter()
@@ -69,14 +67,15 @@ pub fn parse(
         })
         .max()
         .unwrap();
-    let kern_region_pages = ((highest_addr - lowest_addr + (PAGE_SIZE - 1)) / PAGE_SIZE) as usize;
+    let kern_region_pages = (highest_addr - lowest_addr).div_ceil(PAGE_SIZE) as usize;
     assert_eq!(
-        bs.allocate_pages(
+        uefi::boot::allocate_pages(
             uefi::table::boot::AllocateType::Address(lowest_addr_phys as _),
             uefi::table::boot::MemoryType::LOADER_DATA,
             kern_region_pages,
         )
-        .unwrap(),
+        .unwrap()
+        .as_ptr() as u64,
         lowest_addr_phys,
     );
     mem_mgr.allocate((lowest_addr_phys, kern_region_pages as _));

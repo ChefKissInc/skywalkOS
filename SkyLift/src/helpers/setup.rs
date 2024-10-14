@@ -30,73 +30,70 @@ pub fn setup() {
 }
 
 pub fn check_boot_flags() -> (bool, bool) {
-    let mut st = uefi::table::system_table_boot().unwrap();
-    let timer = match unsafe {
-        st.boot_services()
-            .create_event(EventType::TIMER, Tpl::CALLBACK, None, None)
-    } {
-        Ok(v) => v,
-        Err(e) => {
-            warn!("Failed to create timer: {e}.");
-            return (false, false);
-        }
-    };
-    if let Err(e) = st
-        .boot_services()
-        .set_timer(&timer, TimerTrigger::Relative(5 * 1000 * 1000))
-    {
+    let timer =
+        match unsafe { uefi::boot::create_event(EventType::TIMER, Tpl::CALLBACK, None, None) } {
+            Ok(v) => v,
+            Err(e) => {
+                warn!("Failed to create timer: {e}.");
+                return (false, false);
+            }
+        };
+    if let Err(e) = uefi::boot::set_timer(&timer, TimerTrigger::Relative(5 * 1000 * 1000)) {
         warn!("Failed to set timer: {e}.");
-        st.boot_services().close_event(timer).unwrap();
+        uefi::boot::close_event(timer).unwrap();
         return (false, false);
     };
     let mut events = unsafe {
         [
             timer.unsafe_clone(),
-            st.stdin().wait_for_key_event().unwrap(),
+            uefi::system::with_stdin(|v| v.wait_for_key_event()).unwrap(),
         ]
     };
-    let i = match st.boot_services().wait_for_event(&mut events) {
+    let i = match uefi::boot::wait_for_event(&mut events) {
         Ok(v) => v,
         Err(e) => {
             warn!("Failed to wait for event: {e}.");
-            st.boot_services().close_event(timer).unwrap();
+            uefi::boot::close_event(timer).unwrap();
             return (false, false);
         }
     };
 
-    st.boot_services().close_event(timer).unwrap();
+    uefi::boot::close_event(timer).unwrap();
     if i == 0 {
         return (false, false);
     }
 
-    let mut verbose = false;
-    let mut serial_enabled = false;
-    while let Ok(v) = st.stdin().read_key() {
-        match v {
-            Some(Key::Printable(v)) if v == Char16::try_from('v').unwrap() => {
-                verbose = true;
-                break;
+    uefi::system::with_stdin(|stdin| {
+        let mut verbose = false;
+        let mut serial_enabled = false;
+        while let Ok(v) = stdin.read_key() {
+            match v {
+                Some(Key::Printable(v)) if v == Char16::try_from('v').unwrap() => {
+                    verbose = true;
+                    break;
+                }
+                Some(Key::Printable(v)) if v == Char16::try_from('s').unwrap() => {
+                    serial_enabled = true;
+                    break;
+                }
+                _ => {}
             }
-            Some(Key::Printable(v)) if v == Char16::try_from('s').unwrap() => {
-                serial_enabled = true;
-                break;
-            }
-            _ => {}
         }
-    }
-    (verbose, serial_enabled)
+        (verbose, serial_enabled)
+    })
 }
 
 pub fn get_rsdp() -> *const u8 {
-    let st = uefi::table::system_table_boot().unwrap();
-    let mut iter = st.config_table().iter();
-    let rsdp: *const u8 = iter
-        .find(|ent| ent.guid == uefi::table::cfg::ACPI2_GUID)
-        .unwrap_or_else(|| {
-            iter.find(|ent| ent.guid == uefi::table::cfg::ACPI_GUID)
-                .unwrap()
-        })
-        .address
-        .cast();
-    super::pa_to_kern_va(rsdp)
+    uefi::system::with_config_table(|cfg_table| {
+        let mut iter = cfg_table.iter();
+        let rsdp: *const u8 = iter
+            .find(|ent| ent.guid == uefi::table::cfg::ACPI2_GUID)
+            .unwrap_or_else(|| {
+                iter.find(|ent| ent.guid == uefi::table::cfg::ACPI_GUID)
+                    .unwrap()
+            })
+            .address
+            .cast();
+        super::pa_to_kern_va(rsdp)
+    })
 }

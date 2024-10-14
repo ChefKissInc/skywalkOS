@@ -2,7 +2,7 @@
 
 macro_rules! isr_stub {
     ($err:expr, $i:expr) => {
-        core::arch::asm!(
+        core::arch::naked_asm!(
             $err,
             "cld",
             "push {}",
@@ -42,7 +42,6 @@ macro_rules! isr_stub {
             "iretq",
             const $i,
             sym isr_handler,
-            options(noreturn),
         )
     };
 }

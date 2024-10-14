@@ -4,7 +4,6 @@
 #![no_main]
 #![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
 #![allow(clippy::multiple_crate_versions)]
-#![feature(asm_const)]
 
 #[macro_use]
 extern crate alloc;
@@ -13,18 +12,18 @@ extern crate log;
 
 use alloc::{boxed::Box, vec::Vec};
 
-use uefi::{prelude::*, table::boot::MemoryType};
+use uefi::{mem::memory_map::MemoryMap, prelude::*, table::boot::MemoryType};
 
 mod helpers;
 
 #[export_name = "efi_main"]
-extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
+extern "efiapi" fn efi_main(image: Handle, st: *const core::ffi::c_void) -> Status {
     unsafe {
-        st.boot_services().set_image_handle(image);
-        uefi::table::set_system_table(st.as_ptr().cast());
+        uefi::boot::set_image_handle(image);
+        uefi::table::set_system_table(st.cast());
     }
-    uefi::helpers::init(&mut st).unwrap();
-    if let Err(e) = st.boot_services().set_watchdog_timer(0, 0x10000, None) {
+    uefi::helpers::init().unwrap();
+    if let Err(e) = uefi::boot::set_watchdog_timer(0, 0x10000, None) {
         warn!("Failed to disarm watchdog timer: {e}.");
     }
     let fb_info = helpers::fb::init();
@@ -33,8 +32,7 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
     let (verbose, serial_enabled) = helpers::setup::check_boot_flags();
 
     let (kernel_buf, fkcache_buf) = {
-        let mut esp =
-            uefi::fs::FileSystem::new(st.boot_services().get_image_file_system(image).unwrap());
+        let mut esp = uefi::fs::FileSystem::new(uefi::boot::get_image_file_system(image).unwrap());
         (
             esp.read(cstr16!("\\System\\Sky.exec")).unwrap().leak(),
             esp.read(cstr16!("\\System\\SkyKitExtensions"))
@@ -62,16 +60,13 @@ extern "efiapi" fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status 
     )));
 
     trace!("Exiting boot services and jumping to kernel...");
-    let memory_map_entry_count = st
-        .boot_services()
-        .memory_map(MemoryType::LOADER_DATA)
+    let memory_map_entry_count = uefi::boot::memory_map(MemoryType::LOADER_DATA)
         .unwrap()
-        .entries()
         .len()
         + 8;
     let mut memory_map_entries = Vec::with_capacity(memory_map_entry_count);
 
-    for v in unsafe { st.exit_boot_services(MemoryType::LOADER_DATA).1.entries() } {
+    for v in unsafe { uefi::boot::exit_boot_services(MemoryType::LOADER_DATA).entries() } {
         if let Some(v) = mem_mgr.mem_type_from_desc(v) {
             memory_map_entries.push(v);
         }
