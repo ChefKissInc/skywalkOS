@@ -1,5 +1,5 @@
 SKExtension (
-    identifier: "com.ChefKiss.PCIKit",
+    identifier: "org.ChefKiss.PCIKit",
     personalities: {
         "Master": {
             "_Name": String("Root"),
