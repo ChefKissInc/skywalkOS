@@ -2,7 +2,7 @@ name: Run lints and tests
 
 on:
   push:
-    branches: [master, staging, trying]
+    branches: [master]
   pull_request:
     branches: [master]
   schedule:
