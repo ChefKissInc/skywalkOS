@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss Inc 2021-2024. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
+// Copyright (c) ChefKiss 2021-2024. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
 use amd64::paging::PAGE_SIZE;
 use skyliftkit::{MemoryData, MemoryEntry};
