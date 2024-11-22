@@ -1,6 +1,6 @@
 // Copyright (c) ChefKiss Inc 2021-2024. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-#![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
+#![deny(warnings, clippy::nursery, unused_extern_crates)]
 
 use amd64::paging::{
     PageTable, PageTableEntry, PageTableFlags, KERNEL_VIRT_OFFSET, PAGE_SIZE, PHYS_VIRT_OFFSET,

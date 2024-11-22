@@ -2,7 +2,7 @@
 
 #![no_std]
 #![no_main]
-#![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
+#![deny(warnings, clippy::nursery, unused_extern_crates)]
 #![allow(clippy::multiple_crate_versions)]
 
 #[macro_use]

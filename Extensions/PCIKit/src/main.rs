@@ -2,7 +2,7 @@
 
 #![no_std]
 #![no_main]
-#![deny(warnings, clippy::cargo, clippy::nursery, unused_extern_crates)]
+#![deny(warnings, clippy::nursery, unused_extern_crates)]
 
 // #[macro_use]
 // extern crate log;
