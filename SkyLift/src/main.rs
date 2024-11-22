@@ -12,7 +12,7 @@ extern crate log;
 
 use alloc::{boxed::Box, vec::Vec};
 
-use uefi::{mem::memory_map::MemoryMap, prelude::*, table::boot::MemoryType};
+use uefi::{boot::MemoryType, mem::memory_map::MemoryMap, prelude::*};
 
 mod helpers;
 

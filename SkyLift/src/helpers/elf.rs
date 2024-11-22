@@ -70,8 +70,8 @@ pub fn parse(
     let kern_region_pages = (highest_addr - lowest_addr).div_ceil(PAGE_SIZE) as usize;
     assert_eq!(
         uefi::boot::allocate_pages(
-            uefi::table::boot::AllocateType::Address(lowest_addr_phys as _),
-            uefi::table::boot::MemoryType::LOADER_DATA,
+            uefi::boot::AllocateType::Address(lowest_addr_phys as _),
+            uefi::boot::MemoryType::LOADER_DATA,
             kern_region_pages,
         )
         .unwrap()

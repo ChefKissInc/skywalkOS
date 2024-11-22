@@ -3,8 +3,8 @@
 use alloc::boxed::Box;
 
 use uefi::{
+    boot::{EventType, TimerTrigger, Tpl},
     proto::console::text::Key,
-    table::boot::{EventType, TimerTrigger, Tpl},
     Char16,
 };
 

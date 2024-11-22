@@ -4,7 +4,7 @@ use alloc::vec::Vec;
 
 use amd64::paging::PAGE_SIZE;
 use skyliftkit::{MemoryData, MemoryEntry};
-use uefi::table::boot::{MemoryDescriptor, MemoryType};
+use uefi::boot::{MemoryDescriptor, MemoryType};
 
 pub struct MemoryManager {
     entries: Vec<MemoryData>,

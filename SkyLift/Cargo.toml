@@ -22,7 +22,7 @@ log = { version = "0.4.22", default-features = false, features = [
 ] }
 skybuffer = { path = "../Libraries/SkyBuffer" }
 skyliftkit = { path = "../Libraries/SkyLiftKit" }
-uefi = { version = "0.32.0", features = [
+uefi = { version = "0.33.0", features = [
     "alloc",
     "unstable",
     "global_allocator",

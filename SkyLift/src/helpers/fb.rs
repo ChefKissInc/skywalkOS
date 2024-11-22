@@ -6,8 +6,8 @@ use skybuffer::pixel::PixelBitMask;
 use skyliftkit::{FrameBufferInfo, ScreenRes};
 use uefi::{
     boot::ScopedProtocol,
+    boot::{OpenProtocolAttributes, OpenProtocolParams},
     proto::console::gop::{GraphicsOutput, PixelFormat},
-    table::boot::{OpenProtocolAttributes, OpenProtocolParams},
 };
 
 fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Option<Box<FrameBufferInfo>> {
