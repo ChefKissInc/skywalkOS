@@ -16,7 +16,7 @@ fn main() {
                         .unwrap();
                 println!("{}", info.identifier);
                 let payload = std::fs::read(PathBuf::from("../../target/Extensions").join(
-                    format!("{}.exec", info.identifier.split('.').last().unwrap()),
+                    format!("{}.exec", info.identifier.rsplit('.').next().unwrap()),
                 ))
                 .unwrap();
                 (info, payload)
