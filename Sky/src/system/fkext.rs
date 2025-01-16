@@ -39,7 +39,7 @@ fn load_fkext(
         properties: HashMap::from([
             (
                 OSDTENTRY_NAME_KEY.into(),
-                info.identifier.split('.').last().unwrap().into(),
+                info.identifier.rsplit('.').next().unwrap().into(),
             ),
             (
                 SKEXT_MATCH_KEY.into(),
