@@ -18,11 +18,11 @@ hashbrown = { version = "0.15.2", features = ["nightly"] }
 itertools = { version = "0.14.0", default-features = false, features = [
     "use_alloc",
 ] }
-log = { version = "0.4.22", features = [
+log = { version = "0.4.25", features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
-bitfield-struct = "0.10.0"
+bitfield-struct = "0.10.1"
 num_enum = { version = "0.7.3", default-features = false }
 postcard = { version = "1.1.1", default-features = false, features = ["alloc"] }
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }

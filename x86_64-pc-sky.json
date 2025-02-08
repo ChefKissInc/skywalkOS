@@ -6,6 +6,7 @@
   "dynamic-linking": false,
   "exe-suffix": ".exec",
   "features": "-mmx,-sse,-sse2,-sse3,-ssse3,-sse4.1,-sse4.2,-avx,-avx2,+soft-float",
+  "rustc-abi": "x86-softfloat",
   "has-thread-local": false,
   "linker": "rust-lld",
   "linker-flavor": "ld.lld",

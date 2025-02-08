@@ -20,11 +20,11 @@ hashbrown = { version = "0.15.2", features = ["nightly", "serde"] }
 itertools = { version = "0.14.0", default-features = false, features = [
     "use_alloc",
 ] }
-log = { version = "0.4.22", default-features = false, features = [
+log = { version = "0.4.25", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
-bitfield-struct = "0.10.0"
+bitfield-struct = "0.10.1"
 num_enum = { version = "0.7.3", default-features = false }
 skybuffer = { path = "../Libraries/SkyBuffer" }
 postcard = { version = "1.1.1", default-features = false, features = ["alloc"] }
