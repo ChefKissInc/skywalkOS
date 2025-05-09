@@ -78,11 +78,11 @@ impl MultipleAPICDescTable {
         self.local_ic_addr as u64
     }
 
-    pub fn as_iter(&self) -> MADTIter {
+    pub const fn as_iter(&self) -> MADTIter {
         MADTIter {
             ptr: unsafe { (self as *const Self).cast::<u8>().add(size_of::<Self>()) },
             curr: 0,
-            total: self.length as usize - size_of::<Self>(),
+            total: self.header.length as usize - size_of::<Self>(),
         }
     }
 }

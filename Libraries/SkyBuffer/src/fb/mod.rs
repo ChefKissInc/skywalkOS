@@ -20,7 +20,7 @@ pub type Result<T> = core::result::Result<T, FBError>;
 
 impl FrameBuffer {
     #[inline]
-    pub unsafe fn new(
+    pub const unsafe fn new(
         data: *mut u32,
         width: usize,
         height: usize,
