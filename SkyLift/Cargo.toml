@@ -16,13 +16,13 @@ strip = true
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
 elf = { version = "0.7.4", default-features = false, features = ["nightly"] }
-log = { version = "0.4.25", default-features = false, features = [
+log = { version = "0.4.27", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
 skybuffer = { path = "../Libraries/SkyBuffer" }
 skyliftkit = { path = "../Libraries/SkyLiftKit" }
-uefi = { version = "0.34.0", features = [
+uefi = { version = "0.35.0", features = [
     "alloc",
     "unstable",
     "global_allocator",

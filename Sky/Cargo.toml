@@ -16,22 +16,22 @@ strip = true
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
 elf = { version = "0.7.4", default-features = false, features = ["nightly"] }
-hashbrown = { version = "0.15.2", features = ["nightly", "serde"] }
+hashbrown = { version = "0.15.3", features = ["nightly", "serde"] }
 itertools = { version = "0.14.0", default-features = false, features = [
     "use_alloc",
 ] }
-log = { version = "0.4.25", default-features = false, features = [
+log = { version = "0.4.27", default-features = false, features = [
     "max_level_trace",
     "release_max_level_debug",
 ] }
-bitfield-struct = "0.10.1"
+bitfield-struct = "0.11.0"
 num_enum = { version = "0.7.3", default-features = false }
 skybuffer = { path = "../Libraries/SkyBuffer" }
 postcard = { version = "1.1.1", default-features = false, features = ["alloc"] }
 rustc-demangle = "0.1.24"
-seq-macro = "0.3.5"
-serde = { version = "1.0.217", default-features = false, features = ["derive"] }
-spin = { version = "0.9.8", default-features = false, features = [
+seq-macro = "0.3.6"
+serde = { version = "1.0.219", default-features = false, features = ["derive"] }
+spin = { version = "0.10.0", default-features = false, features = [
     "barrier",
     "lock_api",
     "mutex",
@@ -42,7 +42,7 @@ spin = { version = "0.9.8", default-features = false, features = [
 ] }
 skyliftkit = { path = "../Libraries/SkyLiftKit" }
 skykit = { path = "../Libraries/SkyKit" }
-unwinding = { version = "0.2.5", default-features = false, features = [
+unwinding = { version = "0.2.6", default-features = false, features = [
     "fde-static",
     "hide-trace",
     "panic",

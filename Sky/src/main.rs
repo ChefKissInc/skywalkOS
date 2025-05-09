@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss 2021-2024. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
+// Copyright (c) ChefKiss 2021-2025. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
 #![no_std]
 #![no_main]
@@ -115,7 +115,7 @@ extern "C" fn kernel_main(boot_info: &'static skyliftkit::BootInfo) -> ! {
     logger::init();
     assert_eq!(boot_info.revision, skyliftkit::CURRENT_REVISION);
     init_core(boot_info);
-    debug!("Copyright ChefKiss 2021-2024.");
+    debug!("Copyright ChefKiss 2021-2025.");
 
     let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     state.terminal = boot_info.frame_buffer.map(|fb_info| {

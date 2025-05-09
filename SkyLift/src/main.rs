@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss 2021-2024. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
+// Copyright (c) ChefKiss 2021-2025. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
 #![no_std]
 #![no_main]
@@ -66,7 +66,7 @@ extern "efiapi" fn efi_main(image: Handle, st: *const core::ffi::c_void) -> Stat
         + 8;
     let mut memory_map_entries = Vec::with_capacity(memory_map_entry_count);
 
-    for v in unsafe { uefi::boot::exit_boot_services(MemoryType::LOADER_DATA).entries() } {
+    for v in unsafe { uefi::boot::exit_boot_services(None).entries() } {
         if let Some(v) = mem_mgr.mem_type_from_desc(v) {
             memory_map_entries.push(v);
         }

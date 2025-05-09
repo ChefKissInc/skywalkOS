@@ -1,4 +1,4 @@
-// Copyright (c) ChefKiss 2021-2024. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
+// Copyright (c) ChefKiss 2021-2025. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
 pub const PAGE_SIZE: u64 = 0x1000;
 pub const PAGE_MASK: u64 = 0xFFF;
