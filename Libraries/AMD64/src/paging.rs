@@ -127,7 +127,7 @@ impl PageTableFlags {
     }
 
     #[inline]
-    pub fn update_entry(self, entry: &mut PageTableEntry, pte: bool) {
+    pub const fn update_entry(self, entry: &mut PageTableEntry, pte: bool) {
         let pat = (self.pat_index & 0b100) != 0;
         entry.set_present(entry.present() || self.present);
         entry.set_writable(entry.writable() || self.writable);
@@ -169,7 +169,7 @@ impl<const VIRT_OFF: u64> PageTable<VIRT_OFF> {
     }
 
     #[inline]
-    unsafe fn get(&self, offset: usize) -> Option<&mut Self> {
+    unsafe fn get(&mut self, offset: usize) -> Option<&mut Self> {
         let entry = &self.entries[offset];
 
         if entry.present() {
