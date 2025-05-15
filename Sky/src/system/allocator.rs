@@ -13,7 +13,7 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
             .lock()
             .alloc(count)
             .map_or(core::ptr::null_mut(), |ptr| {
-                (amd64::paging::PHYS_VIRT_OFFSET as *mut u8).add(ptr.addr())
+                ptr.map_addr(|v| v + amd64::paging::PHYS_VIRT_OFFSET as usize)
             });
         if !ptr.is_null() {
             ptr.write_bytes(0, (count * 0x1000) as _);
@@ -28,10 +28,7 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
         let pmm = (*super::state::SYS_STATE.get()).pmm.as_ref().unwrap();
         pmm.lock().free(
-            ptr.map_addr(|v| {
-                v.checked_sub(amd64::paging::PHYS_VIRT_OFFSET as usize)
-                    .unwrap()
-            }),
+            ptr.map_addr(|v| v - amd64::paging::PHYS_VIRT_OFFSET as usize),
             ((layout.pad_to_align().size() + 0xFFF) / 0x1000) as _,
         );
     }
