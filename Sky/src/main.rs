@@ -3,7 +3,7 @@
 #![no_std]
 #![no_main]
 #![deny(warnings, clippy::nursery, unused_extern_crates)]
-#![feature(alloc_error_handler, naked_functions, sync_unsafe_cell)]
+#![feature(alloc_error_handler, sync_unsafe_cell)]
 
 use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
 
