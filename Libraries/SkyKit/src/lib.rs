@@ -10,7 +10,6 @@ use alloc::{string::String, vec::Vec};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "userspace")]
 pub mod msg;
 pub mod osdtentry;
 pub mod osvalue;
