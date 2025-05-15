@@ -14,7 +14,7 @@ name = "pcikit"
 strip = true
 
 [dependencies]
-hashbrown = { version = "0.15.3", features = ["nightly"] }
+hashbrown = "0.15.3"
 itertools = { version = "0.14.0", default-features = false, features = [
     "use_alloc",
 ] }

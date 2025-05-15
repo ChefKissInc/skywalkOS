@@ -14,7 +14,7 @@ name = "sktest"
 strip = true
 
 [dependencies]
-hashbrown = { version = "0.15.3", features = ["nightly"] }
+hashbrown = "0.15.3"
 log = { version = "0.4.27", features = [
     "max_level_trace",
     "release_max_level_debug",
