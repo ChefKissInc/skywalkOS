@@ -2,6 +2,7 @@
 
 use alloc::boxed::Box;
 
+use amd64::paging::PHYS_VIRT_OFFSET;
 use skybuffer::pixel::PixelBitMask;
 use skyliftkit::{FrameBufferInfo, ScreenRes};
 use uefi::{
@@ -30,12 +31,11 @@ fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Option<Box<FrameB
         }
     };
     Some(Box::new(FrameBufferInfo {
-        base: unsafe {
-            gop.frame_buffer()
-                .as_mut_ptr()
-                .add(amd64::paging::PHYS_VIRT_OFFSET as _)
-                .cast::<u32>()
-        },
+        base: gop
+            .frame_buffer()
+            .as_mut_ptr()
+            .map_addr(|v| v + PHYS_VIRT_OFFSET as usize)
+            .cast(),
         resolution: ScreenRes::new(mode_info.resolution()),
         pixel_bitmask,
         pitch: gop.current_mode_info().stride(),

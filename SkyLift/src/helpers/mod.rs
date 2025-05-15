@@ -6,7 +6,7 @@ pub mod mem;
 pub mod setup;
 
 pub fn pa_to_kern_va<T>(v: *const T) -> *const T {
-    (v as u64 + amd64::paging::PHYS_VIRT_OFFSET) as *const T
+    v.map_addr(|v| v + amd64::paging::PHYS_VIRT_OFFSET as usize)
 }
 
 pub fn phys_to_kern_ref<T>(v: &'_ T) -> &'_ T {
