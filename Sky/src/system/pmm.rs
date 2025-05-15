@@ -41,11 +41,15 @@ impl BitmapAllocator {
                 return None;
             };
             // Skip the first 2 MiB.
-            Some(if v.base <= 0x20_0000 && v.base + v.length > 0x20_0000 {
-                MemoryData::new(0x20_0000, v.length - 0x20_0000)
+            if v.base <= 0x20_0000 {
+                if v.base + v.length > 0x20_0000 {
+                    Some(MemoryData::new(0x20_0000, v.length - 0x20_0000))
+                } else {
+                    None
+                }
             } else {
-                *v
-            })
+                Some(*v)
+            }
         }) {
             if v.length == 0 {
                 continue;
