@@ -8,12 +8,9 @@
 use alloc::{string::String, vec::Vec};
 
 use hashbrown::HashMap;
+use serde::{Deserialize, Serialize};
 
-extern crate alloc;
 #[cfg(feature = "userspace")]
-#[macro_use]
-extern crate log;
-
 pub mod msg;
 pub mod osdtentry;
 pub mod osvalue;
@@ -21,7 +18,7 @@ pub mod syscall;
 #[cfg(feature = "userspace")]
 pub mod userspace;
 
-use serde::{Deserialize, Serialize};
+extern crate alloc;
 
 pub const USER_VIRT_OFFSET: u64 = 0xC000_0000;
 
