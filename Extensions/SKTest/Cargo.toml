@@ -12,6 +12,7 @@ name = "sktest"
 
 [profile.release]
 strip = true
+lto = true
 
 [dependencies]
 hashbrown = "0.15.3"
