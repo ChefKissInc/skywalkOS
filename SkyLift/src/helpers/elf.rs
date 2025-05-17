@@ -20,7 +20,7 @@ pub fn parse(
     let symbols = elf
         .symbol_table()
         .unwrap()
-        .map(|(symtab, strtab)| {
+        .map_or_else(Vec::new, |(symtab, strtab)| {
             symtab
                 .iter()
                 .map(|v| skyliftkit::KernSymbol {
@@ -35,8 +35,7 @@ pub fn parse(
                     ),
                 })
                 .collect()
-        })
-        .unwrap_or_default();
+        });
 
     trace!("Parsing program headers: ");
     let segments = elf.segments().unwrap();

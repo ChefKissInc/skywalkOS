@@ -11,7 +11,7 @@ use super::gdt::{PrivilegeLevel, SegmentSelector};
 pub mod scheduler;
 pub mod userland;
 
-pub const STACK_SIZE: u64 = 0x14000;
+pub const STACK_LEN: u64 = 0x14000;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ThreadState {
@@ -54,7 +54,7 @@ impl Thread {
                 rip,
                 cs: SegmentSelector::new(3, PrivilegeLevel::User).into(),
                 rflags: 0x202,
-                rsp: stack_addr + STACK_SIZE,
+                rsp: stack_addr + STACK_LEN,
                 ss: SegmentSelector::new(4, PrivilegeLevel::User).into(),
                 ..Default::default()
             },
@@ -110,14 +110,14 @@ impl Process {
         thread
     }
 
-    pub fn track_alloc(&mut self, addr: u64, size: u64, ty: AllocationType) {
+    pub fn track_alloc(&mut self, addr: u64, len: u64, ty: AllocationType) {
         let _lock = self.alloc_lock.lock();
 
         if self.allocations.contains_key(&addr) {
             panic!("PID {}: Address {addr:#X} already allocated", self.id);
         }
 
-        let page_count = size.div_ceil(0x1000);
+        let page_count = len.div_ceil(0x1000);
 
         assert!(
             unsafe {
@@ -133,13 +133,13 @@ impl Process {
         );
 
         trace!(
-            "PID {}: Tracking {addr:#X} ({ty:?}, {size} byte{}, {page_count} page{}, will map: {})",
+            "PID {}: Tracking {addr:#X} ({ty:?}, {len} byte{}, {page_count} page{}, will map: {})",
             self.id,
-            if size > 1 { "s" } else { "" },
+            if len > 1 { "s" } else { "" },
             if page_count > 1 { "s" } else { "" },
             ty != AllocationType::Kernel
         );
-        self.allocations.insert(addr, (size, ty));
+        self.allocations.insert(addr, (len, ty));
 
         if ty == AllocationType::Kernel {
             return;
@@ -158,42 +158,36 @@ impl Process {
         }
     }
 
-    pub fn track_kernelside_alloc(&mut self, addr: u64, size: u64) -> u64 {
+    pub fn track_kernelside_alloc(&mut self, addr: u64, len: u64) -> u64 {
         let _lock = self.alloc_lock.lock();
 
         let addr = addr - amd64::paging::PHYS_VIRT_OFFSET + skykit::USER_VIRT_OFFSET;
         drop(_lock);
-        self.track_alloc(addr, size, AllocationType::Readable);
+        self.track_alloc(addr, len, AllocationType::Readable);
         addr
     }
 
-    pub fn region_is_valid(&self, addr: u64, size: u64) -> bool {
+    pub fn region_is_valid(&self, addr: u64, len: u64) -> bool {
         self.allocations
             .iter()
-            .any(|(k, (v, _))| k <= &addr && addr + size <= k + v)
+            .any(|(k, (v, _))| k <= &addr && addr + len <= k + v)
     }
 
-    pub fn region_is_within_bounds(&self, addr: u64, size: u64) -> bool {
-        self.allocations
-            .get(&addr)
-            .map(|(v, _)| v >= &size)
-            .unwrap_or_default()
+    pub fn region_is_within_bounds(&self, addr: u64, len: u64) -> bool {
+        self.allocations.get(&addr).is_some_and(|(v, _)| v >= &len)
     }
 
-    pub fn region_is_mapped(&self, addr: u64, size: u64) -> bool {
-        self.allocations
-            .get(&addr)
-            .map(|(v, _)| v == &size)
-            .unwrap_or_default()
+    pub fn region_is_mapped(&self, addr: u64, len: u64) -> bool {
+        self.allocations.get(&addr).is_some_and(|(v, _)| v == &len)
     }
 
     pub fn free_alloc(&mut self, addr: u64) {
         let _lock = self.alloc_lock.lock();
 
-        let (size, ty) = self.allocations.remove(&addr).unwrap();
-        let page_count = size.div_ceil(0x1000);
+        let (len, ty) = self.allocations.remove(&addr).unwrap();
+        let page_count = len.div_ceil(0x1000);
         trace!(
-            "PID {}: Freeing {addr:#X} ({ty:?}, {page_count} pages, {size} bytes)",
+            "PID {}: Freeing {addr:#X} ({ty:?}, {page_count} pages, {len} bytes)",
             self.id
         );
 
@@ -246,12 +240,12 @@ impl Process {
         self.addr_to_msg_id.contains_key(&addr)
     }
 
-    pub fn allocate(&mut self, size: u64) -> (u64, u64) {
+    pub fn allocate(&mut self, len: u64) -> (u64, u64) {
         let _lock = self.alloc_lock.lock();
 
-        let page_count = size.div_ceil(0x1000);
+        let page_count = len.div_ceil(0x1000);
         trace!(
-            "PID {}: Allocating {page_count} pages ({size} bytes)",
+            "PID {}: Allocating {page_count} pages ({len} bytes)",
             self.id
         );
         let addr = unsafe {
@@ -265,7 +259,7 @@ impl Process {
         };
         let virt = addr + skykit::USER_VIRT_OFFSET;
         drop(_lock);
-        self.track_alloc(virt, size, AllocationType::Writable);
+        self.track_alloc(virt, len, AllocationType::Writable);
         (virt, page_count)
     }
 }

@@ -43,21 +43,28 @@ pub fn get_info(
     let Some(ent) = dt_index.get(&state.rsi) else {
         return ControlFlow::Break(Some(TerminationReason::NotFound));
     };
-    let data = match info_type {
-        OSDTEntryInfo::Parent => postcard::to_allocvec(&ent.lock().parent),
-        OSDTEntryInfo::Children => postcard::to_allocvec(&ent.lock().children),
-        OSDTEntryInfo::Properties => postcard::to_allocvec(&ent.lock().properties),
-        OSDTEntryInfo::Property => {
-            let Ok(k) = core::str::from_utf8(unsafe {
-                core::slice::from_raw_parts(state.rcx as *const _, state.r8 as _)
-            }) else {
-                return ControlFlow::Break(Some(TerminationReason::MalformedAddress));
-            };
-            postcard::to_allocvec(&ent.lock().properties.get(k))
+    let data = {
+        let ent = ent.lock();
+        match info_type {
+            OSDTEntryInfo::Parent => postcard::to_allocvec(&ent.parent),
+            OSDTEntryInfo::Children => postcard::to_allocvec(&ent.children),
+            OSDTEntryInfo::Properties => postcard::to_allocvec(&ent.properties),
+            OSDTEntryInfo::Property => {
+                let data = state.rcx as *const u8;
+                let len = state.r8 as usize;
+                if data.is_null() || len == 0 {
+                    return ControlFlow::Break(Some(TerminationReason::MalformedArgument));
+                }
+                let Ok(k) = core::str::from_utf8(unsafe { core::slice::from_raw_parts(data, len) })
+                else {
+                    return ControlFlow::Break(Some(TerminationReason::MalformedBody));
+                };
+                postcard::to_allocvec(&ent.properties.get(k))
+            }
         }
-    }
-    .unwrap()
-    .leak();
+        .unwrap()
+        .leak()
+    };
 
     state.rax = scheduler
         .current_process_mut()
@@ -73,12 +80,12 @@ pub fn set_prop(
     state: &RegisterState,
 ) -> ControlFlow<Option<TerminationReason>> {
     let addr = state.rdx;
-    let size = state.rcx;
+    let len = state.rcx;
 
     if !scheduler
         .current_process()
         .unwrap()
-        .region_is_valid(addr, size)
+        .region_is_valid(addr, len)
     {
         return ControlFlow::Break(Some(TerminationReason::MalformedAddress));
     }
@@ -88,7 +95,7 @@ pub fn set_prop(
     let Some(ent) = dt_index.get(&state.rsi) else {
         return ControlFlow::Break(Some(TerminationReason::NotFound));
     };
-    let data = unsafe { core::slice::from_raw_parts(addr as *const _, size as _) };
+    let data = unsafe { core::slice::from_raw_parts(addr as *const _, len as _) };
     let Ok(v) = postcard::from_bytes::<OSDTEntryProp>(data) else {
         return ControlFlow::Break(Some(TerminationReason::MalformedAddress));
     };

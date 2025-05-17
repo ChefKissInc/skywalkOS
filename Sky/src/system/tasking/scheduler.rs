@@ -138,20 +138,15 @@ impl Scheduler {
         assert_eq!(exec.ehdr.class, elf::file::Class::ELF64);
         assert_ne!(exec.ehdr.e_entry, 0);
 
-        let max_vaddr = exec
-            .segments()
-            .unwrap()
+        let segments = exec.segments().unwrap();
+
+        let max_vaddr = segments
             .iter()
             .map(|v| v.p_vaddr + v.p_memsz)
             .max()
             .unwrap();
         let data = vec![0; max_vaddr as usize].leak();
-        for hdr in exec
-            .segments()
-            .unwrap()
-            .iter()
-            .filter(|v| v.p_type == elf::abi::PT_LOAD)
-        {
+        for hdr in segments.iter().filter(|v| v.p_type == elf::abi::PT_LOAD) {
             let fsz = hdr.p_filesz as usize;
             let foff = hdr.p_offset as usize;
             let ext_vaddr = hdr.p_vaddr as usize;
@@ -186,7 +181,7 @@ impl Scheduler {
         unsafe { proc.cr3.lock().map_higher_half() }
         proc.track_alloc(virt_addr, data.len() as _, AllocationType::Writable);
         let tid = self.tid_gen.next();
-        let stack_addr = proc.allocate(super::STACK_SIZE).0;
+        let stack_addr = proc.allocate(super::STACK_LEN).0;
         let thread = proc.new_thread(tid, virt_addr + exec.ehdr.e_entry, stack_addr);
         let Ok(thread) = self.threads.try_insert(tid, thread) else {
             unreachable!()
@@ -207,7 +202,7 @@ impl Scheduler {
     }
 
     pub fn next_thread_mut(&mut self) -> Option<&mut super::Thread> {
-        let mut i = self.current_tid.map(|v| v + 1).unwrap_or_default() as usize;
+        let mut i = self.current_tid.map_or(0, |v| v + 1) as usize;
         if i > self.threads.len() {
             i = 0;
         }
