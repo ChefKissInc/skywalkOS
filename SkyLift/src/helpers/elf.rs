@@ -74,7 +74,5 @@ pub fn parse(mem_mgr: &mut super::mem::MemoryManager, buffer: &[u8]) -> skyliftk
         }
     }
 
-    unsafe {
-        core::mem::transmute::<*const (), skyliftkit::EntryPoint>(elf.ehdr.e_entry as *const ())
-    }
+    unsafe { core::mem::transmute::<_, skyliftkit::EntryPoint>(elf.ehdr.e_entry) }
 }
