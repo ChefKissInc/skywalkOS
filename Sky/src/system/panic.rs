@@ -1,87 +1,5 @@
 // Copyright (c) ChefKiss 2021-2025. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-#[cfg(debug_assertions)]
-struct CallbackData<'a> {
-    counter: usize,
-    kern_symbols: &'a [skyliftkit::KernSymbol],
-}
-
-#[cfg(debug_assertions)]
-extern "C" fn callback(
-    unwind_ctx: &unwinding::abi::UnwindContext<'_>,
-    arg: *mut core::ffi::c_void,
-) -> unwinding::abi::UnwindReasonCode {
-    let data = unsafe { &mut *arg.cast::<CallbackData>() };
-    data.counter += 1;
-
-    let ip = unwinding::abi::_Unwind_GetIP(unwind_ctx) as u64;
-    data.kern_symbols
-        .iter()
-        .find(|v| ip >= v.start && ip < v.end)
-        .map_or_else(
-            || {
-                error!("{:>4}: {ip:#018X}+{:#06X} -> ???", data.counter, 0);
-            },
-            |symbol| {
-                error!(
-                    "{:>4}: {:#018X}+{:#06X} -> {}",
-                    data.counter,
-                    symbol.start,
-                    ip - symbol.start,
-                    rustc_demangle::demangle(symbol.name)
-                );
-            },
-        );
-
-    unwinding::abi::UnwindReasonCode::NO_REASON
-}
-
-#[cfg(debug_assertions)]
-fn backtrace(state: &super::state::SystemState) {
-    error!("Backtrace:");
-    let mut data = CallbackData {
-        counter: 0,
-        kern_symbols: state.kern_symbols.as_ref().unwrap(),
-    };
-    unwinding::abi::_Unwind_Backtrace(callback, core::ptr::addr_of_mut!(data).cast());
-
-    if let Some(ctx) = state.interrupt_context {
-        data.counter = 0;
-        error!("In interrupt:");
-        error!("    {ctx}");
-        error!("Interrupt backtrace:");
-        let mut rbp = ctx.rbp;
-        loop {
-            if rbp == 0 {
-                error!("End of backtrace.");
-                break;
-            }
-            let ip = unsafe { *((rbp + 8) as *const u64) };
-            rbp = unsafe { *(rbp as *const u64) };
-
-            data.counter += 1;
-
-            data.kern_symbols
-                .iter()
-                .find(|v| ip >= v.start && ip < v.end)
-                .map_or_else(
-                    || {
-                        error!("{:>4}: {ip:#018X}+{:#06X} -> ???", data.counter, 0);
-                    },
-                    |symbol| {
-                        error!(
-                            "{:>4}: {:#018X}+{:#06X} -> {}",
-                            data.counter,
-                            symbol.start,
-                            ip - symbol.start,
-                            rustc_demangle::demangle(symbol.name)
-                        );
-                    },
-                );
-        }
-    }
-}
-
 #[panic_handler]
 pub fn panic(info: &core::panic::PanicInfo) -> ! {
     crate::cli!();
@@ -101,8 +19,10 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
 
     error!("{info}");
 
-    #[cfg(debug_assertions)]
-    backtrace(state);
+    if let Some(ctx) = state.interrupt_context {
+        error!("In interrupt:");
+        error!("    {ctx}");
+    }
 
     crate::hlt_loop!();
 }

@@ -12,7 +12,6 @@ name = "sky"
 
 [profile.release]
 strip = true
-panic = "abort"
 
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }
@@ -29,7 +28,6 @@ bitfield-struct = "0.11.0"
 num_enum = { version = "0.7.3", default-features = false }
 skybuffer = { path = "../Libraries/SkyBuffer" }
 postcard = { version = "1.1.1", default-features = false, features = ["alloc"] }
-rustc-demangle = "0.1.24"
 seq-macro = "0.3.6"
 serde = { version = "1.0.219", default-features = false, features = ["derive"] }
 spin = { version = "0.10.0", default-features = false, features = [
@@ -43,10 +41,3 @@ spin = { version = "0.10.0", default-features = false, features = [
 ] }
 skyliftkit = { path = "../Libraries/SkyLiftKit" }
 skykit = { path = "../Libraries/SkyKit" }
-unwinding = { version = "0.2.6", default-features = false, features = [
-    "fde-static",
-    "hide-trace",
-    "panic",
-    "personality",
-    "unwinder",
-] }
