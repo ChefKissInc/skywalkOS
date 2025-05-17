@@ -37,11 +37,11 @@ impl MADTData {
         for ent in madt.as_iter() {
             match ent {
                 InterruptController::ProcessorLocalAPIC(lapic) => {
-                    debug!("{lapic:#X?}");
+                    trace!("{lapic:#X?}");
                     proc_lapics.push(lapic);
                 }
                 InterruptController::InputOutputAPIC(ioapic) => {
-                    debug!("{ioapic:#X?}: {:#X?}", ioapic.read_ver());
+                    trace!("{ioapic:#X?}: {:#X?}", ioapic.read_ver());
                     unsafe {
                         (*crate::system::state::SYS_STATE.get())
                             .pml4
@@ -58,14 +58,14 @@ impl MADTData {
                     ioapics.push(ioapic);
                 }
                 InterruptController::IntrSourceOverride(iso) => {
-                    debug!("{iso:#X?}");
+                    trace!("{iso:#X?}");
                     isos.push(iso);
                 }
                 InterruptController::LocalAPICAddrOverride(a) => {
-                    debug!("{a:#X?}");
+                    trace!("{a:#X?}");
                     lapic_addr = a.addr;
                 }
-                v => debug!("Ignoring {v:X?}"),
+                v => trace!("Ignoring {v:X?}"),
             }
         }
 

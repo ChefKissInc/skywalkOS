@@ -7,7 +7,7 @@ struct KernAllocator;
 
 unsafe impl core::alloc::GlobalAlloc for KernAllocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        let count = ((layout.pad_to_align().size() + 0xFFF) / 0x1000) as u64;
+        let count = layout.pad_to_align().size().div_ceil(0x1000) as u64;
         let pmm = (*super::state::SYS_STATE.get()).pmm.as_ref().unwrap();
         let ptr = pmm
             .lock()
@@ -29,7 +29,7 @@ unsafe impl core::alloc::GlobalAlloc for KernAllocator {
         let pmm = (*super::state::SYS_STATE.get()).pmm.as_ref().unwrap();
         pmm.lock().free(
             ptr.map_addr(|v| v - amd64::paging::PHYS_VIRT_OFFSET as usize),
-            ((layout.pad_to_align().size() + 0xFFF) / 0x1000) as _,
+            layout.pad_to_align().size().div_ceil(0x1000) as _,
         );
     }
 }

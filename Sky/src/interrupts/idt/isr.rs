@@ -6,56 +6,60 @@ macro_rules! isr_stub {
             $err,
             "cld",
             "push {}",
-            "push rax",
-            "push rbx",
-            "push rcx",
-            "push rdx",
-            "push rsi",
-            "push rdi",
-            "push rbp",
-            "push r8",
-            "push r9",
-            "push r10",
-            "push r11",
-            "push r12",
-            "push r13",
-            "push r14",
-            "push r15",
-            "mov rdi, rsp",
-            "call {}",
-            "pop r15",
-            "pop r14",
-            "pop r13",
-            "pop r12",
-            "pop r11",
-            "pop r10",
-            "pop r9",
-            "pop r8",
-            "pop rbp",
-            "pop rdi",
-            "pop rsi",
-            "pop rdx",
-            "pop rcx",
-            "pop rbx",
-            "pop rax",
-            "add rsp, 16",
-            "iretq",
+            "jmp {}",
             const $i,
-            sym isr_handler,
+            sym isr_jmp_common,
         )
     };
 }
 
+#[unsafe(naked)]
+unsafe extern "sysv64" fn isr_jmp_common() {
+    core::arch::naked_asm!(
+        "push rax",
+        "push rbx",
+        "push rcx",
+        "push rdx",
+        "push rsi",
+        "push rdi",
+        "push rbp",
+        "push r8",
+        "push r9",
+        "push r10",
+        "push r11",
+        "push r12",
+        "push r13",
+        "push r14",
+        "push r15",
+        "mov rdi, rsp",
+        "call {}",
+        "pop r15",
+        "pop r14",
+        "pop r13",
+        "pop r12",
+        "pop r11",
+        "pop r10",
+        "pop r9",
+        "pop r8",
+        "pop rbp",
+        "pop rdi",
+        "pop rsi",
+        "pop rdx",
+        "pop rcx",
+        "pop rbx",
+        "pop rax",
+        "add rsp, 16",
+        "iretq",
+        sym isr_handler,
+    );
+}
+
 unsafe extern "sysv64" fn isr_handler(regs: &mut crate::system::RegisterState) {
-    let n = regs.int_num as u8;
-    let handler = &(*super::HANDLERS.get())[n as usize];
+    let handler = &(*super::HANDLERS.get())[regs.int_num as usize];
     (handler.func)(regs);
     if handler.is_irq {
         let state = &mut *crate::system::state::SYS_STATE.get();
         state.lapic.as_ref().unwrap().send_eoi();
-    }
-    if !handler.should_iret && !handler.is_irq {
-        crate::hlt_loop!();
     }
 }
 
@@ -87,4 +91,10 @@ seq_macro::seq!(N in 10..16 {
 });
 seq_macro::seq!(N in 16..256 {
     isr_noerr!(isr~N, N);
+});
+
+seq_macro::seq!(N in 0..256 {
+    pub const ISRS: &[unsafe extern "sysv64" fn(); 256] = &[
+        #(isr~N,)*
+    ];
 });

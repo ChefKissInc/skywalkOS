@@ -30,7 +30,6 @@ seq_macro::seq!(N in 0..256 {
             InterruptHandler {
                 func: default_handler,
                 is_irq: false,
-                should_iret: false,
             },
         )*
     ]);
@@ -46,25 +45,14 @@ type HandlerFn = unsafe extern "sysv64" fn(&mut RegisterState);
 pub struct InterruptHandler {
     pub func: HandlerFn,
     pub is_irq: bool,
-    pub should_iret: bool,
-}
-
-impl core::fmt::Debug for InterruptHandler {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("InterruptHandler")
-            .field("func", &(self.func as usize))
-            .field("is_irq", &self.is_irq)
-            .field("should_iret", &self.should_iret)
-            .finish()
-    }
 }
 
 unsafe extern "sysv64" fn default_handler(regs: &mut RegisterState) {
     let n = regs.int_num as u8;
-    debug!("No handler for ISR #{n}");
+    trace!("No handler for ISR #{n}");
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 /// 4 bits
 pub enum EntryType {
@@ -86,7 +74,7 @@ impl EntryType {
     }
 }
 
-#[bitfield(u16)]
+#[bitfield(u16, debug = false)]
 pub struct EntryFlags {
     #[bits(3)]
     pub ist: u8,
@@ -100,7 +88,7 @@ pub struct EntryFlags {
     pub present: bool,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 #[repr(C, packed)]
 pub struct Entry {
     pub offset_low: u16,
@@ -136,7 +124,7 @@ impl Entry {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 #[repr(C, packed)]
 pub struct IDTReg {
     pub limit: u16,
@@ -146,13 +134,13 @@ pub struct IDTReg {
 impl IDTReg {
     pub unsafe fn load(&self) {
         debug!("Initialising.");
-        seq_macro::seq!(N in 0..256 {
-            let base = isr::isr~N as usize as u64;
-            let entry = &mut (*ENTRIES.get())[N];
+        for n in 0..256 {
+            let base = isr::ISRS[n] as usize as u64;
+            let entry = &mut (*ENTRIES.get())[n];
             entry.offset_low = base as u16;
             entry.offset_middle = (base >> 16) as u16;
             entry.offset_high = (base >> 32) as u32;
-        });
+        }
 
         core::arch::asm!("lidt [{}]", in(reg) self, options(readonly, preserves_flags));
     }
@@ -160,26 +148,18 @@ impl IDTReg {
 
 unsafe impl Sync for IDTReg {}
 
-pub fn set_handler(
-    isr: u8,
-    ist: u8,
-    dpl: PrivilegeLevel,
-    func: HandlerFn,
-    is_irq: bool,
-    should_iret: bool,
-) {
+pub fn set_handler(isr: u8, ist: u8, dpl: PrivilegeLevel, func: HandlerFn, is_irq: bool) {
     let handler = unsafe { &mut (*HANDLERS.get())[isr as usize] };
-    assert_eq!(
-        handler.func as usize, default_handler as usize,
-        "Tried to register already existing ISR #{isr}",
-    );
+
+    if !core::ptr::fn_addr_eq(
+        handler.func,
+        default_handler as for<'a> unsafe extern "sysv64" fn(&'a mut RegisterState),
+    ) {
+        panic!("Tried to register already existing ISR #{isr}");
+    }
 
     let ent = unsafe { &mut (*ENTRIES.get())[isr as usize] };
     ent.flags = ent.flags.with_dpl(dpl).with_ist(ist);
 
-    *handler = InterruptHandler {
-        func,
-        is_irq,
-        should_iret,
-    };
+    *handler = InterruptHandler { func, is_irq };
 }

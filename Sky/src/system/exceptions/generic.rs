@@ -12,10 +12,10 @@ super::generic_exception!(double_fault, "double fault");
 super::generic_exception!(coproc_segment_overrun, "coprocessor segment overrun");
 
 pub unsafe extern "sysv64" fn reserved(regs: &mut crate::system::RegisterState) {
-    exception_msg!(
+    super::handle_exception(
         "reserved",
         "This should NEVER happen! Make an issue and attach the serial output.",
-        regs
+        regs,
     );
 }
 

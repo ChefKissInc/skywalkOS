@@ -12,6 +12,7 @@ name = "sky"
 
 [profile.release]
 strip = true
+panic = "abort"
 
 [dependencies]
 amd64 = { path = "../Libraries/AMD64" }

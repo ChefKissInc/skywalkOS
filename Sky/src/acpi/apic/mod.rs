@@ -294,14 +294,14 @@ pub fn setup(state: &mut crate::system::state::SystemState) {
         let mut madt = state.madt.as_ref().unwrap().lock();
         let base = APICBase::read();
         if base.apic_global_enable() && base.apic_base() != 0 {
-            debug!("APIC already enabled, base is {base:#X?}");
+            trace!("APIC already enabled, base is {base:#X?}");
             madt.lapic_addr = base.apic_base() << 12;
         } else {
-            debug!("Old APIC base is {base:#X?}");
+            trace!("Old APIC base is {base:#X?}");
             let base = base
                 .with_apic_global_enable(true)
                 .with_apic_base(madt.lapic_addr >> 12);
-            debug!("New APIC base is {base:#X?}");
+            trace!("New APIC base is {base:#X?}");
             base.write();
         }
         madt.lapic_addr
@@ -317,10 +317,10 @@ pub fn setup(state: &mut crate::system::state::SystemState) {
             PageTableFlags::new_present().with_writable(true),
         );
     }
-    debug!("LAPIC address is {addr:#X?}");
+    trace!("LAPIC address is {addr:#X}");
     let lapic = LocalAPIC::new(virt_addr);
     let ver = lapic.read_ver();
-    debug!("LAPIC version is {ver:#X?}");
+    trace!("LAPIC version is {ver:#X?}");
 
     // Do not trust LAPIC to be empty at boot
     if ver.max_lvt_entry() > 2 {
@@ -334,7 +334,6 @@ pub fn setup(state: &mut crate::system::state::SystemState) {
             PrivilegeLevel::Supervisor,
             lapic_error_handler,
             false,
-            true,
         );
     }
 
@@ -362,7 +361,6 @@ pub fn setup(state: &mut crate::system::state::SystemState) {
         0,
         PrivilegeLevel::Supervisor,
         spurious_vector_handler,
-        true,
         true,
     );
 

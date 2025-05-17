@@ -40,7 +40,7 @@ impl Terminal {
             state.pml4.as_ref().unwrap().lock().map(
                 base,
                 base - amd64::paging::PHYS_VIRT_OFFSET,
-                ((self.fb.height * self.fb.stride + 0xFFF) / PAGE_SIZE as usize) as _,
+                (self.fb.height * self.fb.stride).div_ceil(PAGE_SIZE as usize) as _,
                 PageTableFlags::new_present()
                     .with_writable(true)
                     .with_pat_entry(2),

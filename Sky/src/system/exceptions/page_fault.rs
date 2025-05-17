@@ -5,7 +5,7 @@ pub unsafe extern "sysv64" fn page_fault(regs: &mut crate::system::RegisterState
     core::arch::asm!("mov {}, cr2", out(reg) cr2, options(nomem, nostack, preserves_flags));
 
     let msg = format!(
-        "There was a {} while {} a {} page at {cr2:#X?}.{}{}{}{}",
+        "There was a {} while {} a {} page at {cr2:#X}.{}{}{}{}",
         if (regs.err_code & (1 << 0)) == 0 {
             "non-present page access"
         } else {
@@ -43,5 +43,5 @@ pub unsafe extern "sysv64" fn page_fault(regs: &mut crate::system::RegisterState
         },
     );
 
-    super::exception_msg!("page fault", msg, regs);
+    super::handle_exception("page fault", &msg, regs);
 }

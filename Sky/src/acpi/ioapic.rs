@@ -10,7 +10,7 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
     madt.isos.iter().find(|v| v.irq == irq).map_or_else(
         || {
             let ioapic = find_for_gsi(&madt, 0).unwrap();
-            debug!("Routing legacy irq {irq} to I/O APIC {}", ioapic.id);
+            trace!("Routing legacy irq {irq} to I/O APIC {}", ioapic.id);
             ioapic.write_redir(
                 u32::from(irq),
                 IOAPICRedir::new()
@@ -22,7 +22,7 @@ pub fn wire_legacy_irq(irq: u8, masked: bool) {
             let ioapic =
                 find_for_gsi(&madt, v.gsi).unwrap_or_else(|| find_for_gsi(&madt, 0).unwrap());
             let gsi = v.gsi;
-            debug!(
+            trace!(
                 "Routing legacy irq {irq} to I/O APIC {} at gsi {gsi}",
                 ioapic.id
             );

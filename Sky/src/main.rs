@@ -5,9 +5,8 @@
 #![deny(warnings, clippy::nursery, unused_extern_crates)]
 #![feature(alloc_error_handler, sync_unsafe_cell)]
 
-use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
-
 use acpi::{tables::rsdp::RootSystemDescPtr, ACPIState};
+use alloc::boxed::Box;
 use hashbrown::HashMap;
 use incr_id::IncrementalIDGen;
 use skykit::{osdtentry::OSDTENTRY_NAME_KEY, SKExtensions};
@@ -55,7 +54,10 @@ macro_rules! cli {
 
 pub fn init_core(boot_info: &skyliftkit::BootInfo) {
     let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    state.kern_symbols = Some(boot_info.kern_symbols);
+    #[cfg(debug_assertions)]
+    {
+        state.kern_symbols = Some(boot_info.kern_symbols);
+    }
     state.verbose = boot_info.verbose;
     state.serial_enabled = boot_info.serial_enabled;
 
@@ -68,18 +70,22 @@ pub fn init_core(boot_info: &skyliftkit::BootInfo) {
 
     state.pmm = Some(BitmapAllocator::new(boot_info.memory_map).into());
 
-    // Switch ownership of symbol data to kernel
-    state.kern_symbols = Some(
-        boot_info
-            .kern_symbols
-            .iter()
-            .map(|v| skyliftkit::KernSymbol {
-                name: Box::leak(v.name.to_owned().into_boxed_str()),
-                ..*v
-            })
-            .collect::<Vec<_>>()
-            .leak(),
-    );
+    #[cfg(debug_assertions)]
+    {
+        // Switch ownership of symbol data to kernel
+        use alloc::{borrow::ToOwned, vec::Vec};
+        state.kern_symbols = Some(
+            boot_info
+                .kern_symbols
+                .iter()
+                .map(|v| skyliftkit::KernSymbol {
+                    name: Box::leak(v.name.to_owned().into_boxed_str()),
+                    ..*v
+                })
+                .collect::<Vec<_>>()
+                .leak(),
+        );
+    }
 
     let root = OSDTEntry {
         properties: HashMap::from([
@@ -119,7 +125,7 @@ extern "C" fn kernel_main(boot_info: &'static skyliftkit::BootInfo) -> ! {
 
     let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     state.terminal = boot_info.frame_buffer.map(|fb_info| {
-        debug!("Got boot display: {fb_info:X?}");
+        trace!("Got boot display: {fb_info:X?}");
         let mut terminal = crate::system::terminal::Terminal::new(unsafe {
             skybuffer::fb::FrameBuffer::new(
                 fb_info.base,

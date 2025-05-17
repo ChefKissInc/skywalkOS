@@ -107,14 +107,7 @@ impl Scheduler {
         let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
         state.lapic.as_ref().unwrap().setup_timer(timer);
 
-        crate::interrupts::idt::set_handler(
-            128,
-            1,
-            PrivilegeLevel::Supervisor,
-            schedule,
-            true,
-            true,
-        );
+        crate::interrupts::idt::set_handler(128, 1, PrivilegeLevel::Supervisor, schedule, true);
         crate::acpi::ioapic::wire_legacy_irq(96, false);
 
         Self {
@@ -178,22 +171,27 @@ impl Scheduler {
                     elf::abi::R_X86_64_RELATIVE => {
                         *ptr = virt_addr.checked_add_signed(reloc.r_addend).unwrap()
                     }
-                    v => unimplemented!("{v:#X?}"),
+                    v => unimplemented!("{v:#X}"),
                 }
             }
         }
 
         let pid = self.pid_gen.next();
-        let proc = self
+        let Ok(proc) = self
             .processes
             .try_insert(pid, super::Process::new(pid, path, virt_addr))
-            .unwrap();
+        else {
+            unreachable!()
+        };
         unsafe { proc.cr3.lock().map_higher_half() }
         proc.track_alloc(virt_addr, data.len() as _, AllocationType::Writable);
         let tid = self.tid_gen.next();
         let stack_addr = proc.allocate(super::STACK_SIZE).0;
         let thread = proc.new_thread(tid, virt_addr + exec.ehdr.e_entry, stack_addr);
-        self.threads.try_insert(tid, thread).unwrap()
+        let Ok(thread) = self.threads.try_insert(tid, thread) else {
+            unreachable!()
+        };
+        thread
     }
 
     pub fn current_thread_mut(&mut self) -> Option<&mut super::Thread> {
@@ -276,7 +274,6 @@ impl Scheduler {
             1,
             PrivilegeLevel::Supervisor,
             irq_handler,
-            true,
             true,
         );
 

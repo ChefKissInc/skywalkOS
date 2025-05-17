@@ -23,11 +23,11 @@ impl ACPIState {
 
         for ent in rsdp.as_type().iter() {
             if !ent.validate() {
-                debug!("Invalid table: {ent:X?}");
+                trace!("Invalid table: {ent:X?}");
                 continue;
             }
 
-            debug!("Table: {ent:#X?}");
+            trace!("Table: {ent:#X?}");
             tables.push(ent);
         }
 

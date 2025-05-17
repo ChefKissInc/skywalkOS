@@ -13,12 +13,9 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
     let sys_state = &mut *crate::system::state::SYS_STATE.get();
     let mut scheduler = sys_state.scheduler.as_ref().unwrap().lock();
 
-    let flow = 'flow: {
-        let Ok(v) = SystemCall::try_from(state.rdi) else {
-            break 'flow ControlFlow::Break(Some(TerminationReason::MalformedArgument));
-        };
-
-        match v {
+    let flow = SystemCall::try_from(state.rdi).map_or(
+        ControlFlow::Break(Some(TerminationReason::MalformedArgument)),
+        |v| match v {
             SystemCall::KPrint => handlers::kprint(&scheduler, state),
             SystemCall::MsgRecv => handlers::msg::recv(&mut scheduler, state),
             SystemCall::MsgSend => handlers::msg::send(&mut scheduler, state),
@@ -33,8 +30,8 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
             SystemCall::NewOSDTEntry => handlers::os_dt_entry::new_entry(state),
             SystemCall::GetOSDTEntryInfo => handlers::os_dt_entry::get_info(&mut scheduler, state),
             SystemCall::SetOSDTEntryProp => handlers::os_dt_entry::set_prop(&mut scheduler, state),
-        }
-    };
+        },
+    );
 
     let ControlFlow::Break(reason) = flow else {
         return;
@@ -51,5 +48,5 @@ unsafe extern "sysv64" fn syscall_handler(state: &mut RegisterState) {
 }
 
 pub fn setup() {
-    crate::interrupts::idt::set_handler(249, 1, PrivilegeLevel::User, syscall_handler, false, true);
+    crate::interrupts::idt::set_handler(249, 1, PrivilegeLevel::User, syscall_handler, false);
 }

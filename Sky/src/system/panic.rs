@@ -1,20 +1,20 @@
 // Copyright (c) ChefKiss 2021-2025. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use unwinding::abi::{UnwindContext, UnwindReasonCode, _Unwind_Backtrace, _Unwind_GetIP};
-
+#[cfg(debug_assertions)]
 struct CallbackData<'a> {
     counter: usize,
     kern_symbols: &'a [skyliftkit::KernSymbol],
 }
 
+#[cfg(debug_assertions)]
 extern "C" fn callback(
-    unwind_ctx: &UnwindContext<'_>,
+    unwind_ctx: &unwinding::abi::UnwindContext<'_>,
     arg: *mut core::ffi::c_void,
-) -> UnwindReasonCode {
+) -> unwinding::abi::UnwindReasonCode {
     let data = unsafe { &mut *arg.cast::<CallbackData>() };
     data.counter += 1;
 
-    let ip = _Unwind_GetIP(unwind_ctx) as u64;
+    let ip = unwinding::abi::_Unwind_GetIP(unwind_ctx) as u64;
     data.kern_symbols
         .iter()
         .find(|v| ip >= v.start && ip < v.end)
@@ -33,33 +33,17 @@ extern "C" fn callback(
             },
         );
 
-    UnwindReasonCode::NO_REASON
+    unwinding::abi::UnwindReasonCode::NO_REASON
 }
 
-#[panic_handler]
-pub fn panic(info: &core::panic::PanicInfo) -> ! {
-    crate::cli!();
-    while super::serial::SERIAL.is_locked() {
-        unsafe { super::serial::SERIAL.force_unlock() }
-    }
-    let state = unsafe { &mut *super::state::SYS_STATE.get() };
-
-    if state.in_panic.load(core::sync::atomic::Ordering::Relaxed) {
-        error!("Panicked while panicking!");
-
-        crate::hlt_loop!();
-    }
-    state
-        .in_panic
-        .store(true, core::sync::atomic::Ordering::Relaxed);
-
-    error!("{info}");
+#[cfg(debug_assertions)]
+fn backtrace(state: &super::state::SystemState) {
     error!("Backtrace:");
     let mut data = CallbackData {
         counter: 0,
         kern_symbols: state.kern_symbols.as_ref().unwrap(),
     };
-    _Unwind_Backtrace(callback, core::ptr::addr_of_mut!(data).cast());
+    unwinding::abi::_Unwind_Backtrace(callback, core::ptr::addr_of_mut!(data).cast());
 
     if let Some(ctx) = state.interrupt_context {
         data.counter = 0;
@@ -96,6 +80,29 @@ pub fn panic(info: &core::panic::PanicInfo) -> ! {
                 );
         }
     }
+}
+
+#[panic_handler]
+pub fn panic(info: &core::panic::PanicInfo) -> ! {
+    crate::cli!();
+    while super::serial::SERIAL.is_locked() {
+        unsafe { super::serial::SERIAL.force_unlock() }
+    }
+    let state = unsafe { &mut *super::state::SYS_STATE.get() };
+
+    if state.in_panic.load(core::sync::atomic::Ordering::Relaxed) {
+        error!("Panicked while panicking!");
+
+        crate::hlt_loop!();
+    }
+    state
+        .in_panic
+        .store(true, core::sync::atomic::Ordering::Relaxed);
+
+    error!("{info}");
+
+    #[cfg(debug_assertions)]
+    backtrace(state);
 
     crate::hlt_loop!();
 }

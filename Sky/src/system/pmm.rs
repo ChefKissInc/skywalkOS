@@ -25,9 +25,9 @@ impl BitmapAllocator {
             .max()
             .unwrap();
 
-        let bitmap_sz = (highest_addr / PAGE_SIZE) / 8 + 8; // Why + 8?
-        debug!(
-            "Highest usable address: {highest_addr:#X?}, Bitmap size: {bitmap_sz} bytes, {} \
+        let bitmap_sz = (highest_addr / PAGE_SIZE).div_ceil(8);
+        trace!(
+            "Highest usable address: {highest_addr:#X}, Bitmap size: {bitmap_sz} bytes, {} \
              entries",
             bitmap_sz / 8
         );
@@ -55,7 +55,7 @@ impl BitmapAllocator {
                 continue;
             }
 
-            debug!("Base: {:#X?}, End: {:#X?}", v.base, v.base + v.length);
+            trace!("Base: {:#X}, End: {:#X}", v.base, v.base + v.length);
             let v = if bitmap.is_empty() && v.length >= bitmap_sz {
                 bitmap = unsafe {
                     core::slice::from_raw_parts_mut(
@@ -73,8 +73,8 @@ impl BitmapAllocator {
 
             let base = v.base / PAGE_SIZE;
             let count = v.length / PAGE_SIZE;
-            debug!(
-                "Base: {base:#X?}, Count: {count:#X?}, End: {}",
+            trace!(
+                "Base: {base:#X}, Count: {count:#X}, End: {:#X}",
                 base + count
             );
             for i in base..(base + count) {

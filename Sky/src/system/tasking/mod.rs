@@ -117,7 +117,7 @@ impl Process {
             panic!("PID {}: Address {addr:#X} already allocated", self.id);
         }
 
-        let page_count = (size + 0xFFF) / 0x1000;
+        let page_count = size.div_ceil(0x1000);
 
         assert!(
             unsafe {
@@ -191,7 +191,7 @@ impl Process {
         let _lock = self.alloc_lock.lock();
 
         let (size, ty) = self.allocations.remove(&addr).unwrap();
-        let page_count = (size + 0xFFF) / 0x1000;
+        let page_count = size.div_ceil(0x1000);
         trace!(
             "PID {}: Freeing {addr:#X} ({ty:?}, {page_count} pages, {size} bytes)",
             self.id
@@ -249,7 +249,7 @@ impl Process {
     pub fn allocate(&mut self, size: u64) -> (u64, u64) {
         let _lock = self.alloc_lock.lock();
 
-        let page_count = (size + 0xFFF) / 0x1000;
+        let page_count = size.div_ceil(0x1000);
         trace!(
             "PID {}: Allocating {page_count} pages ({size} bytes)",
             self.id
