@@ -6,7 +6,7 @@
 
 // #[macro_use]
 // extern crate log;
-#[macro_use]
+// #[macro_use]
 extern crate alloc;
 #[macro_use]
 extern crate bitfield_struct;
@@ -18,7 +18,7 @@ use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 use skykit::{
     msg::Message,
-    osdtentry::{OSDTEntry, OSDTENTRY_NAME_KEY, SKEXT_PROC_KEY},
+    osdtentry::{OSDTEntry, OSDTENTRY_NAME_KEY},
     osvalue::OSValue,
     syscall::SystemCall,
     userspace::{logger::KWriter, port::Port},
@@ -139,11 +139,13 @@ fn print_ent(ent: OSDTEntry, ident: usize) {
 }
 
 #[no_mangle]
-extern "C" fn _start(instance: OSDTEntry) -> ! {
+extern "C" fn _start(_instance: OSDTEntry) -> ! {
     skykit::userspace::logger::init();
 
     let this = PS2Ctl::new();
     this.init();
+    let mut ed_mode = false;
+    let mut shift = false;
     let mut s = String::new();
     write!(KWriter, "> ").unwrap();
     loop {
@@ -155,21 +157,52 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
         while this.output_full() {
             let event = match unsafe { this.data_port.read() } {
                 0xE => Ps2Event::BackSpace,
-                v @ 0x2..=0xB => {
-                    Ps2Event::Pressed("1234567890".chars().nth(v as usize - 0x2).unwrap())
-                }
+                v @ 0x2..=0xD => Ps2Event::Pressed(
+                    (if shift {
+                        "!@#$%^&*()_+"
+                    } else {
+                        "1234567890-="
+                    })
+                    .chars()
+                    .nth(v as usize - 0x2)
+                    .unwrap(),
+                ),
                 0x1C => Ps2Event::Pressed('\n'),
-                v @ 0x10..=0x1C => {
-                    Ps2Event::Pressed("qwertyuiop".chars().nth(v as usize - 0x10).unwrap())
-                }
-                v @ 0x1E..=0x26 => {
-                    Ps2Event::Pressed("asdfghjkl".chars().nth(v as usize - 0x1E).unwrap())
-                }
-                0x29 => Ps2Event::Pressed('0'),
-                v @ 0x2C..=0x32 => {
-                    Ps2Event::Pressed("zxcvbnm".chars().nth(v as usize - 0x2C).unwrap())
-                }
+                v @ 0x10..=0x1C => Ps2Event::Pressed(
+                    (if shift {
+                        "QWERTYUIOP{}"
+                    } else {
+                        "qwertyuiop[]"
+                    })
+                    .chars()
+                    .nth(v as usize - 0x10)
+                    .unwrap(),
+                ),
+                v @ 0x1E..=0x29 => Ps2Event::Pressed(
+                    (if shift {
+                        "ASDFGHJKL:\"~"
+                    } else {
+                        "asdfghjkl;'`"
+                    })
+                    .chars()
+                    .nth(v as usize - 0x1E)
+                    .unwrap(),
+                ),
+                v @ 0x2B..=0x35 => Ps2Event::Pressed(
+                    (if shift { "|ZXCVBNM<>?" } else { "\\zxcvbnm,./" })
+                        .chars()
+                        .nth(v as usize - 0x2B)
+                        .unwrap(),
+                ),
                 0x39 => Ps2Event::Pressed(' '),
+                0x2A | 0x36 => {
+                    shift = true;
+                    continue;
+                }
+                0xAA | 0xB6 => {
+                    shift = false;
+                    continue;
+                }
                 v => Ps2Event::Other(v),
             };
 
@@ -183,50 +216,49 @@ extern "C" fn _start(instance: OSDTEntry) -> ! {
                 continue;
             }
 
-            match s.as_str() {
-                "osdt" => print_ent(OSDTEntry::default(), 0),
-                "msgparent" => {
-                    let pid: u64 = instance
-                        .parent()
-                        .unwrap()
-                        .parent()
-                        .unwrap()
-                        .get_property(SKEXT_PROC_KEY)
-                        .unwrap()
-                        .try_into()
-                        .unwrap();
-
-                    unsafe {
-                        Message::new(pid, vec![1, 2, 3, 4].leak()).send();
-                    }
+            if ed_mode {
+                if s.as_str() == "!END" {
+                    ed_mode = false;
+                    write!(KWriter, "> ").unwrap();
                 }
-                "accessinvalid" => unsafe {
-                    core::arch::asm!(
-                        "int 249",
-                        in("rdi") SystemCall::KPrint as u64,
-                        in("rsi") 0u64,
-                        in("rdx") 0u64,
-                        options(nostack),
-                    );
-                },
-                v if v.split_whitespace().next() == Some("msg") => 'a: {
-                    let mut v = v.split_whitespace().skip(1);
-                    let Some(pid) = v.next().and_then(|v| v.parse().ok()) else {
-                        writeln!(KWriter, "Expected PID").unwrap();
-                        break 'a;
-                    };
-                    let Some(data) = v.next().and_then(|v| v.parse::<u64>().ok()) else {
-                        writeln!(KWriter, "Expected data").unwrap();
-                        break 'a;
-                    };
-                    unsafe {
-                        Message::new(pid, data.to_be_bytes().to_vec().leak()).send();
+                s.clear();
+            } else {
+                match s.as_str() {
+                    "OSDeviceTree" => print_ent(OSDTEntry::default(), 0),
+                    "AccessInvalid" => unsafe {
+                        core::arch::asm!(
+                            "int 249",
+                            in("rdi") SystemCall::KPrint as u64,
+                            in("rsi") 0u64,
+                            in("rdx") 0u64,
+                            options(nostack),
+                        );
+                        panic!("The kernel did not terminate the process...");
+                    },
+                    v if v.split_whitespace().next() == Some("msg") => 'a: {
+                        let mut v = v.split_whitespace().skip(1);
+                        let Some(pid) = v.next().and_then(|v| v.parse().ok()) else {
+                            writeln!(KWriter, "Expected PID").unwrap();
+                            break 'a;
+                        };
+                        let Some(data) = v.next().and_then(|v| v.parse::<u64>().ok()) else {
+                            writeln!(KWriter, "Expected data").unwrap();
+                            break 'a;
+                        };
+                        unsafe {
+                            Message::new(pid, data.to_be_bytes().to_vec().leak()).send();
+                        }
                     }
+                    "Edit" => {
+                        ed_mode = true;
+                        s.clear();
+                        continue;
+                    }
+                    _ => writeln!(KWriter, "{s}").unwrap(),
                 }
-                _ => writeln!(KWriter, "{s}").unwrap(),
+                s.clear();
+                write!(KWriter, "> ").unwrap();
             }
-            write!(KWriter, "> ").unwrap();
-            s.clear();
         }
     }
 }
