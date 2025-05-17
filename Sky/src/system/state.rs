@@ -24,8 +24,6 @@ pub struct OSDTEntry {
 }
 
 pub struct SystemState {
-    #[cfg(debug_assertions)]
-    pub kern_symbols: Option<&'static [skyliftkit::KernSymbol]>,
     pub verbose: bool,
     pub serial_enabled: bool,
     pub pmm: Option<spin::Mutex<BitmapAllocator>>,
@@ -52,8 +50,6 @@ impl SystemState {
     #[inline]
     pub const fn new() -> Self {
         Self {
-            #[cfg(debug_assertions)]
-            kern_symbols: None,
             verbose: cfg!(debug_assertions),
             serial_enabled: false,
             pmm: None,

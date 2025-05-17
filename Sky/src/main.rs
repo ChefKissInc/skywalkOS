@@ -54,10 +54,6 @@ macro_rules! cli {
 
 pub fn init_core(boot_info: &skyliftkit::BootInfo) {
     let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
-    #[cfg(debug_assertions)]
-    {
-        state.kern_symbols = Some(boot_info.kern_symbols);
-    }
     state.verbose = boot_info.verbose;
     state.serial_enabled = boot_info.serial_enabled;
 
@@ -69,23 +65,6 @@ pub fn init_core(boot_info: &skyliftkit::BootInfo) {
     }
 
     state.pmm = Some(BitmapAllocator::new(boot_info.memory_map).into());
-
-    #[cfg(debug_assertions)]
-    {
-        // Switch ownership of symbol data to kernel
-        use alloc::{borrow::ToOwned, vec::Vec};
-        state.kern_symbols = Some(
-            boot_info
-                .kern_symbols
-                .iter()
-                .map(|v| skyliftkit::KernSymbol {
-                    name: Box::leak(v.name.to_owned().into_boxed_str()),
-                    ..*v
-                })
-                .collect::<Vec<_>>()
-                .leak(),
-        );
-    }
 
     let root = OSDTEntry {
         properties: HashMap::from([

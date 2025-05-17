@@ -1,13 +1,8 @@
 // Copyright (c) ChefKiss 2021-2025. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
-
 use amd64::paging::{KERNEL_VIRT_OFFSET, PAGE_SIZE};
 
-pub fn parse(
-    mem_mgr: &mut super::mem::MemoryManager,
-    buffer: &[u8],
-) -> (skyliftkit::EntryPoint, Vec<skyliftkit::KernSymbol>) {
+pub fn parse(mem_mgr: &mut super::mem::MemoryManager, buffer: &[u8]) -> skyliftkit::EntryPoint {
     let elf = elf::ElfBytes::<elf::endian::LittleEndian>::minimal_parse(buffer).unwrap();
 
     assert_eq!(elf.ehdr.class, elf::file::Class::ELF64);
@@ -16,26 +11,6 @@ pub fn parse(
         elf.ehdr.e_entry >= KERNEL_VIRT_OFFSET,
         "Only higher-half kernels"
     );
-
-    let symbols = elf
-        .symbol_table()
-        .unwrap()
-        .map_or_else(Vec::new, |(symtab, strtab)| {
-            symtab
-                .iter()
-                .map(|v| skyliftkit::KernSymbol {
-                    start: v.st_value,
-                    end: v.st_value + v.st_size,
-                    name: Box::leak(
-                        strtab
-                            .get(v.st_name as _)
-                            .unwrap_or("<unknown>")
-                            .to_owned()
-                            .into_boxed_str(),
-                    ),
-                })
-                .collect()
-        });
 
     trace!("Parsing program headers: ");
     let segments = elf.segments().unwrap();
@@ -99,10 +74,7 @@ pub fn parse(
         }
     }
 
-    (
-        unsafe {
-            core::mem::transmute::<*const (), skyliftkit::EntryPoint>(elf.ehdr.e_entry as *const ())
-        },
-        symbols,
-    )
+    unsafe {
+        core::mem::transmute::<*const (), skyliftkit::EntryPoint>(elf.ehdr.e_entry as *const ())
+    }
 }

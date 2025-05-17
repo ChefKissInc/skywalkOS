@@ -5,7 +5,7 @@
 
 use skybuffer::pixel::PixelBitMask;
 
-pub const CURRENT_REVISION: u64 = 0x1B;
+pub const CURRENT_REVISION: u64 = 0x1C;
 
 pub type EntryPoint = extern "sysv64" fn(&'static BootInfo) -> !;
 
@@ -73,7 +73,6 @@ pub struct FrameBufferInfo {
 #[derive(Debug)]
 pub struct BootInfo {
     pub revision: u64,
-    pub kern_symbols: &'static [KernSymbol],
     pub verbose: bool,
     pub serial_enabled: bool,
     pub memory_map: &'static [MemoryEntry],
@@ -86,7 +85,6 @@ impl BootInfo {
     #[inline]
     #[must_use]
     pub fn new(
-        kern_symbols: &'static [KernSymbol],
         verbose: bool,
         serial_enabled: bool,
         frame_buffer: Option<&'static FrameBufferInfo>,
@@ -95,7 +93,6 @@ impl BootInfo {
     ) -> Self {
         Self {
             revision: CURRENT_REVISION,
-            kern_symbols,
             verbose,
             serial_enabled,
             memory_map: Default::default(),
