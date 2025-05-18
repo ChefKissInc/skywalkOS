@@ -34,46 +34,40 @@ impl Colour {
     pub const fn as_u32(self, format: PixelFormat) -> u32 {
         let (r, g, b, a) = (self.r as u32, self.g as u32, self.b as u32, self.a as u32);
 
-        let (r_shift, g_shift, b_shift, a_shift) = match format {
-            PixelFormat::BGR => (16, 8, 0, None),
-            PixelFormat::RGB => (0, 8, 16, None),
-            PixelFormat::BGRA => (16, 8, 0, Some(24)),
-            PixelFormat::RGBA => (0, 8, 16, Some(24)),
+        let (r_mask, r_shift, g_mask, g_shift, b_mask, b_shift, a_mask_shift) = match format {
+            PixelFormat::BGR => (0xFF0000, 16, 0xFF00, 8, 0xFF, 0, None),
+            PixelFormat::RGB => (0xFF, 0, 0xFF00, 8, 0xFF0000, 16, None),
+            PixelFormat::BGRA => (0xFF0000, 16, 0xFF00, 8, 0xFF, 0, Some((0xFF000000, 24))),
+            PixelFormat::RGBA => (0xFF, 0, 0xFF00, 8, 0xFF0000, 16, Some((0xFF000000, 24))),
             PixelFormat::BitMask {
                 r: r_mask,
                 g: g_mask,
                 b: b_mask,
                 a: a_mask,
-            } => {
-                let (r_shift, g_shift, b_shift, a_mask_shift) = (
-                    r_mask.trailing_zeros(),
-                    g_mask.trailing_zeros(),
-                    b_mask.trailing_zeros(),
-                    if let Some(v) = a_mask {
-                        Some((v, v.trailing_zeros()))
-                    } else {
-                        None
-                    },
-                );
-                return if let Some((a_mask, a_shift)) = a_mask_shift {
-                    ((r << r_shift) & r_mask)
-                        | ((g << g_shift) & g_mask)
-                        | ((b << b_shift) & b_mask)
-                        | ((a << a_shift) & a_mask)
+            } => (
+                r_mask,
+                r_mask.trailing_zeros(),
+                g_mask,
+                g_mask.trailing_zeros(),
+                b_mask,
+                b_mask.trailing_zeros(),
+                if let Some(v) = a_mask {
+                    Some((v, v.trailing_zeros()))
                 } else {
-                    ((((r * a) / 255) << r_shift) & r_mask)
-                        | ((((g * a) / 255) << g_shift) & g_mask)
-                        | ((((b * a) / 255) << b_shift) & b_mask)
-                };
-            }
+                    None
+                },
+            ),
         };
 
-        if let Some(a_shift) = a_shift {
-            (r << r_shift) | (g << g_shift) | (b << b_shift) | (a << a_shift)
+        if let Some((a_mask, a_shift)) = a_mask_shift {
+            ((r << r_shift) & r_mask)
+                | ((g << g_shift) & g_mask)
+                | ((b << b_shift) & b_mask)
+                | ((a << a_shift) & a_mask)
         } else {
-            (((r * a) / 255) << r_shift)
-                | (((g * a) / 255) << g_shift)
-                | (((b * a) / 255) << b_shift)
+            ((((r * a) / 255) << r_shift) & r_mask)
+                | ((((g * a) / 255) << g_shift) & g_mask)
+                | ((((b * a) / 255) << b_shift) & b_mask)
         }
     }
 }
