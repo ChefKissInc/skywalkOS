@@ -111,7 +111,7 @@ extern "C" fn kernel_main(boot_info: &'static skyliftkit::BootInfo) -> ! {
                 fb_info.resolution.width,
                 fb_info.resolution.height,
                 fb_info.pitch,
-                fb_info.pixel_bitmask,
+                fb_info.pixel_format,
             )
         });
         terminal.clear();

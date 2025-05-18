@@ -2,30 +2,30 @@
 
 use alloc::boxed::Box;
 
-use skybuffer::pixel::PixelBitMask;
+use skybuffer::pixel::PixelFormat;
 use skyliftkit::{FrameBufferInfo, ScreenRes};
 use uefi::{
     boot::ScopedProtocol,
     boot::{OpenProtocolAttributes, OpenProtocolParams},
-    proto::console::gop::{GraphicsOutput, PixelFormat},
+    proto::console::gop::{GraphicsOutput, PixelFormat as GopPixelFormat},
 };
 
-fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Option<Box<FrameBufferInfo>> {
+fn fbinfo_from_gop(gop: &mut ScopedProtocol<GraphicsOutput>) -> Option<Box<FrameBufferInfo>> {
     let mode_info = gop.current_mode_info();
-    let pixel_bitmask = match mode_info.pixel_format() {
-        PixelFormat::Rgb => PixelBitMask::RGBA,
-        PixelFormat::Bgr => PixelBitMask::BGRA,
-        PixelFormat::Bitmask => {
+    let pixel_format = match mode_info.pixel_format() {
+        GopPixelFormat::Rgb => PixelFormat::RGB,
+        GopPixelFormat::Bgr => PixelFormat::BGR,
+        GopPixelFormat::Bitmask => {
             gop.current_mode_info()
                 .pixel_bitmask()
-                .map(|v| PixelBitMask::Custom {
+                .map(|v| PixelFormat::BitMask {
                     r: v.red,
                     g: v.green,
                     b: v.blue,
-                    a: v.reserved,
+                    a: None,
                 })?
         }
-        PixelFormat::BltOnly => {
+        GopPixelFormat::BltOnly => {
             return None;
         }
     };
@@ -36,7 +36,7 @@ fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Option<Box<FrameB
             .map_addr(|v| v + amd64::paging::PHYS_VIRT_OFFSET as usize)
             .cast(),
         resolution: ScreenRes::new(mode_info.resolution()),
-        pixel_bitmask,
+        pixel_format,
         pitch: gop.current_mode_info().stride(),
     }))
 }
@@ -60,12 +60,14 @@ pub fn init() -> Option<Box<FrameBufferInfo>> {
         )
         .unwrap()
     };
-    let mode = gop
-        .modes()
-        .filter(|v| v.info().pixel_format() != PixelFormat::BltOnly)
-        .max_by_key(|v| v.info().resolution().0)?;
-    if let Err(e) = gop.set_mode(&mode) {
-        warn!("Failed to set mode: {e}.");
+    if gop.current_mode_info().pixel_format() == GopPixelFormat::BltOnly {
+        let mode = gop
+            .modes()
+            .filter(|v| v.info().pixel_format() != GopPixelFormat::BltOnly)
+            .max_by_key(|v| v.info().resolution().0)?;
+        if let Err(e) = gop.set_mode(&mode) {
+            warn!("Failed to set mode: {e}.");
+        }
     }
-    fbinfo_from_gop(gop)
+    fbinfo_from_gop(&mut gop)
 }

@@ -8,7 +8,7 @@ pub struct FrameBuffer {
     pub width: usize,
     pub height: usize,
     pub stride: usize,
-    pub bitmask: crate::pixel::PixelBitMask,
+    pub format: crate::pixel::PixelFormat,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -25,14 +25,14 @@ impl FrameBuffer {
         width: usize,
         height: usize,
         stride: usize,
-        bitmask: crate::pixel::PixelBitMask,
+        format: crate::pixel::PixelFormat,
     ) -> Self {
         Self {
             base: core::slice::from_raw_parts_mut(data, height * stride),
             width,
             height,
             stride,
-            bitmask,
+            format,
         }
     }
 

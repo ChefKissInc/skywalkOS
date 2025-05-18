@@ -3,9 +3,9 @@
 #![no_std]
 #![deny(warnings, clippy::nursery, unused_extern_crates)]
 
-use skybuffer::pixel::PixelBitMask;
+use skybuffer::pixel::PixelFormat;
 
-pub const CURRENT_REVISION: u64 = 0x1C;
+pub const CURRENT_REVISION: u64 = 0x1D;
 
 pub type EntryPoint = extern "sysv64" fn(&'static BootInfo) -> !;
 
@@ -64,7 +64,7 @@ impl ScreenRes {
 #[derive(Debug)]
 pub struct FrameBufferInfo {
     pub resolution: ScreenRes,
-    pub pixel_bitmask: PixelBitMask,
+    pub pixel_format: PixelFormat,
     pub pitch: usize,
     pub base: *mut u32,
 }

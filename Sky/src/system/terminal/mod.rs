@@ -50,7 +50,8 @@ impl Terminal {
 
     #[inline]
     pub fn clear(&mut self) {
-        self.fb.clear(0);
+        self.fb
+            .clear(Colour::new(0, 0, 0, 0).as_u32(self.fb.format));
         self.x = 0;
         self.y = 0;
     }
@@ -64,7 +65,7 @@ impl Terminal {
             return;
         };
         let (x, y) = (self.x * font::FONT_WIDTH, self.y * font::FONT_HEIGHT);
-        let colour = colour.as_u32(self.fb.bitmask);
+        let colour = colour.as_u32(self.fb.format);
         for (i, x_bit) in v
             .chunks_exact(2)
             .map(|a| u16::from_ne_bytes([a[0], a[1]]))
