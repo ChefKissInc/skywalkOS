@@ -32,9 +32,6 @@ impl Colour {
 
     #[must_use]
     pub const fn as_u32(self, format: PixelFormat) -> u32 {
-        if self.r == 0 && self.g == 0 && self.b == 0 {
-            return 0;
-        }
         let (r, g, b, a) = (self.r as u32, self.g as u32, self.b as u32, self.a as u32);
 
         let (r_shift, g_shift, b_shift, a_shift) = match format {
