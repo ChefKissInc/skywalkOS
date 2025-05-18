@@ -217,7 +217,7 @@ extern "C" fn _start(_instance: OSDTEntry) -> ! {
             }
 
             if ed_mode {
-                if s.as_str() == "!END" {
+                if s.as_str() == ":END" {
                     ed_mode = false;
                     write!(KWriter, "> ").unwrap();
                 }
@@ -225,6 +225,11 @@ extern "C" fn _start(_instance: OSDTEntry) -> ! {
             } else {
                 match s.as_str() {
                     "OSDeviceTree" => print_ent(OSDTEntry::default(), 0),
+                    "Edit" => {
+                        ed_mode = true;
+                        s.clear();
+                        continue;
+                    }
                     "AccessInvalid" => unsafe {
                         core::arch::asm!(
                             "int 249",
@@ -235,7 +240,7 @@ extern "C" fn _start(_instance: OSDTEntry) -> ! {
                         );
                         panic!("The kernel did not terminate the process...");
                     },
-                    v if v.split_whitespace().next() == Some("msg") => 'a: {
+                    v if v.split_whitespace().next() == Some("Message") => 'a: {
                         let mut v = v.split_whitespace().skip(1);
                         let Some(pid) = v.next().and_then(|v| v.parse().ok()) else {
                             writeln!(KWriter, "Expected PID").unwrap();
@@ -248,11 +253,6 @@ extern "C" fn _start(_instance: OSDTEntry) -> ! {
                         unsafe {
                             Message::new(pid, data.to_be_bytes().to_vec().leak()).send();
                         }
-                    }
-                    "Edit" => {
-                        ed_mode = true;
-                        s.clear();
-                        continue;
                     }
                     _ => writeln!(KWriter, "{s}").unwrap(),
                 }
