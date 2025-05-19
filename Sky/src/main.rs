@@ -55,7 +55,7 @@ macro_rules! cli {
 pub fn init_core(boot_info: &skyliftkit::BootInfo) {
     let state = unsafe { &mut *crate::system::state::SYS_STATE.get() };
     state.verbose = boot_info.verbose;
-    state.serial_enabled = boot_info.serial_enabled;
+    state.serial_enabled = boot_info.serial_enabled || boot_info.frame_buffer.is_none();
 
     unsafe {
         crate::system::gdt::GDTR.load();
