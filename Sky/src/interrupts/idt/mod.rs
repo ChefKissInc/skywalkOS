@@ -36,7 +36,7 @@ seq_macro::seq!(N in 0..256 {
 });
 
 pub static IDTR: IDTReg = IDTReg {
-    limit: (core::mem::size_of_val(&ENTRIES) - 1) as u16,
+    limit: (size_of_val(&ENTRIES) - 1) as u16,
     base: unsafe { (*ENTRIES.get()).as_ptr() },
 };
 

@@ -2,6 +2,7 @@
 
 use core::ops::ControlFlow;
 
+use amd64::paging::PAGE_SIZE;
 use skykit::TerminationReason;
 
 use crate::system::{tasking::scheduler::Scheduler, RegisterState};
@@ -14,7 +15,7 @@ pub fn alloc(
     let (addr, pages) = process.allocate(state.rsi);
 
     unsafe {
-        core::ptr::write_bytes(addr as *mut u8, 0, (pages * 0x1000) as _);
+        core::ptr::write_bytes(addr as *mut u8, 0, (pages * PAGE_SIZE) as _);
     }
 
     state.rax = addr;

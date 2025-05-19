@@ -2,7 +2,7 @@
 
 use alloc::{boxed::Box, collections::VecDeque, string::String, vec::Vec};
 
-use amd64::paging::PageTableFlags;
+use amd64::paging::{PageTableFlags, PAGE_SIZE};
 use hashbrown::{HashMap, HashSet};
 use skykit::msg::Message;
 
@@ -117,7 +117,7 @@ impl Process {
             panic!("PID {}: Address {addr:#X} already allocated", self.id);
         }
 
-        let page_count = len.div_ceil(0x1000);
+        let page_count = len.div_ceil(PAGE_SIZE);
 
         assert!(
             unsafe {
@@ -185,7 +185,7 @@ impl Process {
         let _lock = self.alloc_lock.lock();
 
         let (len, ty) = self.allocations.remove(&addr).unwrap();
-        let page_count = len.div_ceil(0x1000);
+        let page_count = len.div_ceil(PAGE_SIZE);
         trace!(
             "PID {}: Freeing {addr:#X} ({ty:?}, {page_count} pages, {len} bytes)",
             self.id
@@ -243,11 +243,12 @@ impl Process {
     pub fn allocate(&mut self, len: u64) -> (u64, u64) {
         let _lock = self.alloc_lock.lock();
 
-        let page_count = len.div_ceil(0x1000);
+        let page_count = len.div_ceil(PAGE_SIZE);
         trace!(
             "PID {}: Allocating {page_count} pages ({len} bytes)",
             self.id
         );
+        // TODO: Handle OOM.
         let addr = unsafe {
             (*crate::system::state::SYS_STATE.get())
                 .pmm
@@ -255,8 +256,9 @@ impl Process {
                 .unwrap()
                 .lock()
                 .alloc(page_count)
-                .unwrap() as u64
+                .addr() as u64
         };
+        assert_ne!(addr, 0);
         let virt = addr + skykit::USER_VIRT_OFFSET;
         drop(_lock);
         self.track_alloc(virt, len, AllocationType::Writable);

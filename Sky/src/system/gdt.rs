@@ -210,7 +210,7 @@ impl GDTData {
 pub static GDT: SyncUnsafeCell<GDTData> = SyncUnsafeCell::new(GDTData::new());
 
 pub static GDTR: GDTReg = GDTReg {
-    limit: (core::mem::size_of_val(&GDT) - 1) as u16,
+    limit: (size_of_val(&GDT) - 1) as u16,
     addr: GDT.get(),
 };
 

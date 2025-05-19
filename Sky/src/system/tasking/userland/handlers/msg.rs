@@ -130,7 +130,7 @@ pub fn ack(
     if pid != cur_pid {
         let process = scheduler.current_process().unwrap();
         unsafe {
-            process.cr3.lock().unmap(addr, size.div_ceil(0x1000));
+            process.cr3.lock().unmap(addr, size.div_ceil(PAGE_SIZE));
         }
     }
 

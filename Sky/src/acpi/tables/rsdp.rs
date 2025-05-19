@@ -1,7 +1,5 @@
 // Copyright (c) ChefKiss 2021-2025. Licensed under the Thou Shalt Not Profit License version 1.5. See LICENSE for details.
 
-use core::mem::size_of;
-
 use super::{rsdt::RootSystemDescTable, xsdt::ExtendedSystemDescTable};
 
 #[repr(C, packed)]
