@@ -4,7 +4,7 @@ pub mod shapes;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct FrameBuffer {
-    pub base: &'static mut [u32],
+    pub base: *mut u32,
     pub width: usize,
     pub height: usize,
     pub stride: usize,
@@ -19,16 +19,18 @@ pub enum FBError {
 pub type Result<T> = core::result::Result<T, FBError>;
 
 impl FrameBuffer {
+    /// # Safety
+    /// The caller must ensure that the memory address is valid and that the width, height and stride values are within bounds of the memory data.
     #[inline]
     pub const unsafe fn new(
-        data: *mut u32,
+        base: *mut u32,
         width: usize,
         height: usize,
         stride: usize,
         format: crate::pixel::PixelFormat,
     ) -> Self {
         Self {
-            base: core::slice::from_raw_parts_mut(data, height * stride),
+            base,
             width,
             height,
             stride,
@@ -37,14 +39,16 @@ impl FrameBuffer {
     }
 
     pub fn clear(&mut self, colour: u32) {
-        self.base.fill(colour);
+        for i in 0..self.height * self.stride {
+            unsafe { self.base.add(i).write_volatile(colour) };
+        }
     }
 
     pub fn plot_pixel(&mut self, x: usize, y: usize, colour: u32) -> Result<()> {
         if x >= self.width || y >= self.height {
             Err(FBError::OutOfBounds)
         } else {
-            self.base[x + self.stride * y] = colour;
+            unsafe { self.base.add(x + self.stride * y).write_volatile(colour) };
 
             Ok(())
         }

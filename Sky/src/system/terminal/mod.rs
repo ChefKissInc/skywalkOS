@@ -15,7 +15,6 @@ pub struct Terminal {
     pub height: usize,
 }
 
-unsafe impl Send for Terminal {}
 unsafe impl Sync for Terminal {}
 
 impl Terminal {
@@ -36,7 +35,7 @@ impl Terminal {
     pub fn map_fb(&self) {
         unsafe {
             let state = &mut *super::state::SYS_STATE.get();
-            let base = self.fb.base.as_ptr() as u64;
+            let base = self.fb.base as u64;
             state.pml4.as_ref().unwrap().lock().map(
                 base,
                 base - amd64::paging::PHYS_VIRT_OFFSET,
@@ -80,13 +79,14 @@ impl Terminal {
     }
 
     #[inline]
-    fn handle_scrollback(&mut self) {
+    const fn handle_scrollback(&mut self) {
         if self.y >= self.height {
-            self.fb.base.copy_within(
-                self.fb.stride * font::FONT_HEIGHT..self.fb.stride * self.fb.height,
-                0,
-            );
-            self.fb.base[self.fb.stride * (self.fb.height - font::FONT_HEIGHT)..].fill(0);
+            let row_len = self.fb.stride * font::FONT_HEIGHT;
+            let len = (self.fb.stride * self.fb.height) - row_len;
+            unsafe {
+                self.fb.base.add(row_len).copy_to(self.fb.base, len);
+                self.fb.base.add(len).write_bytes(0, row_len);
+            }
             self.y -= 1;
             self.x = 0;
         }

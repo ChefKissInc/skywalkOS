@@ -2,7 +2,6 @@
 
 #![no_std]
 #![deny(warnings, clippy::nursery, unused_extern_crates)]
-#![allow(clippy::missing_safety_doc)]
 
 pub mod fb;
 pub mod pixel;
