@@ -32,7 +32,7 @@ impl Terminal {
     }
 
     #[inline]
-    pub fn map_fb(&self) {
+    pub fn map_fb(&mut self) {
         unsafe {
             let state = &mut *super::state::SYS_STATE.get();
             let base = self.fb.base as u64;
