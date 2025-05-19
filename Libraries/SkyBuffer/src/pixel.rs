@@ -7,12 +7,33 @@ pub enum PixelFormat {
     BGR,
     RGBA,
     BGRA,
-    BitMask {
+    Custom {
         r: u32,
         g: u32,
         b: u32,
         a: Option<u32>,
     },
+}
+
+impl PixelFormat {
+    #[inline]
+    pub const fn is_valid_component(v: u32) -> bool {
+        32 - (v.leading_zeros() + v.trailing_zeros()) <= 8
+    }
+
+    #[inline]
+    pub const fn from_bitmasks(r: u32, g: u32, b: u32, a: Option<u32>) -> Self {
+        Self::Custom {
+            r: r.trailing_zeros(),
+            g: g.trailing_zeros(),
+            b: b.trailing_zeros(),
+            a: if let Some(a) = a {
+                Some(a.trailing_zeros())
+            } else {
+                None
+            },
+        }
+    }
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
@@ -32,42 +53,23 @@ impl Colour {
 
     #[must_use]
     pub const fn as_u32(self, format: PixelFormat) -> u32 {
-        let (r, g, b, a) = (self.r as u32, self.g as u32, self.b as u32, self.a as u32);
+        let Self { r, g, b, a } = self;
+        let (r, g, b, a) = (r as u32, g as u32, b as u32, a as u32);
 
-        let (r_mask, r_shift, g_mask, g_shift, b_mask, b_shift, a_mask_shift) = match format {
-            PixelFormat::BGR => (0xFF0000, 16, 0xFF00, 8, 0xFF, 0, None),
-            PixelFormat::RGB => (0xFF, 0, 0xFF00, 8, 0xFF0000, 16, None),
-            PixelFormat::BGRA => (0xFF0000, 16, 0xFF00, 8, 0xFF, 0, Some((0xFF000000, 24))),
-            PixelFormat::RGBA => (0xFF, 0, 0xFF00, 8, 0xFF0000, 16, Some((0xFF000000, 24))),
-            PixelFormat::BitMask {
-                r: r_mask,
-                g: g_mask,
-                b: b_mask,
-                a: a_mask,
-            } => (
-                r_mask,
-                r_mask.trailing_zeros(),
-                g_mask,
-                g_mask.trailing_zeros(),
-                b_mask,
-                b_mask.trailing_zeros(),
-                if let Some(v) = a_mask {
-                    Some((v, v.trailing_zeros()))
-                } else {
-                    None
-                },
-            ),
+        let (r_shift, g_shift, b_shift, a_shift) = match format {
+            PixelFormat::BGR => (16, 8, 0, None),
+            PixelFormat::RGB => (0, 8, 16, None),
+            PixelFormat::BGRA => (16, 8, 0, Some(24)),
+            PixelFormat::RGBA => (0, 8, 16, Some(24)),
+            PixelFormat::Custom { r, g, b, a } => (r, g, b, a),
         };
 
-        if let Some((a_mask, a_shift)) = a_mask_shift {
-            ((r << r_shift) & r_mask)
-                | ((g << g_shift) & g_mask)
-                | ((b << b_shift) & b_mask)
-                | ((a << a_shift) & a_mask)
+        if let Some(a_shift) = a_shift {
+            (r << r_shift) | (g << g_shift) | (b << b_shift) | (a << a_shift)
         } else {
-            ((((r * a) / 255) << r_shift) & r_mask)
-                | ((((g * a) / 255) << g_shift) & g_mask)
-                | ((((b * a) / 255) << b_shift) & b_mask)
+            (((r * a) / 255) << r_shift)
+                | (((g * a) / 255) << g_shift)
+                | (((b * a) / 255) << b_shift)
         }
     }
 }

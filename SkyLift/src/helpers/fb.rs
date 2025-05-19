@@ -5,25 +5,42 @@ use alloc::boxed::Box;
 use skybuffer::pixel::PixelFormat;
 use skyliftkit::{FrameBufferInfo, ScreenRes};
 use uefi::{
-    boot::ScopedProtocol,
-    boot::{OpenProtocolAttributes, OpenProtocolParams},
-    proto::console::gop::{GraphicsOutput, PixelFormat as GopPixelFormat},
+    boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol},
+    proto::console::gop::{GraphicsOutput, ModeInfo, PixelFormat as GopPixelFormat},
 };
 
-fn fbinfo_from_gop(gop: &mut ScopedProtocol<GraphicsOutput>) -> Option<Box<FrameBufferInfo>> {
+#[inline]
+fn is_bad_mode(gop: &ScopedProtocol<GraphicsOutput>, mode_info: &ModeInfo) -> bool {
+    match mode_info.pixel_format() {
+        GopPixelFormat::Bitmask => gop
+            .current_mode_info()
+            .pixel_bitmask()
+            .is_none_or(|bitmask| {
+                !PixelFormat::is_valid_component(bitmask.red)
+                    || !PixelFormat::is_valid_component(bitmask.green)
+                    || !PixelFormat::is_valid_component(bitmask.blue)
+            }),
+        GopPixelFormat::BltOnly => true,
+        _ => false,
+    }
+}
+
+#[inline]
+fn fbinfo_from_gop(mut gop: ScopedProtocol<GraphicsOutput>) -> Option<Box<FrameBufferInfo>> {
     let mode_info = gop.current_mode_info();
     let pixel_format = match mode_info.pixel_format() {
         GopPixelFormat::Rgb => PixelFormat::RGB,
         GopPixelFormat::Bgr => PixelFormat::BGR,
         GopPixelFormat::Bitmask => {
-            gop.current_mode_info()
-                .pixel_bitmask()
-                .map(|v| PixelFormat::BitMask {
-                    r: v.red,
-                    g: v.green,
-                    b: v.blue,
-                    a: None,
-                })?
+            let Some(bitmask) = gop.current_mode_info().pixel_bitmask() else {
+                unreachable!()
+            };
+            // Just in case the firmware is shit.
+            match (bitmask.red, bitmask.green, bitmask.blue) {
+                (0xFF, 0xFF00, 0xFF0000) => PixelFormat::RGB,
+                (0xFF0000, 0xFF00, 0xFF) => PixelFormat::BGR,
+                (r, g, b) => PixelFormat::from_bitmasks(r, g, b, None),
+            }
         }
         GopPixelFormat::BltOnly => {
             return None;
@@ -58,16 +75,16 @@ pub fn init() -> Option<Box<FrameBufferInfo>> {
             },
             OpenProtocolAttributes::GetProtocol,
         )
-        .unwrap()
+        .ok()?
     };
-    if gop.current_mode_info().pixel_format() == GopPixelFormat::BltOnly {
+    if is_bad_mode(&gop, &gop.current_mode_info()) {
         let mode = gop
             .modes()
-            .filter(|v| v.info().pixel_format() != GopPixelFormat::BltOnly)
+            .filter(|v| !is_bad_mode(&gop, v.info()))
             .max_by_key(|v| v.info().resolution().0)?;
         if let Err(e) = gop.set_mode(&mode) {
             warn!("Failed to set mode: {e}.");
         }
     }
-    fbinfo_from_gop(&mut gop)
+    fbinfo_from_gop(gop)
 }
